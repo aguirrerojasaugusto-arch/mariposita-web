@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo · Artesanía Mariposita</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body { background-color: #0b1b2b; }
+        .page-header {
+            background: linear-gradient(135deg, #7a2e3a 0%, #c45a4e 100%);
+            color: #fff;
+            padding: 4rem 5%;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .grid-catalogo {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 0 5%;
+            max-width: 1200px;
+            margin: 0 auto 4rem auto;
+        }
+        .btn-outline {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            border: 1px solid #00d2ff;
+            color: #00d2ff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-outline:hover {
+            background: rgba(0, 210, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">Mariposita<span>.</span></a>
+            <div class="nav-links">
+                <a href="/">Inicio</a>
+                <a href="/productos.html">Catálogo</a>
+                <a href="/#sorteos">Sorteos</a>
+                <button class="carrito-btn" onclick="location.href='/carrito.html'">
+                    🛒 Carrito (<span id="carrito-count">0</span>)
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-header">
+        <h1>Nuestro Catálogo Completo</h1>
+        <p>Descubre todas nuestras prendas típicas bordadas a mano en Huancavelica.</p>
+    </div>
+
+    <div class="grid-catalogo" id="grid-productos">
+        <!-- Aquí se inyectan los productos con JS -->
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 Artesanía Mariposita | Hecho con ❤️ en Huancavelica</p>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        async function cargarProductos() {
+            try {
+                const res = await fetch('/api/productos');
+                const productos = await res.json();
+                const grid = document.getElementById('grid-productos');
+                
+                if (!productos.length) {
+                    grid.innerHTML = '<p style="color:#fff; text-align:center;">Pronto tendremos nuevos productos.</p>';
+                    return;
+                }
+
+                grid.innerHTML = productos.map(p => `
+                    <div class="card-producto">
+                        <img src="${p.imagen_base64 ? p.imagen_base64 : 'https://via.placeholder.com/300x250?text=' + encodeURIComponent(p.nombre)}" alt="${p.nombre}">
+                        <div class="info">
+                            <h3>${p.nombre}</h3>
+                            <p style="color:var(--text-muted);font-size:0.9rem;min-height:40px;">${p.descripcion || ''}</p>
+                            <div class="precio">S/ ${p.precio.toFixed(2)}</div>
+                            <div class="stock">Stock: ${p.stock} unidades</div>
+                            <button class="btn-primario" onclick='agregarAlCarrito(${JSON.stringify(p).replace(/'/g, "&apos;")})' ${p.stock === 0 ? 'disabled' : ''}>
+                                ${p.stock === 0 ? 'Agotado' : 'Añadir al carrito'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error("Error cargando productos:", error);
+            }
+        }
+
+        function agregarAlCarrito(producto) {
+            const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+            const existente = carrito.find(i => i.producto_id === producto.id);
+            if (existente) {
+                existente.cantidad += 1;
+            } else {
+                carrito.push({
+                    producto_id: producto.id,
+                    nombre: producto.nombre,
+                    precio: producto.precio,
+                    imagen: producto.imagen_base64,
+                    cantidad: 1
+                });
+            }
+            localStorage.setItem('carrito', JSON.stringify(carrito));
+            actualizarContador();
+            mostrarToast(`"${producto.nombre}" añadido`, 'success');
+        }
+
+        function actualizarContador() {
+            const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+            const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+            document.getElementById('carrito-count').textContent = total;
+        }
+
+        function mostrarToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + (tipo || '');
+            setTimeout(() => { t.className = 'toast'; }, 3500);
+        }
+
+        cargarProductos();
+        actualizarContador();
+    </script>
+</body>
+</html>

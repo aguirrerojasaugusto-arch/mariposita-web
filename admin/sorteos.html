@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Sorteos · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-content {
+        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--color-primario); color: #fff;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.3rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-close:hover { color: #ff4d4d; }
+    
+    .modal-body { padding: 2rem; overflow-y: auto; }
+    .modal-footer {
+        padding: 1.5rem 2rem; border-top: 1px solid #eee;
+        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
+    }
+
+    /* PAGINACIÓN */
+    .pagination {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .pagination button {
+        background: var(--color-primario); color: #fff;
+        border: none; padding: 0.5rem 1rem; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+    }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+
+    /* ⭐ ESTILO PARA LAS IMÁGENES EN LA TABLA */
+    .img-tabla {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: block;
+        margin: 0 auto;
+    }
+    
+    /* Estilo para los botones de acción */
+    .btn-accion {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 0.85rem;
+        margin: 0 2px;
+    }
+    .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
+    .btn-editar:hover { background: #1565c0; color: #fff; }
+    .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+    .btn-eliminar:hover { background: #c62828; color: #fff; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html" class="active">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+            <h2 style="margin:0;">Sorteos</h2>
+            <button class="btn btn-primario" onclick="abrirModalNuevo()">+ Nuevo Sorteo</button>
+        </div>
+        <div id="lista"></div>
+        <div class="pagination" id="paginacion">
+            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL FLOTANTE -->
+<div class="modal-overlay" id="modal-sorteo">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="form-title">Nuevo Sorteo</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-sorteo" enctype="multipart/form-data">
+                <input type="hidden" name="id" id="sorteo-id">
+                <div class="form-group"><label>Nombre</label><input name="nombre" id="sorteo-nombre" required></div>
+                <div class="form-group"><label>Descripción</label><textarea name="descripcion" id="sorteo-desc" rows="2"></textarea></div>
+                <div class="form-group"><label>Precio del ticket (S/)</label><input type="number" step="0.01" name="precio_ticket" id="sorteo-precio" required></div>
+                <div class="form-group"><label>Fecha del sorteo</label><input type="date" name="fecha_sorteo" id="sorteo-fecha" required></div>
+                <div class="form-group"><label>Estado</label>
+                    <select name="estado" id="sorteo-estado">
+                        <option value="activo">Activo</option>
+                        <option value="cerrado">Cerrado</option>
+                        <option value="sorteado">Sorteado</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Imagen del premio</label><input type="file" name="imagen" id="sorteo-imagen" accept=".jpg,.jpeg,.png,.webp"></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+            <button type="submit" form="form-sorteo" class="btn btn-primario" id="btn-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let todosLosSorteos = [];
+let paginaActual = 1;
+const itemsPorPagina = 5;
+
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/sorteos');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    todosLosSorteos = await r.json();
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(todosLosSorteos.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!todosLosSorteos.length) {
+        cont.innerHTML = '<p>No hay sorteos registrados.</p>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const sorteosPagina = todosLosSorteos.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+        ${sorteosPagina.map(s => `<tr>
+            <td>
+                ${s.imagen_base64 
+                    ? `<img class="img-tabla" src="${s.imagen_base64}">` 
+                    : '—'}
+            </td>
+            <td>${s.nombre}</td>
+            <td>S/ ${s.precio_ticket.toFixed(2)}</td>
+            <td>${s.fecha_sorteo}</td>
+            <td>${s.estado}</td>
+            <td>
+                <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
+                <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
+            </td>
+        </tr>`).join('')}
+        </tbody></table>`;
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(todosLosSorteos.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+function abrirModalNuevo() {
+    document.getElementById('form-sorteo').reset();
+    document.getElementById('sorteo-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo Sorteo';
+    document.getElementById('btn-guardar').textContent = 'Guardar';
+    document.getElementById('modal-sorteo').classList.add('active');
+}
+
+function editar(s) {
+    document.getElementById('sorteo-id').value = s.id;
+    document.getElementById('sorteo-nombre').value = s.nombre;
+    document.getElementById('sorteo-desc').value = s.descripcion || '';
+    document.getElementById('sorteo-precio').value = s.precio_ticket;
+    document.getElementById('sorteo-fecha').value = s.fecha_sorteo;
+    document.getElementById('sorteo-estado').value = s.estado;
+    document.getElementById('form-title').textContent = 'Editar Sorteo #' + s.id;
+    document.getElementById('btn-guardar').textContent = 'Actualizar';
+    document.getElementById('modal-sorteo').classList.add('active');
+}
+
+function cerrarModal() {
+    document.getElementById('modal-sorteo').classList.remove('active');
+}
+
+// Evitar que el modal se cierre al hacer clic fuera
+document.getElementById('modal-sorteo').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-sorteo')) return;
+});
+
+document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    const originalText = btn.textContent;
+    
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const f = e.target; 
+    const id = document.getElementById('sorteo-id').value; 
+    const fd = new FormData(f);
+    const url = id ? `/api/admin/sorteos/${id}` : '/api/admin/sorteos';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const r = await fetch(url, { method, body: fd });
+        const d = await r.json();
+        
+        if (r.ok) { 
+            alert('Sorteo guardado correctamente'); 
+            cerrarModal();
+            cargar(); 
+        } else { 
+            alert('Error del servidor: ' + (d.error || 'Desconocido')); 
+        }
+    } catch (error) {
+        alert('Error de red: Asegúrate de que el servidor esté corriendo.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+
+// ⭐ FUNCIÓN PARA ELIMINAR SORTEO
+async function eliminarSorteo(id) {
+    if (!confirm('¿Estás seguro de eliminar este sorteo? Se borrarán también todos los tickets asociados a él. Esta acción no se puede deshacer.')) return;
+    
+    try {
+        const res = await fetch(`/api/admin/sorteos/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('✅ Sorteo eliminado correctamente.');
+            cargar(); // Recargar la tabla
+        } else {
+            alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
+        }
+    } catch (error) {
+        alert('Error de red al intentar eliminar el sorteo.');
+    }
+}
+
+cargar();
+</script>
+</body>
+</html>

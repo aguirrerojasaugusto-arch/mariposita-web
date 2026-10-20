@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Dashboard · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1><img src="/admin/img/logo.png" alt="Logo" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none';"> Mariposita</h1>
+        
+        <a href="/admin/dashboard.html" class="active">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <h2>Bienvenido, <span id="nombre"></span></h2>
+        
+        <div class="stats-grid" id="stats"></div>
+
+        <div class="card">
+            <h3 style="color:var(--color-primario); margin-bottom:1rem;">Acciones rápidas</h3>
+            <p style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <a href="/admin/ordenes.html" class="btn btn-primario">Revisar órdenes</a>
+                <a href="/admin/tickets.html" class="btn btn-primario">Revisar tickets</a>
+                <a href="/admin/buscar.html" class="btn btn-acento">🔍 Buscar Cliente</a>
+            </p>
+        </div>
+    </main>
+</div>
+<script>
+async function checkAuth() {
+    const r = await fetch('/api/auth/admin/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    document.getElementById('nombre').textContent = d.nombre;
+}
+async function loadStats() {
+    const r = await fetch('/api/admin/dashboard');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    const d = await r.json();
+    document.getElementById('stats').innerHTML = `
+        <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
+        <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
+        <div class="stat"><div class="num">S/ ${d.ventas_aprobadas.toFixed(2)}</div><div class="label">Ventas aprobadas</div></div>
+        <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
+    `;
+}
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+checkAuth(); loadStats();
+</script>
+</body>
+</html>

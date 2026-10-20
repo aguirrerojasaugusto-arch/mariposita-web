@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Tickets · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7); z-index: 1000;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-content {
+        background: #fff; width: 90%; max-width: 600px; border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+        padding: 1.5rem; border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--color-primario); color: #fff;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    
+    .modal-body { padding: 1.5rem; overflow-y: auto; }
+    .modal-body h4 { color: var(--color-primario); margin-bottom: 0.5rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+    .modal-body p { margin-bottom: 0.5rem; font-size: 0.95rem; color: #333; }
+    
+    .modal-img {
+        width: 100%; border-radius: 8px; border: 1px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px;
+    }
+    
+    .btn-detalle {
+        background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;
+        padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold;
+    }
+    .btn-detalle:hover { background: #1565c0; color: #fff; }
+
+    .pagination {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .pagination button {
+        background: var(--color-primario); color: #fff;
+        border: none; padding: 0.5rem 1rem; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+    }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+
+    /* ESTILO DEL BUSCADOR */
+    .header-actions {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+    .search-box {
+        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
+        font-size: 0.95rem; width: 300px; outline: none;
+    }
+    .search-box:focus { border-color: var(--color-primario); }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html" class="active">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <div class="header-actions">
+            <h2 style="margin:0;">Tickets pendientes</h2>
+            <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
+        </div>
+        
+        <div class="alert alert-info">
+            ⚠️ <strong>Recuerda:</strong> Abre tu app Yape y confirma que el monto del ticket esté en tu cuenta ANTES de aprobar.
+        </div>
+        
+        <div id="lista"></div>
+        <div class="pagination" id="paginacion">
+            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL DE DETALLES -->
+<div class="modal-overlay" id="modal-detalles">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Detalles del Ticket</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+document.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('modal-detalles').addEventListener('click', cerrarModal);
+
+let todosLosTickets = [];
+let ticketsFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 5;
+
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+function ocrBox(t) {
+    const clase = t.alerta_ocr ? 'ocr-error' : (t.alerta_monto ? 'ocr-alerta' : '');
+    return `<div class="ocr-box ${clase}">
+        <strong>OCR:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : '❌ No leído'}<br>
+        <small>Op: ${t.ocr_operacion || '—'}</small>
+        ${t.alerta_monto ? '<div class="badge-alerta">⚠️ Monto no coincide</div>' : ''}
+        ${t.alerta_ocr ? '<div class="badge-alerta">⚠️ OCR falló</div>' : ''}
+    </div>`;
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/tickets/pendientes');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    todosLosTickets = await r.json();
+    filtrar();
+}
+
+function filtrar() {
+    const texto = document.getElementById('buscador').value.toLowerCase();
+    ticketsFiltrados = todosLosTickets.filter(t => 
+        t.numero_ticket.toLowerCase().includes(texto) ||
+        t.cliente_nombre.toLowerCase().includes(texto) ||
+        (t.cliente_dni && t.cliente_dni.toLowerCase().includes(texto)) ||
+        (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!ticketsFiltrados.length) {
+        cont.innerHTML = '<div class="alert alert-success">No se encontraron tickets.</div>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead><tr><th>Ticket</th><th>Sorteo</th><th>Cliente</th><th>Cant.</th><th>OCR</th><th>Comprobante</th><th>Acciones</th></tr></thead>
+        <tbody>
+        ${ticketsPagina.map((t) => {
+            const indiceReal = todosLosTickets.findIndex(orig => orig.id === t.id);
+            return `<tr>
+                <td><strong>${t.numero_ticket}</strong><br><small>${t.creado_en}</small></td>
+                <td>${t.sorteo_nombre}</td>
+                <td>${t.cliente_nombre}<br><small>DNI: ${t.cliente_dni || '—'}</small></td>
+                <td><strong>${t.cantidad_tickets || 1}</strong></td>
+                <td>${ocrBox(t)}</td>
+                <td>
+                    <button class="btn-detalle" onclick="abrirModal(${indiceReal})">Ver Detalles</button>
+                </td>
+                <td>
+                    <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')">✅ Aprobar</button>
+                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>
+                </td>
+            </tr>`
+        }).join('')}
+        </tbody></table>`;
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+function abrirModal(index) {
+    const t = todosLosTickets[index];
+    document.getElementById('modal-title').textContent = `Ticket ${t.numero_ticket}`;
+    document.getElementById('modal-body').innerHTML = `
+        <h4>Datos del Cliente</h4>
+        <p><strong>Nombre:</strong> ${t.cliente_nombre}</p>
+        <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
+        <p><strong>Teléfono:</strong> ${t.cliente_telefono || 'No registrado'}</p>
+        <p><strong>Departamento:</strong> ${t.cliente_departamento || 'No registrado'}</p>
+        <p><strong>Cantidad de Tickets:</strong> ${t.cantidad_tickets}</p>
+        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+        <h4 style="margin-top:1.5rem;">Comprobante</h4>
+        ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
+        <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
+            <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
+            <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No detectado'}</p>
+            <p style="font-size:0.85rem;"><strong>Operación:</strong> ${t.ocr_operacion || 'No detectada'}</p>
+        </div>
+    `;
+    document.getElementById('modal-detalles').classList.add('active');
+}
+
+function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
+
+async function revisar(id, accion) {
+    let notas = null;
+    if (accion === 'rechazar') {
+        notas = prompt('Motivo del rechazo:');
+        if (notas === null) return;
+    } else {
+        if (!confirm('¿Ya verificaste en tu app Yape que el pago del ticket llegó?')) return;
+    }
+    const r = await fetch(`/api/admin/tickets/${id}/revisar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })
+    });
+    const d = await r.json();
+    if (r.ok) { alert('Ticket ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
+}
+
+cargar();
+</script>
+</body>
+</html>

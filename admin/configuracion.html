@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Configuración · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    /* Fondo oscuro desenfocado para el modal */
+    body {
+        background: linear-gradient(135deg, #0b1b2b 0%, #1a3a5a 100%);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Contenedor del formulario flotante */
+    .config-modal {
+        background: #ffffff;
+        width: 90%;
+        max-width: 900px;
+        max-height: 90vh;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .config-header {
+        padding: 1.5rem 2rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .config-header h2 {
+        margin: 0;
+        color: var(--color-primario, #0077b6);
+        font-size: 1.5rem;
+    }
+    .config-header .btn-cerrar {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #888;
+        transition: color 0.3s;
+    }
+    .config-header .btn-cerrar:hover { color: #c62828; }
+
+    .config-body {
+        padding: 2rem;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+
+    .config-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+    }
+    .config-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .config-section h3 {
+        color: var(--color-primario, #0077b6);
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+    }
+
+    /* Grid para las imágenes */
+    .image-grid {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    .image-box {
+        flex: 1;
+        min-width: 250px;
+    }
+    .image-box h4 {
+        margin-bottom: 0.8rem;
+        color: #555;
+        font-size: 0.95rem;
+    }
+    .preview-box {
+        width: 100%;
+        height: 150px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        background: #f9f9f9;
+        background-size: cover;
+        background-position: center;
+    }
+    .preview-box.logo {
+        border-radius: 50%;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1rem auto;
+    }
+    .preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .file-input-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .file-input-group input {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    /* Campos de texto */
+    .form-group input {
+        background: #f5f7fa;
+        border: 1px solid #e1e4e8;
+    }
+    .form-group input:focus {
+        background: #fff;
+        border-color: var(--color-primario, #0077b6);
+    }
+</style>
+</head>
+<body>
+
+<!-- FORMULARIO FLOTANTE -->
+<div class="config-modal">
+    <div class="config-header">
+        <h2>⚙️ Configuración General</h2>
+        <button class="btn-cerrar" onclick="window.location.href='/admin/dashboard.html'">✕</button>
+    </div>
+    
+    <div class="config-body">
+        
+        <!-- SECCIÓN DE DISEÑO -->
+        <div class="config-section">
+            <h3>Diseño del Panel y Tienda</h3>
+            <div class="image-grid">
+                <!-- Logo -->
+                <div class="image-box">
+                    <h4>Logo del Sistema</h4>
+                    <div id="preview-logo" class="preview-box logo">
+                        <span style="color:#999;">Sin Logo</span>
+                    </div>
+                    <form id="form-logo" enctype="multipart/form-data" class="file-input-group">
+                        <input type="hidden" name="tipo" value="logo">
+                        <input type="file" name="imagen" accept="image/*" required>
+                        <button type="submit" class="btn btn-primario">Subir</button>
+                    </form>
+                </div>
+
+                <!-- Fondo -->
+                <div class="image-box">
+                    <h4>Imagen de Fondo (Login)</h4>
+                    <div id="preview-fondo" class="preview-box">
+                        <span style="color:#999;">Sin Fondo</span>
+                    </div>
+                    <form id="form-fondo" enctype="multipart/form-data" class="file-input-group">
+                        <input type="hidden" name="tipo" value="fondo">
+                        <input type="file" name="imagen" accept="image/*" required>
+                        <button type="submit" class="btn btn-primario">Subir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE DATOS -->
+        <div class="config-section">
+            <h3>Datos de Pago y Contacto</h3>
+            <form id="form-config">
+                <div class="form-group"><label>Número Yape</label><input name="numero_yape"></div>
+                <div class="form-group"><label>Número Plin</label><input name="numero_plin"></div>
+                <div class="form-group"><label>Nombre del titular</label><input name="nombre_titular"></div>
+                <div class="form-group"><label>WhatsApp</label><input name="whatsapp"></div>
+                <div class="form-group"><label>Email de contacto</label><input name="email_contacto"></div>
+                <button type="submit" class="btn btn-primario" style="width:100%; padding:0.8rem; margin-top:1rem;">Guardar Cambios</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Cargar datos
+async function cargar() {
+    const r = await fetch('/api/admin/configuracion');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    const cfg = await r.json();
+    
+    // Llenar textos
+    const f = document.getElementById('form-config');
+    Object.entries(cfg).forEach(([k, v]) => { if (f[k]) f[k].value = v; });
+
+    // Mostrar imágenes
+    if (cfg.logo_admin) {
+        document.getElementById('preview-logo').innerHTML = `<img src="${cfg.logo_admin}">`;
+    }
+    if (cfg.fondo_login) {
+        const preview = document.getElementById('preview-fondo');
+        preview.style.backgroundImage = `url('${cfg.fondo_login}')`;
+        preview.innerHTML = '';
+    }
+}
+
+// Guardar textos
+document.getElementById('form-config').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const r = await fetch('/api/admin/configuracion', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(fd))
+    });
+    if (r.ok) alert('Datos guardados correctamente'); else alert('Error al guardar');
+});
+
+// Subir Logo
+document.getElementById('form-logo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true; btn.textContent = '...';
+    
+    const fd = new FormData(e.target);
+    try {
+        const r = await fetch('/api/admin/configuracion-imagenes', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (r.ok) { alert('Logo actualizado'); cargar(); } 
+        else { alert('Error: ' + d.error); }
+    } catch (err) { alert('Error de red'); }
+    btn.disabled = false; btn.textContent = 'Subir';
+});
+
+// Subir Fondo
+document.getElementById('form-fondo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true; btn.textContent = '...';
+    
+    const fd = new FormData(e.target);
+    try {
+        const r = await fetch('/api/admin/configuracion-imagenes', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (r.ok) { alert('Fondo actualizado'); cargar(); } 
+        else { alert('Error: ' + d.error); }
+    } catch (err) { alert('Error de red'); }
+    btn.disabled = false; btn.textContent = 'Subir';
+});
+
+cargar();
+</script>
+</body>
+</html>

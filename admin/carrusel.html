@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Carrusel · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .grid-carrusel { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .card-img { background: #fff; padding: 0.5rem; border-radius: 8px; box-shadow: var(--sombra); text-align: center; }
+    .card-img img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" class="active">🖼️ Carrusel</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <h2>Carrusel de Fondo (Máx. 5 imágenes)</h2>
+        <div class="alert alert-info">
+            Sube las imágenes horizontales. El sistema las mostrará rotando automáticamente en la página principal.
+        </div>
+        
+        <div class="card">
+            <h3>Subir nueva imagen</h3>
+            <form id="form-carrusel" enctype="multipart/form-data" style="margin-top:1rem; display:flex; gap:1rem; align-items:flex-end;">
+                <div class="form-group" style="flex:1; margin:0;">
+                    <label>Archivo de imagen</label>
+                    <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp" required>
+                </div>
+                <button type="submit" class="btn btn-primario" id="btn-subir">Subir Imagen</button>
+            </form>
+        </div>
+
+        <h3 style="margin-top:2rem;">Imágenes actuales</h3>
+        <div id="lista-carrusel" class="grid-carrusel"></div>
+    </main>
+</div>
+<script>
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/carrusel');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    const imagenes = await r.json();
+    const cont = document.getElementById('lista-carrusel');
+    
+    if (!imagenes.length) {
+        cont.innerHTML = '<p>No hay imágenes en el carrusel.</p>';
+        return;
+    }
+
+    cont.innerHTML = imagenes.map(img => `
+        <div class="card-img">
+            <img src="${img.imagen_base64}" alt="Carrusel">
+            <button class="btn btn-rechazar" onclick="eliminar(${img.id})" style="width:100%;">Eliminar</button>
+        </div>
+    `).join('');
+}
+
+document.getElementById('form-carrusel').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-subir');
+    btn.disabled = true; 
+    btn.textContent = 'Subiendo...';
+    
+    const fd = new FormData(e.target);
+    
+    try {
+        const r = await fetch('/api/admin/carrusel', { method: 'POST', body: fd });
+        const d = await r.json();
+        
+        if (r.ok) { 
+            e.target.reset(); 
+            cargar(); 
+        } else { 
+            alert('Error: ' + d.error); 
+        }
+    } catch (error) {
+        alert('Error de red al subir la imagen');
+    } finally {
+        btn.disabled = false; 
+        btn.textContent = 'Subir Imagen';
+    }
+});
+
+async function eliminar(id) {
+    if (!confirm('¿Eliminar esta imagen del carrusel?')) return;
+    await fetch(`/api/admin/carrusel/${id}`, { method: 'DELETE' });
+    cargar();
+}
+
+cargar();
+</script>
+</body>
+</html>

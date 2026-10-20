@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Productos · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    /* MODAL FLOTANTE */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-content {
+        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--color-primario); color: #fff;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.3rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-close:hover { color: #ff4d4d; }
+    
+    .modal-body { padding: 2rem; overflow-y: auto; }
+    .modal-footer {
+        padding: 1.5rem 2rem; border-top: 1px solid #eee;
+        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
+    }
+
+    /* PAGINACIÓN */
+    .pagination {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .pagination button {
+        background: var(--color-primario); color: #fff;
+        border: none; padding: 0.5rem 1rem; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+    }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+
+    /* ESTILO DEL BUSCADOR */
+    .header-actions {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+    .search-box {
+        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
+        font-size: 0.95rem; width: 300px; outline: none;
+    }
+    .search-box:focus { border-color: var(--color-primario); }
+
+    /* ⭐ ESTILO PARA LAS IMÁGENES EN LA TABLA */
+    .img-tabla {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html" class="active">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <div class="header-actions">
+            <h2 style="margin:0;">Productos</h2>
+            <div style="display:flex; gap:1rem;">
+                <input type="text" id="buscador" class="search-box" placeholder="Buscar producto..." onkeyup="filtrar()">
+                <button class="btn btn-primario" onclick="abrirModalNuevo()">+ Nuevo Producto</button>
+            </div>
+        </div>
+        
+        <div id="lista"></div>
+        <div class="pagination" id="paginacion">
+            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL FLOTANTE -->
+<div class="modal-overlay" id="modal-producto">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="form-title">Nuevo producto</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-producto" enctype="multipart/form-data">
+                <input type="hidden" name="id" id="prod-id">
+                <div class="form-group"><label>Nombre</label><input name="nombre" id="prod-nombre" required></div>
+                <div class="form-group"><label>Descripción</label><textarea name="descripcion" id="prod-desc" rows="2"></textarea></div>
+                <div class="form-group"><label>Precio (S/)</label><input type="number" step="0.01" name="precio" id="prod-precio" required></div>
+                <div class="form-group"><label>Stock</label><input type="number" name="stock" id="prod-stock" value="0"></div>
+                <div class="form-group"><label>Categoría</label>
+                    <select name="categoria" id="prod-cat">
+                        <option value="ropa_tipica">Ropa típica</option>
+                        <option value="accesorio">Accesorio</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Imagen</label><input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp"></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+            <button type="submit" form="form-producto" class="btn btn-primario" id="btn-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let todosLosProductos = [];
+let productosFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 5;
+
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/productos');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    todosLosProductos = await r.json();
+    filtrar();
+}
+
+function filtrar() {
+    const texto = document.getElementById('buscador').value.toLowerCase();
+    productosFiltrados = todosLosProductos.filter(p => 
+        p.nombre.toLowerCase().includes(texto) ||
+        (p.descripcion && p.descripcion.toLowerCase().includes(texto)) ||
+        (p.categoria && p.categoria.toLowerCase().includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!productosFiltrados.length) {
+        cont.innerHTML = '<p>No se encontraron productos.</p>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const productosPagina = productosFiltrados.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Activo</th><th>Acciones</th></tr></thead>
+        <tbody>
+        ${productosPagina.map(p => `<tr>
+            <td>
+                ${p.imagen_base64 
+                    ? `<img class="img-tabla" src="${p.imagen_base64}">` 
+                    : '—'}
+            </td>
+            <td>${p.nombre}<br><small>${p.categoria}</small></td>
+            <td>S/ ${p.precio.toFixed(2)}</td>
+            <td>${p.stock}</td>
+            <td>${p.activo ? '✅' : '❌'}</td>
+            <td>
+                <button class="btn btn-ghost" onclick='editar(${JSON.stringify(p).replace(/'/g, "&apos;")})'>Editar</button>
+                <button class="btn btn-rechazar" onclick="desactivar(${p.id})">Desactivar</button>
+            </td>
+        </tr>`).join('')}
+        </tbody></table>`;
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+function abrirModalNuevo() {
+    document.getElementById('form-producto').reset();
+    document.getElementById('prod-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo Producto';
+    document.getElementById('btn-guardar').textContent = 'Guardar';
+    document.getElementById('modal-producto').classList.add('active');
+}
+
+function editar(p) {
+    document.getElementById('prod-id').value = p.id;
+    document.getElementById('prod-nombre').value = p.nombre;
+    document.getElementById('prod-desc').value = p.descripcion || '';
+    document.getElementById('prod-precio').value = p.precio;
+    document.getElementById('prod-stock').value = p.stock;
+    document.getElementById('prod-cat').value = p.categoria;
+    document.getElementById('form-title').textContent = 'Editar Producto #' + p.id;
+    document.getElementById('btn-guardar').textContent = 'Actualizar';
+    document.getElementById('modal-producto').classList.add('active');
+}
+
+function cerrarModal() {
+    document.getElementById('modal-producto').classList.remove('active');
+}
+
+// Evitar que el modal se cierre al hacer clic fuera
+document.getElementById('modal-producto').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modal-producto')) return;
+});
+
+document.getElementById('form-producto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    const originalText = btn.textContent;
+    
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const f = e.target; 
+    const id = document.getElementById('prod-id').value; 
+    const fd = new FormData(f);
+    const url = id ? `/api/admin/productos/${id}` : '/api/admin/productos';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const r = await fetch(url, { method, body: fd });
+        const d = await r.json();
+        
+        if (r.ok) { 
+            alert('Producto guardado correctamente'); 
+            cerrarModal();
+            cargar(); 
+        } else { 
+            alert('Error del servidor: ' + (d.error || 'Desconocido')); 
+        }
+    } catch (error) {
+        alert('Error de red: Asegúrate de que el servidor esté corriendo.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+
+async function desactivar(id) {
+    if (!confirm('¿Desactivar este producto? No se borrará, solo se ocultará del catálogo.')) return;
+    await fetch(`/api/admin/productos/${id}`, { method: 'DELETE' });
+    cargar();
+}
+
+cargar();
+</script>
+</body>
+</html>

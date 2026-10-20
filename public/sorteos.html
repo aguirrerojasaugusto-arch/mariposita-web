@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todos los Sorteos · Mariposita</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body { background-color: #0b1b2b; }
+        .header-search {
+            display: flex; align-items: center; background: #0d253f;
+            border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 20px;
+            padding: 0.2rem 0.5rem; margin-left: 1rem; flex-grow: 1; max-width: 350px;
+        }
+        .header-search input {
+            background: transparent; border: none; color: #fff;
+            padding: 0.4rem 0.8rem; font-size: 0.85rem; outline: none; width: 100%;
+        }
+        .header-search button {
+            background: var(--accent-cyan); color: #03131d; border: none;
+            padding: 0.4rem 0.8rem; border-radius: 15px; font-size: 0.8rem;
+            font-weight: 700; cursor: pointer; white-space: nowrap;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #7a2e3a 0%, #c45a4e 100%);
+            color: #fff; padding: 4rem 5%; text-align: center; margin-bottom: 2rem;
+        }
+        .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 1rem; }
+        .grid-sorteos {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem; padding: 0 5%; max-width: 1200px; margin: 0 auto 4rem auto;
+        }
+        .card-sorteo {
+            background: #112240; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s, border-color 0.3s;
+            display: flex; flex-direction: column;
+        }
+        .card-sorteo:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+        }
+        .card-sorteo img { width: 100%; height: 250px; object-fit: cover; }
+        .card-sorteo .info { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-sorteo h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #fff; margin-bottom: 0.5rem; }
+        .card-sorteo p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; flex-grow: 1; }
+        .card-sorteo .fecha { color: var(--accent-cyan); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .card-sorteo .precio { color: #ffcc00; font-size: 1.3rem; font-weight: 800; margin-bottom: 1rem; }
+        .card-sorteo .btn-comprar {
+            width: 100%; padding: 0.8rem; background: var(--accent-cyan); color: #000;
+            border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+            text-align: center; text-decoration: none; transition: background 0.3s;
+        }
+        .card-sorteo .btn-comprar:hover { background: #00b8e6; }
+        .card-sorteo .btn-finalizado {
+            width: 100%; padding: 0.8rem; background: #555; color: #ccc;
+            border: none; border-radius: 8px; font-weight: 700; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">Mariposita<span>.</span></a>
+            <div class="nav-links">
+                <a href="/">Inicio</a>
+                <a href="/productos.html">Productos</a>
+                <a href="/sorteos.html">Sorteos</a>
+                <a href="#">Blog</a>
+                <div class="header-search">
+                    <input type="text" id="input-dni" placeholder="Buscar por DNI o Teléfono..." onkeypress="if(event.key === 'Enter') buscarPedidoPublico()">
+                    <button onclick="buscarPedidoPublico()">🔍 Consultar</button>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button class="carrito-btn" onclick="location.href='/carrito.html'">
+                    🛒 Carrito (<span id="carrito-count">0</span>)
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-header">
+        <h1>Nuestros Sorteos</h1>
+        <p>Participa y gana hermosas prendas bordadas a mano.</p>
+    </div>
+
+    <div class="grid-sorteos" id="grid-sorteos">
+        <!-- JS carga los sorteos aquí -->
+    </div>
+
+    <footer class="footer">
+        <p>© 2026 Artesanía Mariposita | Hecho con ❤️ en Huancavelica</p>
+    </footer>
+
+    <!-- MODAL DE BÚSQUEDA (Opcional, para que funcione el buscador desde aquí) -->
+    <div class="resultado-overlay" id="resultado-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(3,19,29,0.9);z-index:3000;display:none;justify-content:center;align-items:center;">
+        <div style="background:#112240;border:2px solid var(--accent-cyan);border-radius:12px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto;padding:2rem;position:relative;">
+            <button style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;" onclick="document.getElementById('resultado-overlay').style.display='none'">✕</button>
+            <h2 style="color:#fff;margin-bottom:1rem;">Resultados</h2>
+            <div id="resultado-body" style="color:#ccc;"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        async function cargarSorteos() {
+            try {
+                const res = await fetch('/api/sorteos');
+                const sorteos = await res.json();
+                const grid = document.getElementById('grid-sorteos');
+                
+                if (!sorteos.length) {
+                    grid.innerHTML = '<p style="color:#fff; text-align:center; grid-column: 1/-1;">Pronto anunciaremos nuevos sorteos.</p>';
+                    return;
+                }
+
+                grid.innerHTML = sorteos.map(s => {
+                    const fechaSorteo = new Date(`${s.fecha_sorteo}T23:59:59`).getTime();
+                    const yaFinalizo = new Date().getTime() > fechaSorteo;
+                    
+                    const boton = yaFinalizo 
+                        ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
+                        : `<a href="/sorteo.html?id=${s.id}" class="btn-comprar">Comprar Ticket</a>`;
+
+                    return `
+                        <div class="card-sorteo">
+                            <img src="${s.imagen_base64 ? s.imagen_base64 : 'https://via.placeholder.com/300x250/112240/00d2ff?text=' + encodeURIComponent(s.nombre)}" alt="${s.nombre}">
+                            <div class="info">
+                                <h3>${s.nombre}</h3>
+                                <p>${s.descripcion || ''}</p>
+                                <div class="fecha">📅 Sorteo: ${s.fecha_sorteo}</div>
+                                <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
+                                ${boton}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error("Error al cargar sorteos:", error);
+            }
+        }
+
+        // (Opcional) Lógica simple para el buscador en esta página
+        async function buscarPedidoPublico() {
+            const query = document.getElementById('input-dni').value.trim();
+            if (!query) return alert("Ingresa un DNI o Teléfono");
+            const overlay = document.getElementById('resultado-overlay');
+            const body = document.getElementById('resultado-body');
+            overlay.style.display = 'flex';
+            body.innerHTML = 'Buscando...';
+            try {
+                const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (!data.ordenes.length && !data.tickets.length) {
+                    body.innerHTML = '<p>No se encontraron resultados.</p>';
+                    return;
+                }
+                let html = '';
+                data.tickets.forEach(t => {
+                    html += `<div style="background:#0d253f;padding:1rem;border-radius:8px;margin-bottom:0.5rem;border-left:4px solid var(--accent-cyan);">
+                        <p><strong>Ticket: ${t.numero_ticket}</strong> (${t.estado_pago})</p>
+                        <p>Sorteo: ${t.sorteo_nombre}</p>
+                        <p>Participante: ${t.cliente_nombre}</p>
+                    </div>`;
+                });
+                body.innerHTML = html;
+            } catch (e) { body.innerHTML = 'Error al buscar.'; }
+        }
+
+        function actualizarContador() {
+            const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+            const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+            document.getElementById('carrito-count').textContent = total;
+        }
+
+        cargarSorteos();
+        actualizarContador();
+    </script>
+</body>
+</html>

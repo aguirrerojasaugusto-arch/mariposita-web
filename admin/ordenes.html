@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Órdenes · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7); z-index: 1000;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-content {
+        background: #fff; width: 90%; max-width: 800px; border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+        padding: 1.5rem; border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--color-primario); color: #fff;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    
+    .modal-body { padding: 1.5rem; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    
+    .modal-section h4 { color: var(--color-primario); margin-bottom: 1rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+    .modal-section p { margin-bottom: 0.5rem; font-size: 0.95rem; color: #333; }
+    
+    .modal-img {
+        width: 100%; border-radius: 8px; border: 1px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px;
+    }
+    
+    .btn-detalle {
+        background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;
+        padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold;
+    }
+    .btn-detalle:hover { background: #1565c0; color: #fff; }
+
+    .pagination {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .pagination button {
+        background: var(--color-primario); color: #fff;
+        border: none; padding: 0.5rem 1rem; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+    }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+
+    /* ESTILO DEL BUSCADOR */
+    .header-actions {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+    .search-box {
+        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
+        font-size: 0.95rem; width: 300px; outline: none;
+    }
+    .search-box:focus { border-color: var(--color-primario); }
+
+    @media (max-width: 768px) {
+        .modal-body { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html" class="active">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <div class="header-actions">
+            <h2 style="margin:0;">Órdenes pendientes</h2>
+            <input type="text" id="buscador" class="search-box" placeholder="Buscar por código, cliente, teléfono..." onkeyup="filtrar()">
+        </div>
+        
+        <div class="alert alert-info">
+            ⚠️ <strong>Recuerda:</strong> Abre tu app Yape y confirma que el dinero esté en tu cuenta ANTES de aprobar.
+        </div>
+        
+        <div id="lista"></div>
+        <div class="pagination" id="paginacion">
+            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL DE DETALLES -->
+<div class="modal-overlay" id="modal-detalles">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Detalles de la Orden</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+document.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('modal-detalles').addEventListener('click', cerrarModal);
+
+let todasLasOrdenes = [];
+let ordenesFiltradas = [];
+let paginaActual = 1;
+const itemsPorPagina = 5;
+
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+function ocrBox(o) {
+    const clase = o.alerta_ocr ? 'ocr-error' : (o.alerta_monto ? 'ocr-alerta' : '');
+    return `<div class="ocr-box ${clase}">
+        <strong>OCR:</strong> ${o.ocr_monto !== null ? 'S/ ' + o.ocr_monto.toFixed(2) : '❌ No leído'}<br>
+        <small>Op: ${o.ocr_operacion || '—'}<br>Fecha: ${o.ocr_fecha || '—'}</small>
+        ${o.alerta_monto ? '<div class="badge-alerta">⚠️ Monto no coincide</div>' : ''}
+        ${o.alerta_ocr ? '<div class="badge-alerta">⚠️ OCR falló</div>' : ''}
+    </div>`;
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/ordenes/pendientes');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    todasLasOrdenes = await r.json();
+    filtrar(); // Llamamos a filtrar para renderizar la tabla inicial
+}
+
+function filtrar() {
+    const texto = document.getElementById('buscador').value.toLowerCase();
+    ordenesFiltradas = todasLasOrdenes.filter(o => 
+        o.codigo.toLowerCase().includes(texto) ||
+        o.cliente_nombre.toLowerCase().includes(texto) ||
+        (o.cliente_telefono && o.cliente_telefono.toLowerCase().includes(texto)) ||
+        (o.cliente_email && o.cliente_email.toLowerCase().includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(ordenesFiltradas.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!ordenesFiltradas.length) {
+        cont.innerHTML = '<div class="alert alert-success">No se encontraron órdenes con ese criterio.</div>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const ordenesPagina = ordenesFiltradas.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead><tr><th>Código</th><th>Cliente</th><th>Total</th><th>OCR</th><th>Comprobante</th><th>Acciones</th></tr></thead>
+        <tbody>
+        ${ordenesPagina.map((o) => {
+            // Buscamos el índice real en el array original para el modal
+            const indiceReal = todasLasOrdenes.findIndex(orig => orig.id === o.id);
+            return `<tr>
+                <td><strong>${o.codigo}</strong><br><small>${o.creado_en}</small></td>
+                <td>${o.cliente_nombre}<br><small>${o.cliente_telefono}</small></td>
+                <td><strong>S/ ${o.total.toFixed(2)}</strong><br><small>${o.total_items} items</small></td>
+                <td>${ocrBox(o)}</td>
+                <td>
+                    <button class="btn-detalle" onclick="abrirModal(${indiceReal})">Ver Detalles</button>
+                </td>
+                <td>
+                    <button class="btn btn-aprobar" onclick="revisar(${o.id}, 'aprobar')">✅ Aprobar</button>
+                    <button class="btn btn-rechazar" onclick="revisar(${o.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>
+                </td>
+            </tr>`
+        }).join('')}
+        </tbody></table>`;
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(ordenesFiltradas.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+async function abrirModal(index) {
+    const orden = todasLasOrdenes[index];
+    let itemsHTML = '';
+    try {
+        const r = await fetch(`/api/admin/ordenes/${orden.id}`);
+        const data = await r.json();
+        if (data.items) {
+            itemsHTML = data.items.map(it => `
+                <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #eee; padding: 0.5rem 0;">
+                    <span>${it.cantidad}x ${it.nombre}</span>
+                    <strong>S/ ${(it.cantidad * it.precio_unitario).toFixed(2)}</strong>
+                </div>
+            `).join('');
+        }
+    } catch(e) { console.error(e); }
+
+    document.getElementById('modal-title').textContent = `Orden ${orden.codigo}`;
+    document.getElementById('modal-body').innerHTML = `
+        <div class="modal-section">
+            <h4>Datos del Cliente</h4>
+            <p><strong>Nombre:</strong> ${orden.cliente_nombre}</p>
+            <p><strong>Teléfono:</strong> ${orden.cliente_telefono}</p>
+            <p><strong>Dirección:</strong> ${orden.cliente_direccion}</p>
+            <p><strong>Fecha:</strong> ${orden.creado_en}</p>
+            <h4 style="margin-top:1.5rem;">Productos</h4>
+            ${itemsHTML || '<p>No hay detalles</p>'}
+            <h4 style="margin-top:1.5rem;">Total a Pagar</h4>
+            <p style="font-size:1.4rem; color:var(--color-primario); font-weight:bold;">S/ ${orden.total.toFixed(2)}</p>
+        </div>
+        <div class="modal-section">
+            <h4>Comprobante de Pago</h4>
+            ${orden.comprobante_base64 ? `<img src="${orden.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
+            <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
+                <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
+                <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${orden.ocr_monto !== null ? 'S/ ' + orden.ocr_monto.toFixed(2) : 'No detectado'}</p>
+                <p style="font-size:0.85rem;"><strong>Fecha:</strong> ${orden.ocr_fecha || 'No detectada'}</p>
+            </div>
+        </div>
+    `;
+    document.getElementById('modal-detalles').classList.add('active');
+}
+
+function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
+
+async function revisar(id, accion) {
+    let notas = null;
+    if (accion === 'rechazar') {
+        notas = prompt('Motivo del rechazo (visible al cliente):');
+        if (notas === null) return;
+    } else {
+        if (!confirm('¿Ya verificaste en tu app Yape que el pago llegó a tu cuenta?')) return;
+    }
+    const r = await fetch(`/api/admin/ordenes/${id}/revisar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })
+    });
+    const d = await r.json();
+    if (r.ok) { alert('Orden ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
+}
+
+cargar();
+</script>
+</body>
+</html>

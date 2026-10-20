@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finalizar Compra · Mariposita</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+    body { background-color: var(--bg-dark); }
+    
+    .checkout-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(3, 19, 29, 0.85); backdrop-filter: blur(8px);
+        z-index: 2000; display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .checkout-modal.active { opacity: 1; visibility: visible; }
+
+    .checkout-content {
+        background-color: var(--bg-card); width: 100%; max-width: 800px;
+        border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .checkout-header {
+        padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .checkout-header h2 { font-size: 1.5rem; color: #fff; }
+
+    .checkout-body {
+        padding: 2rem; overflow-y: auto;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+    }
+
+    .checkout-resumen { border-right: 1px solid rgba(255,255,255,0.1); padding-right: 2rem; }
+    .resumen-titulo { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+    .resumen-lista { margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto; }
+    .resumen-item { display: flex; justify-content: space-between; color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .resumen-total { display: flex; justify-content: space-between; color: var(--accent-cyan); font-size: 1.4rem; font-weight: 700; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+
+    .checkout-form .form-group { margin-bottom: 1rem; }
+    .checkout-form label { display: block; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .checkout-form input, .checkout-form textarea {
+        width: 100%; padding: 0.7rem; border-radius: 4px;
+        background: #0b1b2b; border: 1px solid rgba(255,255,255,0.2);
+        color: #fff; font-family: inherit; transition: border 0.3s;
+    }
+    .checkout-form input:focus, .checkout-form textarea:focus { outline: none; border-color: var(--accent-cyan); }
+    .checkout-form input[type="file"] { padding: 0.5rem; background: transparent; }
+    .checkout-form input:disabled { background-color: #1a2f3a !important; color: #8892b0 !important; cursor: not-allowed; }
+
+    .checkout-footer {
+        padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex; justify-content: flex-end; gap: 1rem;
+    }
+
+    .pago-instrucciones {
+        background: rgba(0, 210, 255, 0.1); border: 1px dashed var(--accent-cyan);
+        padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;
+        font-size: 0.85rem; color: #d1d5db;
+    }
+    .pago-instrucciones strong { color: var(--accent-cyan); }
+
+    @media (max-width: 768px) {
+        .checkout-body { grid-template-columns: 1fr; }
+        .checkout-resumen { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-right: 0; padding-bottom: 1.5rem; }
+    }
+
+    /* --- ESTILOS DEL TICKET --- */
+    #print-section { display: none; justify-content: center; padding: 2rem; }
+    #ticket-container { background: #fff; border-radius: 8px; width: 100%; max-width: 350px; padding: 1.5rem; color: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .ticket { font-family: 'Courier Prime', monospace; font-size: 14px; line-height: 1.2; color: #1a1a1a; text-align: center; }
+    .ticket-header { margin-bottom: 1rem; }
+    .ticket-header h3 { font-size: 16px; margin: 0; text-transform: uppercase; }
+    .ticket-divider { border-top: 1px dashed #1a1a1a; margin: 0.5rem 0; }
+    .ticket-items { text-align: left; margin: 1rem 0; }
+    .ticket-item { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+    .ticket-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-top: 1rem; }
+    .ticket-footer { margin-top: 1.5rem; font-size: 12px; }
+
+    /* Toast notificación */
+    .toast {
+        position: fixed; bottom: 2rem; right: 2rem;
+        background: var(--accent-cyan); color: #03131d;
+        padding: 1rem 1.5rem; border-radius: 4px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        opacity: 0; transform: translateY(20px); transition: all 0.3s;
+        z-index: 9999; font-weight: 600;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #ff4d4d; color: #fff; }
+
+    /* ⭐ SPINNER DE CARGA */
+    .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(3, 19, 29, 0.3);
+        border-radius: 50%;
+        border-top-color: #03131d;
+        animation: spin 1s ease-in-out infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Ocultar el resto de la página al imprimir */
+    @media print {
+        body * { visibility: hidden; }
+        #print-section, #print-section * { visibility: visible; }
+        #print-section { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 0; }
+        #ticket-container { box-shadow: none; border: none; max-width: 100%; }
+    }
+</style>
+</head>
+<body>
+
+    <div class="header-wrap" style="justify-content: flex-start; padding-left: 5%;">
+        <a href="/" class="logo-block" style="clip-path: none; background: transparent;">
+            <div class="logo-icon">🦋</div>
+            <div class="logo-text">
+                <strong>MARIPOSITA</strong>
+                <span>Volver a la tienda</span>
+            </div>
+        </a>
+    </div>
+
+    <div id="loading-screen" style="text-align: center; margin-top: 15vh;">
+        <h2 style="color: var(--text-muted);">Procesando tu carrito...</h2>
+    </div>
+
+    <!-- MODAL FLOTANTE DE CHECKOUT -->
+    <div class="checkout-modal" id="checkout-modal">
+        <div class="checkout-content" id="checkout-content">
+            <div class="checkout-header">
+                <h2>Finalizar Compra</h2>
+                <a href="/" class="btn-cerrar" style="text-decoration:none;">✕</a>
+            </div>
+            
+            <div class="checkout-body">
+                <div class="checkout-resumen">
+                    <h3 class="resumen-titulo">Resumen del Pedido</h3>
+                    <div class="resumen-lista" id="resumen-lista"></div>
+                    
+                    <div class="pago-instrucciones">
+                        <strong>💳 Instrucciones:</strong><br>
+                        Paga por Yape/Plin al <strong id="info-yape">...</strong><br>
+                        Titular: <strong id="info-titular">...</strong>
+                    </div>
+
+                    <div class="resumen-total">
+                        <span>Total:</span>
+                        <span id="resumen-total-precio">S/ 0.00</span>
+                    </div>
+                </div>
+
+                <form id="form-checkout" class="checkout-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>DNI</label>
+                        <input type="text" name="dni" id="dni-input" maxlength="8" required placeholder="Ingresa tu DNI">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre completo</label>
+                        <input name="nombre" id="nombre-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input name="telefono" id="telefono-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección de envío</label>
+                        <textarea name="direccion" id="direccion-input" rows="2" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Comprobante de pago (Yape/Plin)</label>
+                        <input type="file" name="comprobante" accept=".jpg,.jpeg,.png,.webp" required>
+                        <div style="background: rgba(0, 210, 255, 0.05); border-left: 3px solid var(--accent-cyan); padding: 0.8rem; margin-top: 0.5rem; border-radius: 4px;">
+                            <p style="color: var(--accent-cyan); font-weight: 700; font-size: 0.75rem; margin-bottom: 0.3rem; text-transform: uppercase;">Especificaciones:</p>
+                            <ul style="color: #8892b0; font-size: 0.75rem; margin-left: 1rem; line-height: 1.4;">
+                                <li>Recorta la imagen dejando <strong>solo la parte blanca</strong> de la tarjeta de Yape/Plin.</li>
+                                <li>No incluyas bordes negros, barras de estado ni botones del celular.</li>
+                                <li>Asegúrate de que el <strong>monto</strong> y la <strong>fecha</strong> se vean nítidos.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="checkout-footer">
+                <a href="/" class="btn-dark" id="btn-seguir-comprando" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Seguir comprando</a>
+                <button type="submit" form="form-checkout" class="btn-solid" id="btn-pagar">Enviar Pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DEL TICKET (Oculta) -->
+    <div id="print-section">
+        <div id="ticket-container">
+            <div class="ticket">
+                <div class="ticket-header">
+                    <h3>SUPERMERCADO</h3>
+                    <h3>"MARIPOSITA"</h3>
+                    <p>Av. Huancavelica 123</p>
+                    <p>RUC: 10456789123</p>
+                </div>
+                <div class="ticket-divider"></div>
+                <div id="ticket-fecha" style="text-align: left; font-size: 12px; margin: 0.5rem 0;"></div>
+                <div class="ticket-items" id="ticket-items"></div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-total">
+                    <span>TOTAL:</span>
+                    <span id="ticket-total">S/ 0.00</span>
+                </div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-footer">
+                    <p>PAGO EN EFECTIVO / YAPE</p>
+                    <p>GRACIAS POR SU VISITA</p>
+                    <p style="margin-top: 0.5rem; font-size: 10px;">www.mariposita.pe</p>
+                </div>
+            </div>
+            
+            <button onclick="window.print()" class="btn-solid" style="width: 100%; margin-top: 1rem; display: block; cursor:pointer;">🖨️ Imprimir Ticket</button>
+            <a href="/" class="btn-dark" style="width: 100%; margin-top: 0.5rem; display: block; text-align: center; text-decoration: none;">Volver a la Tienda</a>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+
+        async function init() {
+            if (!carrito.length) {
+                alert("Tu carrito está vacío. Volviendo a la tienda...");
+                window.location.href = '/';
+                return;
+            }
+
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('checkout-modal').classList.add('active');
+
+            try {
+                const res = await fetch('/api/config-publica');
+                const config = await res.json();
+                document.getElementById('info-yape').textContent = config.numero_yape || 'No configurado';
+                document.getElementById('info-titular').textContent = config.nombre_titular || 'No configurado';
+            } catch (e) { 
+                console.error("Error al cargar configuración", e); 
+                document.getElementById('info-yape').textContent = 'Error de red';
+            }
+
+            renderResumen();
+            configurarBuscadorDNI();
+        }
+
+        // ⭐ LÓGICA PARA AUTOCOMPLETAR DATOS POR DNI (CON DEBUG)
+        function configurarBuscadorDNI() {
+            let timeoutBusqueda = null;
+            const dniInput = document.getElementById('dni-input');
+            const nombreInput = document.getElementById('nombre-input');
+            const telefonoInput = document.getElementById('telefono-input');
+            const direccionInput = document.getElementById('direccion-input');
+
+            dniInput.addEventListener('input', function(e) {
+                clearTimeout(timeoutBusqueda);
+                const dni = e.target.value.trim();
+                
+                if (dni.length === 8) {
+                    nombreInput.value = 'Buscando...';
+                    nombreInput.disabled = true;
+                    
+                    timeoutBusqueda = setTimeout(async () => {
+                        try {
+                            console.log("Consultando API para DNI:", dni);
+                            const res = await fetch(`/api/buscar-cliente/${dni}`);
+                            
+                            if (!res.ok) {
+                                throw new Error(`Error del servidor: ${res.status}`);
+                            }
+
+                            const data = await res.json();
+                            console.log("Respuesta de la API:", data);
+                            
+                            if (data.encontrado) {
+                                nombreInput.value = data.cliente.nombre;
+                                telefonoInput.value = data.cliente.telefono || '';
+                                direccionInput.value = data.cliente.direccion || '';
+                                nombreInput.disabled = true; // Bloquear si ya existe
+                                console.log("✅ Datos autocompletados.");
+                            } else {
+                                nombreInput.value = '';
+                                nombreInput.disabled = false; // Desbloquear si es nuevo
+                                nombreInput.placeholder = 'Escribe tu nombre completo';
+                                nombreInput.focus();
+                                console.log("ℹ️ DNI no encontrado en la BD. Cliente nuevo.");
+                            }
+                        } catch (err) {
+                            console.error("❌ Error en la petición:", err);
+                            // Alerta visual para saber qué está fallando
+                            alert("No se pudo conectar con el servidor para buscar el DNI. Revisa la consola (F12).");
+                            nombreInput.value = '';
+                            nombreInput.disabled = false;
+                        }
+                    }, 800);
+                } else {
+                    nombreInput.disabled = false;
+                    nombreInput.value = '';
+                    telefonoInput.value = '';
+                    direccionInput.value = '';
+                    nombreInput.placeholder = 'Se autocompletará con el DNI';
+                }
+            });
+        }
+
+        function renderResumen() {
+            const lista = document.getElementById('resumen-lista');
+            let total = 0;
+            lista.innerHTML = carrito.map(item => {
+                total += item.precio * item.cantidad;
+                return `<div class="resumen-item">
+                    <span>${item.cantidad}x ${item.nombre}</span>
+                    <span>S/ ${(item.precio * item.cantidad).toFixed(2)}</span>
+                </div>`;
+            }).join('');
+            document.getElementById('resumen-total-precio').textContent = `S/ ${total.toFixed(2)}`;
+        }
+
+        document.getElementById('form-checkout').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnPagar = document.getElementById('btn-pagar');
+            const btnSeguir = document.getElementById('btn-seguir-comprando');
+            
+            btnPagar.disabled = true;
+            btnSeguir.style.pointerEvents = 'none';
+            btnSeguir.style.opacity = '0.5';
+            
+            const originalText = btnPagar.textContent;
+            btnPagar.innerHTML = '<div class="spinner"></div> Validando...';
+
+            const form = e.target;
+            const fd = new FormData(form);
+            const itemsParaEnviar = carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad }));
+            fd.append('items', JSON.stringify(itemsParaEnviar));
+
+            try {
+                const res = await fetch('/api/ordenes', { method: 'POST', body: fd });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Error al procesar el pedido');
+
+                localStorage.removeItem('carrito');
+                document.getElementById('checkout-modal').classList.remove('active');
+                generarTicket(data);
+
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+                btnPagar.disabled = false;
+                btnPagar.textContent = originalText;
+                btnSeguir.style.pointerEvents = 'auto';
+                btnSeguir.style.opacity = '1';
+            }
+        });
+
+        function generarTicket(data) {
+            let total = 0;
+            let itemsHtml = '';
+            
+            const fecha = new Date().toLocaleString('es-PE');
+            document.getElementById('ticket-fecha').innerHTML = `
+                <div>FECHA: ${fecha}</div>
+                <div>ORDEN: ${data.codigo}</div>
+            `;
+
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                itemsHtml += `
+                    <div class="ticket-item">
+                        <span>${item.cantidad}x ${item.nombre.substring(0, 15)}...</span>
+                        <span>S/ ${subtotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('ticket-items').innerHTML = itemsHtml;
+            document.getElementById('ticket-total').textContent = `S/ ${total.toFixed(2)}`;
+            
+            document.getElementById('print-section').style.display = 'flex';
+        }
+
+        function mostrarToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast show ' + (tipo || '');
+            setTimeout(() => { t.className = 'toast'; }, 4000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

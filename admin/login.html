@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Admin · Artesanía Mariposita</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<div class="login-container">
+    <!-- El fondo ahora se maneja por JS -->
+    <div class="login-bg-image" id="login-bg"></div>
+
+    <div class="login-content">
+        <div class="login-left">
+            <h1>Arte y tradición con <br><span>Artesanía Mariposita</span></h1>
+            <p>En Artesanía Mariposita ofrecemos piezas únicas bordadas a mano por artesanas de Huancavelica, llevando la elegancia andina a tu hogar.</p>
+            
+            <div class="login-features">
+                <div class="login-feature">
+                    <div class="icon">🕒</div>
+                    <div><strong>Horario</strong>Lun - Sáb<br>9am - 8pm</div>
+                </div>
+                <div class="login-feature">
+                    <div class="icon">📅</div>
+                    <div><strong>Atención Online</strong>Compra 24/7<br>Fija tu pedido</div>
+                </div>
+                <div class="login-feature">
+                    <div class="icon">📞</div>
+                    <div><strong>Contacto</strong>WhatsApp<br>+51 987 654 321</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-right">
+            <div class="login-card">
+                <!-- El logo ahora se maneja por JS -->
+                <img src="" id="login-logo" alt="Logo Mariposita">
+                
+                <h2>Iniciar Sesión</h2>
+                <p>Sistema de Gestión Artesanía Mariposita</p>
+                
+                <form id="login-form">
+                    <div class="login-form-group">
+                        <label>USUARIO</label>
+                        <input type="email" name="email" placeholder="admin@mariposita.pe" required autofocus>
+                    </div>
+                    <div class="login-form-group">
+                        <label>CONTRASEÑA</label>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    
+                    <div id="msg"></div>
+                    
+                    <button type="submit" class="btn-login">Ingresar</button>
+                </form>
+
+                <div class="login-secure">🔒 Conexión segura</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar imágenes dinámicas de configuración
+async function cargarDiseno() {
+    try {
+        const res = await fetch('/api/config-publica'); // Usamos la ruta pública
+        const config = await res.json();
+        
+        if (config.logo_admin) {
+            document.getElementById('login-logo').src = config.logo_admin;
+        } else {
+            // Logo por defecto si no hay
+            document.getElementById('login-logo').src = '/admin/img/logo.png'; 
+            document.getElementById('login-logo').onerror = function() { this.style.display = 'none'; };
+        }
+
+        if (config.fondo_login) {
+            document.getElementById('login-bg').style.backgroundImage = `url('${config.fondo_login}')`;
+        }
+    } catch (e) { console.error("Error cargando diseño", e); }
+}
+
+cargarDiseno();
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Verificando...';
+    btn.disabled = true;
+
+    const fd = new FormData(e.target);
+    const res = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(fd))
+    });
+    const data = await res.json();
+    
+    if (res.ok && data.success) {
+        location.href = data.redirect;
+    } else {
+        document.getElementById('msg').innerHTML = `<div style="color:#fff; background:rgba(198,40,40,0.8); padding:0.5rem; border-radius:6px; margin-bottom:1rem;">${data.error}</div>`;
+        btn.textContent = 'Ingresar';
+        btn.disabled = false;
+    }
+});
+</script>
+</body>
+</html>

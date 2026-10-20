@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ESTO EVITA QUE EL NAVEGADOR GUARDE LA PÁGINA EN CACHÉ -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Nuestros Sorteos · Mariposita</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+    body { background-color: #0b1b2b; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+    
+    .header { background: #03131d; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .header .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #fff; text-decoration: none; }
+    .header .nav-links a { color: #fff; text-decoration: none; margin-left: 1.5rem; font-weight: 500; }
+    .header .nav-links a:hover { color: #00d2ff; }
+
+    .page-header {
+        background: linear-gradient(135deg, #7a2e3a 0%, #c45a4e 100%);
+        color: #fff; padding: 4rem 5%; text-align: center;
+    }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 0.5rem; margin-top: 0; }
+    .page-header p { margin: 0; font-size: 1.1rem; opacity: 0.9; }
+
+    .grid-sorteos {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem; padding: 3rem 5%; max-width: 1200px; margin: 0 auto;
+    }
+    .card-sorteo {
+        background: #112240; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);
+        overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        transition: transform 0.3s, border-color 0.3s;
+        display: flex; flex-direction: column;
+    }
+    .card-sorteo:hover { transform: translateY(-5px); border-color: #00d2ff; }
+    .card-sorteo img { width: 100%; height: 250px; object-fit: cover; }
+    .card-sorteo .info { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+    .card-sorteo h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #fff; margin: 0 0 0.5rem 0; }
+    .card-sorteo p { color: #8892b0; font-size: 0.9rem; margin-bottom: 1rem; flex-grow: 1; }
+    .card-sorteo .fecha { color: #00d2ff; font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .card-sorteo .precio { color: #ffcc00; font-size: 1.3rem; font-weight: 800; margin-bottom: 1rem; }
+    
+    .card-sorteo .btn-comprar {
+        width: 100%; padding: 0.8rem; background: #00d2ff; color: #000;
+        border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+        transition: background 0.3s; font-size: 1rem;
+        display: block; text-align: center;
+    }
+    .card-sorteo .btn-comprar:hover { background: #00b8e6; }
+    
+    .card-sorteo .btn-finalizado {
+        width: 100%; padding: 0.8rem; background: #555; color: #ccc;
+        border: none; border-radius: 8px; font-weight: 700; text-align: center;
+    }
+
+    /* MODAL FLOTANTE (Oculto por defecto) */
+    .checkout-modal { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(3, 19, 29, 0.9); backdrop-filter: blur(8px); 
+        z-index: 9999; /* Asegura que esté por encima de todo */
+        display: none; justify-content: center; align-items: center; 
+        opacity: 0; transition: opacity 0.3s; 
+    }
+    .checkout-modal.active { display: flex; opacity: 1; }
+    
+    .checkout-content { 
+        background: #112240; width: 95%; max-width: 650px; border-radius: 12px; 
+        border: 1px solid rgba(0, 210, 255, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        display: flex; flex-direction: column; max-height: 90vh; position: relative; 
+        animation: slideUp 0.4s ease-out; 
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .checkout-header { padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .checkout-header h2 { font-size: 1.5rem; color: #fff; margin: 0; }
+    .btn-cerrar { background: transparent; border: none; color: #ff4d4d; font-size: 1.5rem; cursor: pointer; transition: color 0.3s; }
+    .btn-cerrar:hover { color: #fff; }
+    .checkout-body { padding: 1.5rem 2rem; overflow-y: auto; }
+    
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.3rem; color: #ccc; }
+    .form-label span { color: #ff4d4d; }
+    .input-wrapper { display: flex; background: #f4f4f4; border-radius: 8px; overflow: hidden; }
+    .input-wrapper.dark { background: rgba(20, 5, 40, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); }
+    .input-icon { width: 45px; display: flex; justify-content: center; align-items: center; background: #7b2cbf; color: #fff; font-size: 1.1rem; }
+    .input-wrapper input, .input-wrapper select { flex: 1; padding: 0.8rem; border: none; background: transparent; font-size: 0.95rem; color: #333; outline: none; width: 100%; }
+    .input-wrapper.dark input, .input-wrapper.dark select { color: #fff; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .total-box { display: flex; align-items: center; background: #100520; border: 2px solid #ffcc00; border-radius: 8px; padding: 0.3rem; height: 46px; }
+    .total-icon { width: 30px; height: 30px; background: #ffcc00; color: #000; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-weight: 800; margin-right: 8px; font-size: 0.8rem; }
+    .total-amount { flex: 1; text-align: right; font-size: 1.2rem; font-weight: 800; color: #ffcc00; padding-right: 8px; }
+    .pago-box { background: rgba(255, 204, 0, 0.05); border: 1px dashed #ffcc00; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; text-align: center; font-size: 0.85rem; }
+    .pago-box h4 { color: #ffcc00; margin: 0 0 0.5rem 0; text-transform: uppercase; font-size: 0.8rem; }
+    .pago-box p { margin: 0.2rem 0; color: #fff; }
+    .pago-box .pago-numero { font-size: 1.2rem; font-weight: 800; color: #ffcc00; letter-spacing: 1px; display: block; }
+    .upload-zone { border: 2px dashed rgba(255, 204, 0, 0.4); background: rgba(255, 204, 0, 0.05); border-radius: 8px; padding: 1rem; text-align: center; position: relative; cursor: pointer; }
+    .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .upload-title { color: #ffcc00; font-weight: 800; font-size: 0.9rem; }
+    .terms { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #ccc; margin: 1rem 0; }
+    .btn-submit { width: 100%; padding: 0.9rem; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 1rem; }
+    .btn-submit:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: #00d2ff; color: #000; padding: 1rem; border-radius: 4px; opacity: 0; transition: 0.3s; z-index: 9999; font-weight: bold; }
+    .toast.show { opacity: 1; }
+    .toast.error { background: #ff4d4d; color: #fff; }
+</style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="/" class="logo">Mariposita.</a>
+        <div class="nav-links">
+            <a href="/">Inicio</a>
+            <a href="/productos.html">Productos</a>
+            <a href="/sorteos.html">Sorteos</a>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h1>Nuestros Sorteos</h1>
+        <p>Participa y gana hermosas prendas bordadas a mano.</p>
+    </div>
+
+    <div class="grid-sorteos" id="grid-sorteos">
+        <!-- JS carga los sorteos aquí -->
+    </div>
+
+    <!-- MODAL FLOTANTE DE COMPRA -->
+    <div class="checkout-modal" id="checkout-modal">
+        <div class="checkout-content">
+            <div class="checkout-header">
+                <h2>Comprar Ticket</h2>
+                <button class="btn-cerrar" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="checkout-body">
+                <form id="form-ticket" enctype="multipart/form-data">
+                    <input type="hidden" id="sorteo-id" name="sorteo_id">
+                    
+                    <div class="form-group">
+                        <label class="form-label">DNI <span>*</span></label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">🆔</div>
+                            <input type="text" id="dni-input" name="dni" placeholder="Ingresa tu DNI" maxlength="8" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">NOMBRES Y APELLIDOS <span>*</span></label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">👤</div>
+                            <input type="text" name="nombre" id="nombre-input" placeholder="Se autocompletará con el DNI" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">WHATSAPP <span>*</span></label>
+                            <div class="input-wrapper dark">
+                                <div class="input-icon">💬</div>
+                                <input type="tel" name="telefono" placeholder="987 654 321" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">DEPARTAMENTO <span>*</span></label>
+                            <div class="input-wrapper dark">
+                                <div class="input-icon">📍</div>
+                                <select name="departamento" required>
+                                    <option value="" disabled selected>Elige...</option>
+                                    <option value="Lima">Lima</option>
+                                    <option value="Arequipa">Arequipa</option>
+                                    <option value="Huancavelica">Huancavelica</option>
+                                    <option value="Cusco">Cusco</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">CANTIDAD <span>*</span></label>
+                            <div class="input-wrapper dark">
+                                <div class="input-icon">🎟️</div>
+                                <select id="cantidad-tickets" name="cantidad" onchange="actualizarTotalModal()">
+                                    <option value="1">1 Ticket</option>
+                                    <option value="2">2 Tickets</option>
+                                    <option value="3">3 Tickets</option>
+                                    <option value="4">4 Tickets</option>
+                                    <option value="5">5 Tickets</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">TOTAL A PAGAR</label>
+                            <div class="total-box">
+                                <div class="total-icon">S/</div>
+                                <div class="total-amount" id="total-display">S/ 0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pago-box">
+                        <h4>💳 Paga a:</h4>
+                        <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
+                        <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
+                        <p>Titular: <span id="info-titular">...</span></p>
+                        <p style="color:#ff4d4d; font-size:0.75rem; margin-top:0.5rem;">⚠️ Transfiere el monto exacto.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">COMPROBANTE <span>*</span></label>
+                        <div class="upload-zone">
+                            <input type="file" name="comprobante" accept=".jpg,.jpeg,.png,.webp" required>
+                            <div class="upload-title">☁️ SUBIR COMPROBANTE</div>
+                        </div>
+                    </div>
+
+                    <label class="terms">
+                        <input type="checkbox" required> Acepto los términos y condiciones.
+                    </label>
+
+                    <button type="submit" class="btn-submit" id="btn-comprar">Confirmar Compra</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let sorteos = [];
+        let sorteoActivo = null;
+        let config = {};
+
+        // 1. Cargar configuración de pago
+        async function cargarConfig() {
+            try {
+                const res = await fetch('/api/config-publica');
+                config = await res.json();
+                document.getElementById('info-yape').textContent = config.numero_yape || 'No config';
+                document.getElementById('info-plin').textContent = config.numero_plin || 'No config';
+                document.getElementById('info-titular').textContent = config.nombre_titular || 'No config';
+            } catch(e) { console.error("Error cargando config", e); }
+        }
+
+        // 2. Cargar lista de sorteos
+        async function cargarSorteos() {
+            try {
+                const res = await fetch('/api/sorteos');
+                sorteos = await res.json();
+                const grid = document.getElementById('grid-sorteos');
+                
+                if (!sorteos.length) {
+                    grid.innerHTML = '<p style="color:#fff; text-align:center; grid-column: 1/-1;">No hay sorteos disponibles.</p>';
+                    return;
+                }
+
+                grid.innerHTML = sorteos.map(s => {
+                    const fechaSorteo = new Date(`${s.fecha_sorteo}T23:59:59`).getTime();
+                    const yaFinalizo = new Date().getTime() > fechaSorteo;
+                    
+                    // EL BOTÓN USA ONCLICK. NO HAY HREF. NO HAY REDIRECCIÓN.
+                    const boton = yaFinalizo 
+                        ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
+                        : `<button type="button" class="btn-comprar" onclick="abrirModal(${s.id})">Comprar Ticket</button>`;
+
+                    return `
+                        <div class="card-sorteo">
+                            <img src="${s.imagen_base64 ? s.imagen_base64 : 'https://via.placeholder.com/300x250/112240/00d2ff?text=' + encodeURIComponent(s.nombre)}" alt="${s.nombre}">
+                            <div class="info">
+                                <h3>${s.nombre}</h3>
+                                <p>${s.descripcion || ''}</p>
+                                <div class="fecha">📅 Sorteo: ${s.fecha_sorteo}</div>
+                                <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
+                                ${boton}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch(e) { console.error("Error cargando sorteos", e); }
+        }
+
+        // 3. Abrir modal (Función clave)
+        function abrirModal(id) {
+            console.log("Abriendo modal para sorteo ID:", id); // Para depurar en consola
+            sorteoActivo = sorteos.find(s => s.id === id);
+            if (!sorteoActivo) return;
+
+            document.getElementById('sorteo-id').value = id;
+            document.getElementById('form-ticket').reset();
+            document.getElementById('sorteo-id').value = id; // Reset borra el hidden
+            document.getElementById('total-display').textContent = `S/ ${sorteoActivo.precio_ticket.toFixed(2)}`;
+            
+            document.getElementById('checkout-modal').classList.add('active');
+        }
+
+        function cerrarModal() {
+            document.getElementById('checkout-modal').classList.remove('active');
+        }
+
+        function actualizarTotalModal() {
+            if (!sorteoActivo) return;
+            const cant = parseInt(document.getElementById('cantidad-tickets').value);
+            document.getElementById('total-display').textContent = `S/ ${(sorteoActivo.precio_ticket * cant).toFixed(2)}`;
+        }
+
+        // 4. Validación de DNI (RENIEC)
+        document.getElementById('dni-input').addEventListener('input', async function(e) {
+            const dni = e.target.value;
+            const inputNombre = document.getElementById('nombre-input');
+            if (dni.length === 8) {
+                inputNombre.placeholder = '⏳ Buscando...';
+                try {
+                    const res = await fetch(`https://api.apis.net.pe/v2/reniec/dni?numero=${dni}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        inputNombre.value = `${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}`;
+                        inputNombre.placeholder = '✅ Validado';
+                        inputNombre.disabled = true;
+                    } else { throw new Error(); }
+                } catch {
+                    inputNombre.value = '';
+                    inputNombre.placeholder = 'Escribe tu nombre manualmente';
+                    inputNombre.disabled = false;
+                    inputNombre.focus();
+                }
+            } else {
+                inputNombre.value = '';
+                inputNombre.disabled = false;
+                inputNombre.placeholder = 'Se autocompletará con el DNI';
+            }
+        });
+
+        // 5. Enviar formulario (Evita recargar la página)
+        document.getElementById('form-ticket').addEventListener('submit', async (e) => {
+            e.preventDefault(); // <--- ESTO ES CLAVE: Evita la recarga
+            
+            const btn = document.getElementById('btn-comprar');
+            btn.disabled = true;
+            btn.textContent = 'Procesando...';
+
+            const fd = new FormData(e.target);
+            
+            try {
+                const res = await fetch('/api/tickets', { method: 'POST', body: fd });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Error al procesar');
+
+                // Éxito: Reemplazamos el contenido del modal
+                document.querySelector('.checkout-content').innerHTML = `
+                    <div style="text-align:center; padding: 2rem;">
+                        <div style="font-size:3rem;">🎉</div>
+                        <h2 style="color:#00d2ff; margin:1rem 0;">¡Ticket Reservado!</h2>
+                        <p style="color:#fff;">Tu código es: <strong>${data.numero_ticket}</strong></p>
+                        <p style="color:#8892b0; font-size:0.9rem;">En breve validaremos tu pago.</p>
+                        <button onclick="location.reload()" class="btn-submit" style="margin-top:1rem;">Volver a los Sorteos</button>
+                    </div>
+                `;
+            } catch (error) {
+                mostrarToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Compra';
+            }
+        });
+
+        function mostrarToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast show ' + (tipo || '');
+            setTimeout(() => { t.className = 'toast'; }, 5000);
+        }
+
+        // Inicializar al cargar la página
+        cargarConfig();
+        cargarSorteos();
+    </script>
+</body>
+</html>

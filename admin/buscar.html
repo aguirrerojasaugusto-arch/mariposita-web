@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Consultar Estado · Mariposita</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .search-container {
+        max-width: 800px; margin: 0 auto; background: #fff;
+        padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; }
+    .search-subtitle { color: #666; margin-bottom: 2rem; }
+    
+    .search-input-group {
+        display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;
+    }
+    .search-input-group input {
+        width: 60%; max-width: 400px; padding: 1rem; border: 2px solid #ddd;
+        border-radius: 8px; font-size: 1.2rem; outline: none; transition: border 0.3s;
+    }
+    .search-input-group input:focus { border-color: var(--color-primario); }
+    .search-input-group button {
+        padding: 1rem 2rem; background: var(--color-primario); color: #fff;
+        border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer;
+        font-weight: bold; transition: background 0.3s;
+    }
+    .search-input-group button:hover { background: #5a1a24; }
+
+    /* Resultados */
+    .resultado-card {
+        background: #f9f9f9; border-left: 5px solid var(--color-primario);
+        padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: left;
+    }
+    .resultado-header {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid #ddd; padding-bottom: 0.5rem; margin-bottom: 1rem;
+    }
+    .badge-estado {
+        padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;
+    }
+    .estado-pendiente { background: #fff3cd; color: #856404; }
+    .estado-aprobado { background: #d4edda; color: #155724; }
+    .estado-rechazado { background: #f8d7da; color: #721c24; }
+    .estado-enviado { background: #d1ecf1; color: #0c5460; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/buscar.html" class="active">🔍 Consultar Estado</a>
+        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    
+    <main class="main" style="background: #f4f1ec;">
+        <div class="search-container">
+            <h2 class="search-title">Consultar mi Pedido</h2>
+            <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
+            
+            <div class="search-input-group">
+                <input type="text" id="input-busqueda" placeholder="Ej: 74589612 o 987654321" onkeypress="if(event.key === 'Enter') buscar()">
+                <button onclick="buscar()">Buscar</button>
+            </div>
+
+            <div id="resultados"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+async function logout() {
+    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function buscar() {
+    const query = document.getElementById('input-busqueda').value.trim();
+    const cont = document.getElementById('resultados');
+
+    if (!query) {
+        cont.innerHTML = '<p style="color:red;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        return;
+    }
+
+    cont.innerHTML = '<p>Buscando en la base de datos...</p>';
+
+    try {
+        const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+
+        if (!data.ordenes.length && !data.tickets.length) {
+            cont.innerHTML = '<div class="alert alert-info">No se encontraron compras registradas con ese número.</div>';
+            return;
+        }
+
+        let html = '';
+
+        // Mostrar Órdenes de Ropa
+        if (data.ordenes.length > 0) {
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem;">Tus Compras de Ropa</h3>';
+            data.ordenes.forEach(o => {
+                const estadoClass = `estado-${o.estado}`;
+                html += `
+                    <div class="resultado-card">
+                        <div class="resultado-header">
+                            <strong>Orden: ${o.codigo}</strong>
+                            <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
+                        </div>
+                        <p><strong>Fecha:</strong> ${o.creado_en}</p>
+                        <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
+                        <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
+                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        // Mostrar Tickets de Sorteo
+        if (data.tickets.length > 0) {
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem;">Tus Tickets de Sorteo</h3>';
+            data.tickets.forEach(t => {
+                const estadoClass = `estado-${t.estado_pago}`;
+                html += `
+                    <div class="resultado-card">
+                        <div class="resultado-header">
+                            <strong>Ticket: ${t.numero_ticket}</strong>
+                            <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
+                        </div>
+                        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                        <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
+                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        cont.innerHTML = html;
+
+    } catch (error) {
+        cont.innerHTML = '<p style="color:red;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
+    }
+}
+</script>
+</body>
+</html>
