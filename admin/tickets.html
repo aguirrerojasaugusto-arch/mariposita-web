@@ -4,38 +4,7 @@
 <meta charset="UTF-8"><title>Tickets · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); z-index: 1000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
-    .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-content {
-        background: #fff; width: 90%; max-width: 600px; border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;
-        display: flex; flex-direction: column; max-height: 90vh;
-        animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
-    .modal-header h3 { margin: 0; font-size: 1.2rem; }
-    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
-    .modal-body { padding: 1.5rem; overflow-y: auto; }
-    .modal-body h4 { color: var(--color-primario); margin-bottom: 0.5rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
-    .modal-body p { margin-bottom: 0.5rem; font-size: 0.95rem; color: #333; }
-    .modal-img { width: 100%; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px; }
-    .btn-detalle { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-detalle:hover { background: #1565c0; color: #fff; }
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
-    .pagination span { font-weight: bold; color: #333; }
-    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
-    .search-box:focus { border-color: var(--color-primario); }
-
-    /* ⭐ ESTILOS PARA EL HOVER DE COMPROBANTE ⭐ */
+    /* ⭐ ESTILOS PARA EL HOVER DEL COMPROBANTE ⭐ */
     .cliente-hover {
         position: relative;
         cursor: pointer;
@@ -45,7 +14,7 @@
         position: absolute;
         top: 100%;
         left: 0;
-        width: 200px;
+        width: 250px; /* Tamaño un poco más grande para ver mejor el Yape */
         height: auto;
         background: #fff;
         border: 2px solid var(--color-primario);
@@ -82,6 +51,14 @@
         margin-top: 5px;
         font-size: 0.85rem;
     }
+
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
+    .search-box:focus { border-color: var(--color-primario); }
 </style>
 </head>
 <body>
@@ -118,20 +95,7 @@
     </main>
 </div>
 
-<div class="modal-overlay" id="modal-detalles">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modal-title">Detalles del Ticket</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div class="modal-body" id="modal-body"></div>
-    </div>
-</div>
-
 <script>
-document.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
-document.getElementById('modal-detalles').addEventListener('click', cerrarModal);
-
 let todosLosTickets = [];
 let ticketsFiltrados = [];
 let paginaActual = 1;
@@ -159,7 +123,6 @@ async function checkAuth() {
 
 // ⭐ LÓGICA DE ALERTAS Y HOVER ⭐
 function celdaCliente(t) {
-    // Si tiene alerta, mostramos el mensaje en rojo
     const alertaHTML = t.notas_admin 
         ? `<div class="alert-box" style="margin-top:5px; padding:4px 8px; font-size:0.75rem;">${t.notas_admin}</div>` 
         : '';
@@ -169,7 +132,6 @@ function celdaCliente(t) {
             <strong>${t.cliente_nombre}</strong>
             <br><small>DNI: ${t.cliente_dni || '—'}</small>
             ${alertaHTML}
-            <!-- IMAGEN FLOTANTE AL PASAR EL MOUSE -->
             ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="comprobante-hover">` : ''}
         </div>
     `;
@@ -212,15 +174,26 @@ function renderizarTabla() {
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
     cont.innerHTML = `<table>
-        <thead><tr><th>Ticket</th><th>Sorteo</th><th>Cliente (Pasa el mouse)</th><th>Cant.</th><th>Datos OCR</th><th>Acciones</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Ticket</th>
+                <th>Sorteo</th>
+                <th>Cliente (Pasa el mouse)</th>
+                <th>Cant.</th>
+                <th>Costo Ticket</th> <!-- ⭐ NUEVA COLUMNA -->
+                <th>Datos OCR</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
         <tbody>
         ${ticketsPagina.map((t) => {
-            const indiceReal = todosLosTickets.findIndex(orig => orig.id === t.id);
             return `<tr>
                 <td><strong>${t.numero_ticket}</strong><br><small>${t.creado_en}</small></td>
                 <td>${t.sorteo_nombre}</td>
                 <td>${celdaCliente(t)}</td>
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
+                <!-- ⭐ MOSTRAMOS EL PRECIO DEL TICKET ⭐ -->
+                <td><strong>S/ ${t.precio_ticket ? t.precio_ticket.toFixed(2) : '0.00'}</strong></td>
                 <td>
                     <div style="font-size:0.85rem;">
                         <strong>Monto:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No leído'}<br>
@@ -229,9 +202,9 @@ function renderizarTabla() {
                     </div>
                 </td>
                 <td>
-                    <button class="btn-detalle" onclick="abrirModal(${indiceReal})" style="margin-bottom:5px;">Ver Detalles</button><br>
-                    <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')">✅ Aprobar</button>
-                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')">❌ Rechazar</button>
+                    <!-- ⭐ BOTÓN DE DETALLES ELIMINADO, SOLO QUEDAN LOS DE ACCIÓN ⭐ -->
+                    <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
+                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
                 </td>
             </tr>`
         }).join('')}
@@ -245,44 +218,6 @@ function cambiarPagina(dir) {
     if (paginaActual > totalPaginas) paginaActual = totalPaginas;
     renderizarTabla();
 }
-
-// ⭐ MODAL DE DETALLES MEJORADO ⭐
-function abrirModal(index) {
-    const t = todosLosTickets[index];
-    document.getElementById('modal-title').textContent = `Ticket ${t.numero_ticket}`;
-    
-    // Bloque de alerta en el modal
-    const alertaModal = t.notas_admin 
-        ? `<div style="background:#ffebee; border-left:4px solid #c62828; padding:10px; border-radius:6px; margin-bottom:15px;">
-             <strong style="color:#c62828;">⚠️ Alerta del sistema:</strong><br>
-             <span style="color:#c62828; font-size:0.9rem;">${t.notas_admin}</span>
-           </div>` 
-        : '';
-
-    document.getElementById('modal-body').innerHTML = `
-        ${alertaModal}
-        
-        <h4>Datos del Cliente</h4>
-        <p><strong>Nombre:</strong> ${t.cliente_nombre}</p>
-        <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
-        <p><strong>Teléfono:</strong> ${t.cliente_telefono || 'No registrado'}</p>
-        <p><strong>Departamento:</strong> ${t.cliente_departamento || 'No registrado'}</p>
-        <p><strong>Cantidad de Tickets:</strong> ${t.cantidad_tickets}</p>
-        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-        
-        <h4 style="margin-top:1.5rem;">Comprobante de Pago</h4>
-        ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
-        
-        <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
-            <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos extraídos por el sistema</h4>
-            <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No detectado'}</p>
-            <p style="font-size:0.85rem;"><strong>Nro. de Operación:</strong> ${t.ocr_operacion || 'No detectado'}</p>
-        </div>
-    `;
-    document.getElementById('modal-detalles').classList.add('active');
-}
-
-function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
 
 async function revisar(id, accion) {
     let notas = null;
