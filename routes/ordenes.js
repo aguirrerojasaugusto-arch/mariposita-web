@@ -8,7 +8,6 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ============ BUSCAR CLIENTE POR DNI ============
 router.get('/buscar-cliente/:dni', async (req, res) => {
     const dni = req.params.dni;
     if (!dni) return res.status(400).json({ error: 'DNI requerido' });
@@ -23,17 +22,14 @@ router.get('/buscar-cliente/:dni', async (req, res) => {
         if (cliente) res.json({ encontrado: true, cliente });
         else res.json({ encontrado: false, cliente: null });
     } catch (error) {
-        console.error("Error al buscar cliente:", error);
         res.status(500).json({ error: 'Error interno al buscar el DNI' });
     }
 });
 
-// ============ CREAR ORDEN ============
 router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
 
     try {
-        // 1. Validación visual básica (opcional, evalúa orientación y colores)
         const validacion = await validarImagenOrden(req.file.buffer);
         if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
@@ -42,7 +38,6 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             return res.status(400).json({ error: 'Faltan datos personales (Nombre, DNI, Teléfono o Dirección)' });
         }
 
-        // 2. Validar productos y calcular total
         let itemsParsed;
         try { itemsParsed = JSON.parse(items); } catch { itemsParsed = null; }
         if (!Array.isArray(itemsParsed) || itemsParsed.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
@@ -50,10 +45,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
         let total = 0;
         const validItems = [];
         for (const it of itemsParsed) {
-            const prodRes = await db.execute({
-                sql: 'SELECT * FROM productos WHERE id = ? AND activo = 1',
-                args: [it.producto_id]
-            });
+            const prodRes = await db.execute({ sql: 'SELECT * FROM productos WHERE id = ? AND activo = 1', args: [it.producto_id] });
             const prod = prodRes.rows[0];
             if (!prod) return res.status(400).json({ error: 'Producto no encontrado' });
             const cant = parseInt(it.cantidad, 10);
@@ -63,10 +55,9 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             validItems.push({ producto_id: prod.id, cantidad: cant, precio: prod.precio });
         }
 
-        // 3. Leer el comprobante con la IA
         const ocr = await extraerDatosOrden(req.file.buffer);
         
-        // Validamos el nombre (si la IA lo logró leer)
+        // ⭐ VALIDACIÓN DE NOMBRE (ÓRDENES) ⭐
         if (ocr.destinatario || ocr.texto_completo) {
             const nombreParaValidar = nombre.trim().toLowerCase();
             const palabrasNombre = nombreParaValidar.split(' ').filter(p => p.length > 2);
@@ -75,14 +66,13 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
 
             if (!nombreCoincide) {
                 return res.status(400).json({ 
-                    error: `El nombre ingresado ("${nombre}") no coincide con el destinatario que figura en el comprobante.` 
+                    error: `El nombre ingresado ("${nombre}") no coincide con el destinatario del comprobante.` 
                 });
             }
         }
 
-        // 4. Anti-duplicado (Hash de imagen)
+        // ⭐ VALIDACIÓN DE DUPLICADOS (ÓRDENES) ⭐
         const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-        
         const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
         const ordenDup = await db.execute({ sql: 'SELECT id FROM ordenes WHERE hash_comprobante = ?', args: [hash] });
         
@@ -90,7 +80,6 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
         }
 
-        // 5. Guardar la orden
         const countRes = await db.execute('SELECT COUNT(*) as c FROM ordenes');
         const count = countRes.rows[0].c + 1;
         const year = new Date().getFullYear();
@@ -113,12 +102,11 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             });
         }
 
-        // Respuesta exitosa
         res.json({ success: true, codigo, total, mensaje: 'Orden recibida correctamente.' });
         
     } catch (e) {
         console.error("Error procesando orden:", e);
-        res.status(500).json({ error: 'Error interno al procesar la orden. Intenta de nuevo.' });
+        res.status(500).json({ error: 'Error interno al procesar la orden.' });
     }
 });
 
