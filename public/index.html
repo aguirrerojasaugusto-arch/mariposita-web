@@ -173,6 +173,96 @@
         .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-cyan); color: #03131d; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); opacity: 0; transform: translateY(20px); transition: all 0.3s; z-index: 9999; font-weight: 600; }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #ff4d4d; color: #fff; }
+
+        /* ⭐ ESTILOS DEL FOOTER (PIE DE PÁGINA) ⭐ */
+        .footer-principal {
+            background-color: #03131d;
+            color: #8892b0;
+            padding: 4rem 5% 2rem 5%;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'Inter', sans-serif;
+        }
+        .footer-contenido {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        .footer-col h3 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .footer-col p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .footer-col p strong {
+            color: #00d2ff;
+        }
+        .footer-col ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-col ul li {
+            margin-bottom: 0.8rem;
+        }
+        .footer-col ul li a {
+            color: #8892b0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .footer-col ul li a:hover {
+            color: #00d2ff;
+            padding-left: 5px;
+        }
+        .footer-pagos {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .footer-pagos span {
+            background: #0d253f;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            color: #637381;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .footer-bottom span {
+            color: #ff4d4d;
+        }
+        @media (max-width: 768px) {
+            .footer-contenido { grid-template-columns: 1fr; text-align: center; }
+            .footer-col p { justify-content: center; }
+            .footer-col ul li a { justify-content: center; }
+            .footer-pagos { justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -189,7 +279,6 @@
 
     <div class="header-sticky">
         <div class="top-bar">
-            <!-- ⭐ IDs PARA ACTUALIZAR LOS DATOS DINÁMICAMENTE ⭐ -->
             <div class="top-bar-info">
                 <span id="top-telefono">📞 (0125) 456 78 90</span>
                 <span id="top-email">✉️ ventas@mariposita.pe</span>
@@ -283,6 +372,47 @@
         <div class="viewer-title" id="viewer-title"></div>
     </div>
 
+    <!-- ⭐ FOOTER (PIE DE PÁGINA) ⭐ -->
+    <footer class="footer-principal">
+        <div class="footer-contenido">
+            <!-- Columna 1: Sobre Nosotros -->
+            <div class="footer-col">
+                <h3>🦋 Artesanía Mariposita</h3>
+                <p>Llevamos el arte y la tradición de la sierra peruana a tu hogar. Prendas bordadas a mano con dedicación y amor por nuestras raíces.</p>
+                <div class="footer-pagos">
+                    <span>💳 Yape</span>
+                    <span>💳 Plin</span>
+                    <span>🏦 Transferencia</span>
+                </div>
+            </div>
+
+            <!-- Columna 2: Enlaces Rápidos -->
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <ul>
+                    <li><a href="/">➔ Inicio</a></li>
+                    <li><a href="#productos">➔ Catálogo de Productos</a></li>
+                    <li><a href="javascript:void(0)" onclick="abrirModalSorteos()">➔ Sorteos Activos</a></li>
+                    <li><a href="javascript:void(0)" onclick="buscarPedidoPublico()">➔ Consultar mi Pedido</a></li>
+                </ul>
+            </div>
+
+            <!-- Columna 3: Contacto -->
+            <div class="footer-col">
+                <h3>Contáctanos</h3>
+                <p><strong>📞 Teléfono:</strong> <span id="footer-telefono">(0125) 456 78 90</span></p>
+                <p><strong>✉️ Email:</strong> <span id="footer-email">ventas@mariposita.pe</span></p>
+                <p><strong>📍 Ubicación:</strong> <span id="footer-ubicacion">Huancavelica, Perú</span></p>
+                <p><strong>💬 WhatsApp:</strong> <a href="#" id="footer-whatsapp" style="color:#25d366; text-decoration:none;">Escríbenos aquí</a></p>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="year"></span> Artesanía Mariposita. Todos los derechos reservados.</p>
+            <p>Hecho con <span>❤</span> en Huancavelica, Perú.</p>
+        </div>
+    </footer>
+
     <div id="toast" class="toast"></div>
 
     <script>
@@ -310,18 +440,32 @@
                     document.getElementById('logo-header').innerHTML = `<img src="${config.logo_admin}" class="logo-img-dinamico">`;
                 }
 
-                // ⭐ ACTUALIZAMOS LA BARRA SUPERIOR CON LOS DATOS DE LA BD ⭐
+                // Actualizar Barra Superior
                 if (config.telefono_contacto) document.getElementById('top-telefono').textContent = `📞 ${config.telefono_contacto}`;
                 if (config.email_contacto) document.getElementById('top-email').textContent = `✉️ ${config.email_contacto}`;
                 if (config.ubicacion) document.getElementById('top-ubicacion').textContent = `📍 ${config.ubicacion}`;
 
+                // ⭐ Actualizar Footer ⭐
+                if (config.telefono_contacto) document.getElementById('footer-telefono').textContent = config.telefono_contacto;
+                if (config.email_contacto) document.getElementById('footer-email').textContent = config.email_contacto;
+                if (config.ubicacion) document.getElementById('footer-ubicacion').textContent = config.ubicacion;
+
                 const btnWhatsApp = document.getElementById('btn-whatsapp');
+                const footerWhatsApp = document.getElementById('footer-whatsapp');
+                
                 if (config.whatsapp) {
                     const numeroLimpio = config.whatsapp.replace(/\D/g, '');
-                    btnWhatsApp.href = `https://wa.me/51${numeroLimpio}?text=Hola,%20estoy%20interesado%20en%20un%20producto%20de%20Mariposita`;
+                    const linkWsp = `https://wa.me/51${numeroLimpio}?text=Hola,%20estoy%20interesado%20en%20un%20producto%20de%20Mariposita`;
+                    btnWhatsApp.href = linkWsp;
+                    footerWhatsApp.href = linkWsp;
                 } else {
                     btnWhatsApp.style.display = 'none';
+                    footerWhatsApp.style.display = 'none';
                 }
+
+                // Poner el año actual en el footer
+                document.getElementById('year').textContent = new Date().getFullYear();
+
             } catch (e) { console.error("Error al cargar config", e); }
         }
 
