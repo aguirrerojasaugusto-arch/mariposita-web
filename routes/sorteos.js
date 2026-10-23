@@ -6,12 +6,12 @@ const { esComprobanteYape } = require('../services/validarComprobante');
 const { extraerDatosComprobante } = require('../services/ocr');
 const router = express.Router();
 
-// Función auxiliar para limpiar y comparar textos
+// Función auxiliar para limpiar textos (quita asteriscos, puntos, etc.)
 function limpiarTexto(texto) {
     if (!texto) return '';
     return texto.toLowerCase()
-        .replace(/[*#.,\-_]/g, '') // Elimina asteriscos, puntos, comas, etc.
-        .replace(/\s+/g, ' ')      // Reemplaza múltiples espacios por uno solo
+        .replace(/[^a-záéíóúñ\s]/g, '') // Deja solo letras y espacios
+        .replace(/\s+/g, ' ')          // Reemplaza múltiples espacios por uno solo
         .trim();
 }
 
@@ -41,36 +41,51 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T23:59:59`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
-            // 2. Procesar OCR (Lectura de imagen con IA)
+            // 2. Procesar OCR
             const ocr = await extraerDatosComprobante(req.file.buffer);
             if (ocr.error_ocr) console.warn("OCR falló:", ocr.error_ocr);
 
-            // ⭐ 3. VALIDACIÓN INTELIGENTE DEL NOMBRE DEL TITULAR ⭐
+            // ⭐ 3. VALIDACIÓN POR 3 LETRAS DEL NOMBRE Y APELLIDO ⭐
             const configRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'nombre_titular'");
             const nombreTitularConfigurado = configRes.rows[0] ? configRes.rows[0].valor : '';
 
             if (nombreTitularConfigurado) {
                 // Limpiamos el nombre configurado (ej: "Marcos Utc*" -> "marcos utc")
                 const nombreLimpioConfig = limpiarTexto(nombreTitularConfigurado);
+                const palabrasConfig = nombreLimpioConfig.split(' ').filter(p => p.length > 1);
                 
-                // Obtenemos las palabras clave del nombre configurado (ignorando palabras de 2 letras o menos)
-                const palabrasClave = nombreLimpioConfig.split(' ').filter(p => p.length > 2);
-                
-                // Limpiamos lo que la IA leyó en la imagen
+                // Tomamos las 3 primeras letras del Nombre (palabra 0) y Apellido (palabra 1)
+                let prefijoNombre = '';
+                let prefijoApellido = '';
+
+                if (palabrasConfig.length >= 1) {
+                    prefijoNombre = palabrasConfig[0].substring(0, 3);
+                }
+                if (palabrasConfig.length >= 2) {
+                    prefijoApellido = palabrasConfig[1].substring(0, 3);
+                }
+
+                // Limpiamos el texto leído por la IA
                 const textoLeido = limpiarTexto(`${ocr.destinatario || ''} ${ocr.texto_completo || ''}`);
                 
-                // Contamos cuántas palabras clave del titular se encontraron en el texto de la imagen
-                let coincidencias = 0;
-                palabrasClave.forEach(palabra => {
-                    if (textoLeido.includes(palabra)) coincidencias++;
-                });
+                // Validación: El texto debe contener el prefijo del nombre Y el prefijo del apellido
+                let esValido = false;
 
-                // Si se encontró al menos el 50% de las palabras, lo aceptamos
-                const porcentajeCoincidencia = (coincidencias / palabrasClave.length) * 100;
+                if (prefijoNombre && prefijoApellido) {
+                    // Buscamos si ambas partes (ej: "mar" y "utc") están presentes
+                    if (textoLeido.includes(prefijoNombre) && textoLeido.includes(prefijoApellido)) {
+                        esValido = true;
+                    }
+                } else if (prefijoNombre) {
+                    // Si solo hay un nombre, validamos solo ese prefijo
+                    if (textoLeido.includes(prefijoNombre)) {
+                        esValido = true;
+                    }
+                }
 
-                if (porcentajeCoincidencia < 50) {
+                if (!esValido) {
                     return res.status(400).json({ 
-                        error: `El comprobante no parece estar a nombre de "${nombreTitularConfigurado}". Por favor, verifica que sea el titular correcto.` 
+                        error: `El comprobante no coincide con el titular configurado ("${nombreTitularConfigurado}"). Asegúrate de que el nombre y apellido sean legibles.` 
                     });
                 }
             }
