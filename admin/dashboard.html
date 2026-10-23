@@ -4,6 +4,58 @@
 <meta charset="UTF-8"><title>Dashboard · Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    /* ⭐ FONDO DE PANTALLA CON PAISAJE DE LA SIERRA ⭐ */
+    body {
+        background: linear-gradient(rgba(11, 27, 43, 0.85), rgba(11, 27, 43, 0.85)), 
+                    url('https://images.unsplash.com/photo-1580619305218-8423a7ef79b4?q=80&w=2070&auto=format&fit=crop') 
+                    no-repeat center center fixed !important;
+        background-size: cover !important;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden; /* Evita el scroll en el body */
+    }
+
+    /* Hacemos que el fondo del layout sea transparente para que se vea la imagen */
+    .admin-layout {
+        background: transparent !important;
+    }
+
+    /* El sidebar lo dejamos semi-transparente para que se lea bien */
+    .sidebar {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(5px);
+        height: 100vh;
+    }
+
+    /* El contenedor principal también transparente */
+    .main {
+        background: transparent !important;
+        padding: 2rem 3rem;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    /* Hacemos que las letras del título sean blancas para que resalten en el paisaje */
+    .main h2 {
+        color: #ffffff !important;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+
+    /* Estilos de las tarjetas de estadísticas con un poco de transparencia */
+    .stat {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+    }
+
+    /* El contenedor de acciones rápidas */
+    .card {
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+    }
+</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -22,9 +74,9 @@
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
-        <h2>Bienvenido, <span id="nombre"></span> (<span id="rol"></span>)</h2>
+        <h2 style="margin-bottom: 2rem;">Bienvenido, <span id="nombre"></span> (<span id="rol"></span>)</h2>
         
-        <div class="stats-grid" id="stats"></div>
+        <div class="stats-grid" id="stats" style="margin-bottom: 2rem;"></div>
 
         <div class="card">
             <h3 style="color:var(--color-primario); margin-bottom:1rem;">Acciones rápidas</h3>
