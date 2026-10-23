@@ -8,7 +8,6 @@
 <body>
 
 <div class="login-container">
-    <!-- El fondo ahora se maneja por JS -->
     <div class="login-bg-image" id="login-bg"></div>
 
     <div class="login-content">
@@ -34,7 +33,6 @@
 
         <div class="login-right">
             <div class="login-card">
-                <!-- El logo ahora se maneja por JS -->
                 <img src="" id="login-logo" alt="Logo Mariposita">
                 
                 <h2>Iniciar Sesión</h2>
@@ -71,7 +69,6 @@ async function cargarDiseno() {
         if (config.logo_admin) {
             document.getElementById('login-logo').src = config.logo_admin;
         } else {
-            // Logo por defecto si no hay
             document.getElementById('login-logo').src = '/admin/img/logo.png'; 
             document.getElementById('login-logo').onerror = function() { this.style.display = 'none'; };
         }
@@ -87,21 +84,35 @@ cargarDiseno();
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
+    const msg = document.getElementById('msg');
+    
     btn.textContent = 'Verificando...';
     btn.disabled = true;
+    msg.innerHTML = '';
 
     const fd = new FormData(e.target);
-    const res = await fetch('/api/auth/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.fromEntries(fd))
-    });
-    const data = await res.json();
     
-    if (res.ok && data.success) {
-        location.href = data.redirect;
-    } else {
-        document.getElementById('msg').innerHTML = `<div style="color:#fff; background:rgba(198,40,40,0.8); padding:0.5rem; border-radius:6px; margin-bottom:1rem;">${data.error}</div>`;
+    try {
+        // ⭐ CORRECCIÓN: Apuntamos a la ruta unificada /api/auth/login
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(fd))
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+            // Redirigir según el rol que devuelve el backend
+            location.href = data.redirect;
+        } else {
+            msg.innerHTML = `<div style="color:#fff; background:rgba(198,40,40,0.8); padding:0.5rem; border-radius:6px; margin-bottom:1rem;">${data.error || 'Error al iniciar sesión'}</div>`;
+            btn.textContent = 'Ingresar';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        console.error(error);
+        msg.innerHTML = `<div style="color:#fff; background:rgba(198,40,40,0.8); padding:0.5rem; border-radius:6px; margin-bottom:1rem;">Error de conexión con el servidor.</div>`;
         btn.textContent = 'Ingresar';
         btn.disabled = false;
     }

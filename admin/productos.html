@@ -4,7 +4,6 @@
 <meta charset="UTF-8"><title>Productos · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    /* MODAL FLOTANTE */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
@@ -12,66 +11,27 @@
         opacity: 0; visibility: hidden; transition: all 0.3s;
     }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    
     .modal-content {
         background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
         box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
         display: flex; flex-direction: column; max-height: 90vh;
         animation: slideUp 0.3s ease-out;
     }
-    @keyframes slideUp {
-        from { transform: translateY(30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    .modal-header {
-        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--color-primario); color: #fff;
-    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.3rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-close:hover { color: #ff4d4d; }
-    
     .modal-body { padding: 2rem; overflow-y: auto; }
-    .modal-footer {
-        padding: 1.5rem 2rem; border-top: 1px solid #eee;
-        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
-    }
-
-    /* PAGINACIÓN */
-    .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1rem; margin-top: 1.5rem;
-    }
-    .pagination button {
-        background: var(--color-primario); color: #fff;
-        border: none; padding: 0.5rem 1rem; border-radius: 6px;
-        cursor: pointer; font-weight: bold;
-    }
+    .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
     .pagination span { font-weight: bold; color: #333; }
-
-    /* ESTILO DEL BUSCADOR */
-    .header-actions {
-        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-    }
-    .search-box {
-        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
-        font-size: 0.95rem; width: 300px; outline: none;
-    }
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
-
-    /* ⭐ ESTILO PARA LAS IMÁGENES EN LA TABLA */
-    .img-tabla {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        display: block;
-        margin: 0 auto;
-    }
+    .img-tabla { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -82,9 +42,11 @@
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
         <a href="/admin/productos.html" class="active">👗 Productos</a>
-        <a href="/admin/sorteos.html">🎰 Sorteos</a>
-        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
@@ -105,7 +67,6 @@
     </main>
 </div>
 
-<!-- MODAL FLOTANTE -->
 <div class="modal-overlay" id="modal-producto">
     <div class="modal-content">
         <div class="modal-header">
@@ -142,8 +103,22 @@ let paginaActual = 1;
 const itemsPorPagina = 5;
 
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    if (d.rol !== 'admin') {
+        document.getElementById('nav-sorteos').style.display = 'none';
+        document.getElementById('nav-carrusel').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+    }
+    cargar();
 }
 
 async function cargar() {
@@ -185,11 +160,7 @@ function renderizarTabla() {
         <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Activo</th><th>Acciones</th></tr></thead>
         <tbody>
         ${productosPagina.map(p => `<tr>
-            <td>
-                ${p.imagen_base64 
-                    ? `<img class="img-tabla" src="${p.imagen_base64}">` 
-                    : '—'}
-            </td>
+            <td>${p.imagen_base64 ? `<img class="img-tabla" src="${p.imagen_base64}">` : '—'}</td>
             <td>${p.nombre}<br><small>${p.categoria}</small></td>
             <td>S/ ${p.precio.toFixed(2)}</td>
             <td>${p.stock}</td>
@@ -234,7 +205,6 @@ function cerrarModal() {
     document.getElementById('modal-producto').classList.remove('active');
 }
 
-// Evitar que el modal se cierre al hacer clic fuera
 document.getElementById('modal-producto').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-producto')) return;
 });
@@ -243,7 +213,6 @@ document.getElementById('form-producto').addEventListener('submit', async (e) =>
     e.preventDefault();
     const btn = document.getElementById('btn-guardar');
     const originalText = btn.textContent;
-    
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
@@ -256,7 +225,6 @@ document.getElementById('form-producto').addEventListener('submit', async (e) =>
     try {
         const r = await fetch(url, { method, body: fd });
         const d = await r.json();
-        
         if (r.ok) { 
             alert('Producto guardado correctamente'); 
             cerrarModal();
@@ -278,7 +246,7 @@ async function desactivar(id) {
     cargar();
 }
 
-cargar();
+checkAuth();
 </script>
 </body>
 </html>

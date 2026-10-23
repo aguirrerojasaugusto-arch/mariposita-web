@@ -9,7 +9,6 @@ async function extraerDatosOrden(fileBuffer) {
 
     try {
         const base64 = fileBuffer.toString('base64');
-        
         const prompt = `Analiza esta captura de pantalla de un pago móvil peruano (Yape o Plin).
 Devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura exacta:
 {
@@ -33,7 +32,7 @@ Si no puedes leer algo, pon null. NO inventes datos.`;
 
         let resp;
         let intentos = 0;
-        const maxIntentos = 2; // Reducido a 2 para no hacer esperar tanto al usuario
+        const maxIntentos = 2;
 
         while (intentos < maxIntentos) {
             resp = await fetch(GEMINI_URL, {
@@ -46,7 +45,6 @@ Si no puedes leer algo, pon null. NO inventes datos.`;
             });
 
             if (resp.ok) break;
-
             if (resp.status === 503) {
                 intentos++;
                 const espera = 2000 * intentos;

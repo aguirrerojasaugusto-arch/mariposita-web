@@ -3,8 +3,14 @@ node_modules/
 *.db
 *.db-wal
 *.db-shm
+sessions.db
+
+# Ignorar todas las imágenes subidas
 uploads/comprobantes/*
 uploads/productos/*
+uploads/imagenes/*
+
+# Mantener las carpetas vacías en Git
 !uploads/comprobantes/.gitkeep
 !uploads/productos/.gitkeep
-sessions.db
+!uploads/imagenes/.gitkeep

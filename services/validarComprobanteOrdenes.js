@@ -5,14 +5,10 @@ async function validarImagenOrden(fileBuffer) {
         if (!fileBuffer || fileBuffer.length < 10) {
             return { valido: false, error: 'El archivo está vacío o dañado.' };
         }
-
-        // 1. Analizar los metadatos para ver la orientación (debe ser vertical)
         const metadata = await sharp(fileBuffer).metadata();
         if (metadata.width > metadata.height) {
             return { valido: false, error: 'La imagen debe ser una captura de pantalla vertical de tu celular.' };
         }
-
-        // 2. Redimensionar a 100x100 para analizar los colores
         const { data, info } = await sharp(fileBuffer)
             .resize(100, 100, { fit: 'inside' })
             .raw()
@@ -26,8 +22,6 @@ async function validarImagenOrden(fileBuffer) {
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
-
-            // Solo verificamos que haya mucho color blanco (fondo de la tarjeta)
             if (r > 200 && g > 200 && b > 200) {
                 pixelesBlancos++;
             }
@@ -35,14 +29,10 @@ async function validarImagenOrden(fileBuffer) {
         }
 
         const porcentajeBlanco = (pixelesBlancos / totalMuestras) * 100;
-
-        // Regla flexible: Al menos 20% de fondo blanco
         if (porcentajeBlanco < 20) {
             return { valido: false, error: 'La imagen no parece un comprobante de Yape/Plin (falta el fondo blanco de la tarjeta).' };
         }
-
         return { valido: true };
-
     } catch (error) {
         return { valido: false, error: 'El archivo subido no es una imagen válida o está dañado.' };
     }

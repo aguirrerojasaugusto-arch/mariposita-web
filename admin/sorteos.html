@@ -11,67 +11,25 @@
         opacity: 0; visibility: hidden; transition: all 0.3s;
     }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    
     .modal-content {
         background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
         box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
         display: flex; flex-direction: column; max-height: 90vh;
         animation: slideUp 0.3s ease-out;
     }
-    @keyframes slideUp {
-        from { transform: translateY(30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    .modal-header {
-        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--color-primario); color: #fff;
-    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.3rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-close:hover { color: #ff4d4d; }
-    
     .modal-body { padding: 2rem; overflow-y: auto; }
-    .modal-footer {
-        padding: 1.5rem 2rem; border-top: 1px solid #eee;
-        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
-    }
-
-    /* PAGINACIÓN */
-    .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1rem; margin-top: 1.5rem;
-    }
-    .pagination button {
-        background: var(--color-primario); color: #fff;
-        border: none; padding: 0.5rem 1rem; border-radius: 6px;
-        cursor: pointer; font-weight: bold;
-    }
+    .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
     .pagination span { font-weight: bold; color: #333; }
-
-    /* ⭐ ESTILO PARA LAS IMÁGENES EN LA TABLA */
-    .img-tabla {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        display: block;
-        margin: 0 auto;
-    }
-    
-    /* Estilo para los botones de acción */
-    .btn-accion {
-        padding: 0.4rem 0.8rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 0.85rem;
-        margin: 0 2px;
-    }
+    .img-tabla { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; margin: 0 auto; }
+    .btn-accion { padding: 0.4rem 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin: 0 2px; }
     .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar:hover { background: #1565c0; color: #fff; }
     .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
@@ -85,10 +43,12 @@
         <a href="/admin/dashboard.html">📊 Dashboard</a>
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html">👗 Productos</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
         <a href="/admin/sorteos.html" class="active">🎰 Sorteos</a>
-        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
@@ -105,7 +65,6 @@
     </main>
 </div>
 
-<!-- MODAL FLOTANTE -->
 <div class="modal-overlay" id="modal-sorteo">
     <div class="modal-content">
         <div class="modal-header">
@@ -142,8 +101,22 @@ let paginaActual = 1;
 const itemsPorPagina = 5;
 
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    if (d.rol !== 'admin') {
+        document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-carrusel').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+    }
+    cargar();
 }
 
 async function cargar() {
@@ -175,11 +148,7 @@ function renderizarTabla() {
         <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
         ${sorteosPagina.map(s => `<tr>
-            <td>
-                ${s.imagen_base64 
-                    ? `<img class="img-tabla" src="${s.imagen_base64}">` 
-                    : '—'}
-            </td>
+            <td>${s.imagen_base64 ? `<img class="img-tabla" src="${s.imagen_base64}">` : '—'}</td>
             <td>${s.nombre}</td>
             <td>S/ ${s.precio_ticket.toFixed(2)}</td>
             <td>${s.fecha_sorteo}</td>
@@ -224,7 +193,6 @@ function cerrarModal() {
     document.getElementById('modal-sorteo').classList.remove('active');
 }
 
-// Evitar que el modal se cierre al hacer clic fuera
 document.getElementById('modal-sorteo').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modal-sorteo')) return;
 });
@@ -233,7 +201,6 @@ document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-guardar');
     const originalText = btn.textContent;
-    
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
@@ -246,7 +213,6 @@ document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
     try {
         const r = await fetch(url, { method, body: fd });
         const d = await r.json();
-        
         if (r.ok) { 
             alert('Sorteo guardado correctamente'); 
             cerrarModal();
@@ -262,17 +228,14 @@ document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
     }
 });
 
-// ⭐ FUNCIÓN PARA ELIMINAR SORTEO
 async function eliminarSorteo(id) {
     if (!confirm('¿Estás seguro de eliminar este sorteo? Se borrarán también todos los tickets asociados a él. Esta acción no se puede deshacer.')) return;
-    
     try {
         const res = await fetch(`/api/admin/sorteos/${id}`, { method: 'DELETE' });
         const data = await res.json();
-        
         if (res.ok) {
             alert('✅ Sorteo eliminado correctamente.');
-            cargar(); // Recargar la tabla
+            cargar();
         } else {
             alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
         }
@@ -281,7 +244,7 @@ async function eliminarSorteo(id) {
     }
 }
 
-cargar();
+checkAuth();
 </script>
 </body>
 </html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Usuarios · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-content {
+        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
+        display: flex; flex-direction: column; max-height: 90vh;
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--color-primario); color: #fff;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.3rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-close:hover { color: #ff4d4d; }
+    
+    .modal-body { padding: 2rem; overflow-y: auto; }
+    .modal-footer {
+        padding: 1.5rem 2rem; border-top: 1px solid #eee;
+        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
+    }
+
+    .badge-rol {
+        padding: 0.3rem 0.8rem; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    }
+    .rol-admin { background: #c62828; color: #fff; }
+    .rol-vendedor { background: #0077b6; color: #fff; }
+    .rol-cliente { background: #2e7d32; color: #fff; }
+
+    .badge-activo { background: #e8f5e9; color: #2e7d32; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+    .badge-inactivo { background: #ffebee; color: #c62828; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+
+    .btn-accion {
+        padding: 0.4rem 0.8rem; border: none; border-radius: 6px;
+        cursor: pointer; font-weight: bold; font-size: 0.85rem; margin: 0 2px;
+    }
+    .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
+    .btn-editar:hover { background: #1565c0; color: #fff; }
+    .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+    .btn-eliminar:hover { background: #c62828; color: #fff; }
+    .btn-toggle { background: #fff3e0; color: #ef6c00; border: 1px solid #ef6c00; }
+    .btn-toggle:hover { background: #ef6c00; color: #fff; }
+
+    .header-actions {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+    }
+    .search-box {
+        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
+        font-size: 0.95rem; width: 300px; outline: none;
+    }
+    .search-box:focus { border-color: var(--color-primario); }
+
+    .pagination {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1rem; margin-top: 1.5rem;
+    }
+    .pagination button {
+        background: var(--color-primario); color: #fff;
+        border: none; padding: 0.5rem 1rem; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+    }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination span { font-weight: bold; color: #333; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <h1>🦋 Mariposita</h1>
+        <a href="/admin/dashboard.html">📊 Dashboard</a>
+        <a href="/admin/ordenes.html">📦 Órdenes</a>
+        <a href="/admin/tickets.html">🎁 Tickets</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" class="active">👥 Usuarios</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
+        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+    </aside>
+    <main class="main">
+        <div class="header-actions">
+            <h2 style="margin:0;">Gestión de Usuarios</h2>
+            <div style="display:flex; gap:1rem;">
+                <input type="text" id="buscador" class="search-box" placeholder="Buscar por nombre o email..." onkeyup="filtrar()">
+                <button class="btn btn-primario" onclick="abrirModalNuevo()">+ Nuevo Usuario</button>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            💡 <strong>Roles:</strong> Admin (todo), Vendedor (solo órdenes/tickets), Cliente (tienda).
+        </div>
+
+        <div id="lista"></div>
+        <div class="pagination" id="paginacion">
+            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="modal-usuario">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="form-title">Nuevo Usuario</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-usuario">
+                <input type="hidden" id="user-id">
+                <div class="form-group"><label>Nombre completo *</label><input id="user-nombre" required></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="user-email" required></div>
+                <div class="form-group"><label>Teléfono</label><input id="user-telefono"></div>
+                <div class="form-group">
+                    <label>Rol *</label>
+                    <select id="user-rol" required>
+                        <option value="vendedor">Vendedor (Órdenes y tickets)</option>
+                        <option value="admin">Admin (Acceso total)</option>
+                        <option value="cliente">Cliente (Tienda)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña <span id="pass-hint"></span></label>
+                    <input type="password" id="user-password" autocomplete="new-password">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+            <button type="submit" form="form-usuario" class="btn btn-primario" id="btn-guardar">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let todosLosUsuarios = [];
+let usuariosFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 8;
+
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    try {
+        const r = await fetch('/api/auth/me');
+        const d = await r.json();
+        
+        if (!d.logged) return location.href = '/admin/login.html';
+
+        if (d.rol !== 'admin') {
+            document.getElementById('nav-productos').style.display = 'none';
+            document.getElementById('nav-sorteos').style.display = 'none';
+            document.getElementById('nav-carrusel').style.display = 'none';
+            document.getElementById('nav-config').style.display = 'none';
+            
+            document.querySelector('.main').innerHTML = `
+                <div class="alert alert-error" style="margin-top: 2rem;">
+                    <h2>⛔ Acceso Denegado</h2>
+                    <p>Tu cuenta tiene el rol de <strong>${d.rol}</strong>. No tienes permisos para gestionar usuarios.</p>
+                    <a href="/admin/ordenes.html" class="btn btn-primario" style="margin-top: 1rem; display:inline-block;">Ir a mis tareas</a>
+                </div>
+            `;
+            return;
+        }
+        cargar();
+    } catch (e) {
+        location.href = '/admin/login.html';
+    }
+}
+
+async function cargar() {
+    try {
+        const r = await fetch('/api/admin/usuarios');
+        if (r.status === 401) return location.href = '/admin/login.html';
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Error al cargar');
+        todosLosUsuarios = data;
+        filtrar();
+    } catch (e) {
+        document.getElementById('lista').innerHTML = `<p style="color:red;">${e.message}</p>`;
+    }
+}
+
+function filtrar() {
+    const texto = document.getElementById('buscador').value.toLowerCase();
+    usuariosFiltrados = todosLosUsuarios.filter(u => 
+        u.nombre.toLowerCase().includes(texto) ||
+        u.email.toLowerCase().includes(texto) ||
+        (u.rol && u.rol.toLowerCase().includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(usuariosFiltrados.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!usuariosFiltrados.length) {
+        cont.innerHTML = '<p>No se encontraron usuarios.</p>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const usuariosPagina = usuariosFiltrados.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Último acceso</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        ${usuariosPagina.map(u => `
+            <tr>
+                <td><strong>${u.nombre}</strong><br><small>${u.telefono || '—'}</small></td>
+                <td>${u.email}</td>
+                <td><span class="badge-rol rol-${u.rol}">${u.rol}</span></td>
+                <td>${u.activo ? '<span class="badge-activo">Activo</span>' : '<span class="badge-inactivo">Inactivo</span>'}</td>
+                <td><small>${u.ultimo_acceso || 'Nunca'}</small></td>
+                <td>
+                    <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(u).replace(/'/g, "&apos;")})'>Editar</button>
+                    <button class="btn-accion btn-toggle" onclick="toggleActivo(${u.id})">${u.activo ? 'Desactivar' : 'Activar'}</button>
+                    <button class="btn-accion btn-eliminar" onclick="eliminar(${u.id}, '${u.nombre}')">Eliminar</button>
+                </td>
+            </tr>
+        `).join('')}
+        </tbody></table>`;
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(usuariosFiltrados.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+function abrirModalNuevo() {
+    document.getElementById('form-usuario').reset();
+    document.getElementById('user-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo Usuario';
+    document.getElementById('btn-guardar').textContent = 'Guardar';
+    document.getElementById('pass-hint').textContent = '';
+    document.getElementById('user-password').required = true;
+    document.getElementById('modal-usuario').classList.add('active');
+}
+
+function editar(u) {
+    document.getElementById('user-id').value = u.id;
+    document.getElementById('user-nombre').value = u.nombre;
+    document.getElementById('user-email').value = u.email;
+    document.getElementById('user-telefono').value = u.telefono || '';
+    document.getElementById('user-rol').value = u.rol;
+    document.getElementById('user-password').value = '';
+    document.getElementById('user-password').required = false;
+    document.getElementById('pass-hint').textContent = '(dejar vacío para no cambiar)';
+    document.getElementById('form-title').textContent = 'Editar Usuario #' + u.id;
+    document.getElementById('btn-guardar').textContent = 'Actualizar';
+    document.getElementById('modal-usuario').classList.add('active');
+}
+
+function cerrarModal() {
+    document.getElementById('modal-usuario').classList.remove('active');
+}
+
+document.getElementById('form-usuario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const id = document.getElementById('user-id').value;
+    const body = {
+        nombre: document.getElementById('user-nombre').value,
+        email: document.getElementById('user-email').value,
+        telefono: document.getElementById('user-telefono').value,
+        rol: document.getElementById('user-rol').value
+    };
+    const pass = document.getElementById('user-password').value;
+    if (pass) body.password = pass;
+
+    try {
+        const url = id ? `/api/admin/usuarios/${id}` : '/api/admin/usuarios';
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (r.ok) {
+            alert('Usuario guardado correctamente');
+            cerrarModal();
+            cargar();
+        } else {
+            alert('Error: ' + (d.error || 'Desconocido'));
+        }
+    } catch (err) {
+        alert('Error de red');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+});
+
+async function toggleActivo(id) {
+    if (!confirm('¿Cambiar el estado de este usuario?')) return;
+    try {
+        const r = await fetch(`/api/admin/usuarios/${id}/toggle-activo`, { method: 'POST' });
+        const d = await r.json();
+        if (r.ok) cargar();
+        else alert('Error: ' + d.error);
+    } catch (e) { alert('Error de red'); }
+}
+
+async function eliminar(id, nombre) {
+    if (!confirm(`¿Eliminar definitivamente al usuario "${nombre}"?\n\n⚠️ Esta acción no se puede deshacer.`)) return;
+    try {
+        const r = await fetch(`/api/admin/usuarios/${id}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (r.ok) { alert('Usuario eliminado'); cargar(); }
+        else alert('Error: ' + d.error);
+    } catch (e) { alert('Error de red'); }
+}
+
+checkAuth();
+</script>
+</body>
+</html>

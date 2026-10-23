@@ -13,15 +13,16 @@
         <a href="/admin/dashboard.html" class="active">📊 Dashboard</a>
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html">👗 Productos</a>
-        <a href="/admin/sorteos.html">🎰 Sorteos</a>
-        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
         <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
-        <h2>Bienvenido, <span id="nombre"></span></h2>
+        <h2>Bienvenido, <span id="nombre"></span> (<span id="rol"></span>)</h2>
         
         <div class="stats-grid" id="stats"></div>
 
@@ -37,11 +38,23 @@
 </div>
 <script>
 async function checkAuth() {
-    const r = await fetch('/api/auth/admin/me');
+    const r = await fetch('/api/auth/me');
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
+    
     document.getElementById('nombre').textContent = d.nombre;
+    document.getElementById('rol').textContent = d.rol;
+
+    // Ocultar menús según el rol
+    if (d.rol !== 'admin') {
+        document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-sorteos').style.display = 'none';
+        document.getElementById('nav-carrusel').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+    }
 }
+
 async function loadStats() {
     const r = await fetch('/api/admin/dashboard');
     if (r.status === 401) return location.href = '/admin/login.html';
@@ -53,10 +66,12 @@ async function loadStats() {
         <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
     `;
 }
+
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
 }
+
 checkAuth(); loadStats();
 </script>
 </body>

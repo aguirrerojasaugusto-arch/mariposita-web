@@ -16,10 +16,12 @@
         <a href="/admin/dashboard.html">📊 Dashboard</a>
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html">👗 Productos</a>
-        <a href="/admin/sorteos.html">🎰 Sorteos</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
         <a href="/admin/carrusel.html" class="active">🖼️ Carrusel</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
@@ -45,8 +47,22 @@
 </div>
 <script>
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    if (d.rol !== 'admin') {
+        document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-sorteos').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+    }
+    cargar();
 }
 
 async function cargar() {
@@ -100,7 +116,7 @@ async function eliminar(id) {
     cargar();
 }
 
-cargar();
+checkAuth();
 </script>
 </body>
 </html>

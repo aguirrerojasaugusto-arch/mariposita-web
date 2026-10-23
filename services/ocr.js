@@ -1,6 +1,4 @@
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-
-// Función para esperar
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function extraerDatosComprobante(fileBuffer) {
@@ -11,7 +9,6 @@ async function extraerDatosComprobante(fileBuffer) {
 
     try {
         const base64 = fileBuffer.toString('base64');
-        
         const prompt = `Analiza esta captura de pantalla de un pago móvil peruano (Yape o Plin).
 Devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura exacta:
 {
@@ -41,7 +38,6 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
         let intentos = 0;
         const maxIntentos = 3;
 
-        // Bucle para reintentar si el servidor está saturado (503)
         while (intentos < maxIntentos) {
             resp = await fetch(GEMINI_URL, {
                 method: 'POST',
@@ -52,16 +48,14 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
                 body: JSON.stringify(body)
             });
 
-            if (resp.ok) break; // Si responde bien, salimos
-
-            // Si es error 503 (saturado), esperamos y reintentamos
+            if (resp.ok) break;
             if (resp.status === 503) {
                 intentos++;
-                const espera = 2000 * intentos; // 2s, 4s, 6s...
+                const espera = 2000 * intentos;
                 console.warn(`⚠️ Gemini saturado. Reintentando en ${espera/1000}s... (Intento ${intentos}/${maxIntentos})`);
                 await sleep(espera);
             } else {
-                break; // Si es otro error (400, 403, etc.), no reintentamos
+                break;
             }
         }
 

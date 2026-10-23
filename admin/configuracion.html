@@ -5,7 +5,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    /* Fondo oscuro desenfocado para el modal */
     body {
         background: linear-gradient(135deg, #0b1b2b 0%, #1a3a5a 100%);
         height: 100vh;
@@ -14,8 +13,6 @@
         justify-content: center;
         align-items: center;
     }
-
-    /* Contenedor del formulario flotante */
     .config-modal {
         background: #ffffff;
         width: 90%;
@@ -28,124 +25,29 @@
         overflow: hidden;
         animation: slideUp 0.4s ease-out;
     }
-
-    @keyframes slideUp {
-        from { transform: translateY(40px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    .config-header {
-        padding: 1.5rem 2rem;
-        background: #f8f9fa;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .config-header h2 {
-        margin: 0;
-        color: var(--color-primario, #0077b6);
-        font-size: 1.5rem;
-    }
-    .config-header .btn-cerrar {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #888;
-        transition: color 0.3s;
-    }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .config-header { padding: 1.5rem 2rem; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .config-header h2 { margin: 0; color: var(--color-primario, #0077b6); font-size: 1.5rem; }
+    .config-header .btn-cerrar { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; transition: color 0.3s; }
     .config-header .btn-cerrar:hover { color: #c62828; }
-
-    .config-body {
-        padding: 2rem;
-        overflow-y: auto;
-        flex-grow: 1;
-    }
-
-    .config-section {
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #eee;
-    }
-    .config-section:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-    }
-    .config-section h3 {
-        color: var(--color-primario, #0077b6);
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-    }
-
-    /* Grid para las imágenes */
-    .image-grid {
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-    }
-    .image-box {
-        flex: 1;
-        min-width: 250px;
-    }
-    .image-box h4 {
-        margin-bottom: 0.8rem;
-        color: #555;
-        font-size: 0.95rem;
-    }
-    .preview-box {
-        width: 100%;
-        height: 150px;
-        border: 2px dashed #ccc;
-        border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 1rem;
-        overflow: hidden;
-        background: #f9f9f9;
-        background-size: cover;
-        background-position: center;
-    }
-    .preview-box.logo {
-        border-radius: 50%;
-        width: 150px;
-        height: 150px;
-        margin: 0 auto 1rem auto;
-    }
-    .preview-box img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-
-    .file-input-group {
-        display: flex;
-        gap: 0.5rem;
-    }
-    .file-input-group input {
-        flex: 1;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 0.9rem;
-    }
-
-    /* Campos de texto */
-    .form-group input {
-        background: #f5f7fa;
-        border: 1px solid #e1e4e8;
-    }
-    .form-group input:focus {
-        background: #fff;
-        border-color: var(--color-primario, #0077b6);
-    }
+    .config-body { padding: 2rem; overflow-y: auto; flex-grow: 1; }
+    .config-section { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #eee; }
+    .config-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .config-section h3 { color: var(--color-primario, #0077b6); margin-bottom: 1rem; font-size: 1.1rem; }
+    .image-grid { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .image-box { flex: 1; min-width: 250px; }
+    .image-box h4 { margin-bottom: 0.8rem; color: #555; font-size: 0.95rem; }
+    .preview-box { width: 100%; height: 150px; border: 2px dashed #ccc; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-bottom: 1rem; overflow: hidden; background: #f9f9f9; background-size: cover; background-position: center; }
+    .preview-box.logo { border-radius: 50%; width: 150px; height: 150px; margin: 0 auto 1rem auto; }
+    .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+    .file-input-group { display: flex; gap: 0.5rem; }
+    .file-input-group input { flex: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+    .form-group input { background: #f5f7fa; border: 1px solid #e1e4e8; }
+    .form-group input:focus { background: #fff; border-color: var(--color-primario, #0077b6); }
 </style>
 </head>
 <body>
 
-<!-- FORMULARIO FLOTANTE -->
 <div class="config-modal">
     <div class="config-header">
         <h2>⚙️ Configuración General</h2>
@@ -154,11 +56,9 @@
     
     <div class="config-body">
         
-        <!-- SECCIÓN DE DISEÑO -->
         <div class="config-section">
             <h3>Diseño del Panel y Tienda</h3>
             <div class="image-grid">
-                <!-- Logo -->
                 <div class="image-box">
                     <h4>Logo del Sistema</h4>
                     <div id="preview-logo" class="preview-box logo">
@@ -171,7 +71,6 @@
                     </form>
                 </div>
 
-                <!-- Fondo -->
                 <div class="image-box">
                     <h4>Imagen de Fondo (Login)</h4>
                     <div id="preview-fondo" class="preview-box">
@@ -186,7 +85,6 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE DATOS -->
         <div class="config-section">
             <h3>Datos de Pago y Contacto</h3>
             <form id="form-config">
@@ -203,17 +101,26 @@
 </div>
 
 <script>
-// Cargar datos
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    if (d.rol !== 'admin') {
+        alert('Solo administradores pueden acceder a configuración.');
+        location.href = '/admin/dashboard.html';
+    }
+    cargar();
+}
+
 async function cargar() {
     const r = await fetch('/api/admin/configuracion');
     if (r.status === 401) return location.href = '/admin/login.html';
     const cfg = await r.json();
     
-    // Llenar textos
     const f = document.getElementById('form-config');
     Object.entries(cfg).forEach(([k, v]) => { if (f[k]) f[k].value = v; });
 
-    // Mostrar imágenes
     if (cfg.logo_admin) {
         document.getElementById('preview-logo').innerHTML = `<img src="${cfg.logo_admin}">`;
     }
@@ -224,7 +131,6 @@ async function cargar() {
     }
 }
 
-// Guardar textos
 document.getElementById('form-config').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -234,7 +140,6 @@ document.getElementById('form-config').addEventListener('submit', async (e) => {
     if (r.ok) alert('Datos guardados correctamente'); else alert('Error al guardar');
 });
 
-// Subir Logo
 document.getElementById('form-logo').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
@@ -250,7 +155,6 @@ document.getElementById('form-logo').addEventListener('submit', async (e) => {
     btn.disabled = false; btn.textContent = 'Subir';
 });
 
-// Subir Fondo
 document.getElementById('form-fondo').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
@@ -266,7 +170,7 @@ document.getElementById('form-fondo').addEventListener('submit', async (e) => {
     btn.disabled = false; btn.textContent = 'Subir';
 });
 
-cargar();
+checkAuth();
 </script>
 </body>
 </html>

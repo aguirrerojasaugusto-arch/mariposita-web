@@ -1,29 +1,26 @@
 {
   "name": "artesania-mariposita",
-  "version": "1.0.0",
-  "description": "E-commerce de ropa típica de Huancavelica con sorteos mensuales",
+  "version": "3.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node --max-old-space-size=4096 server.js",
+    "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node seed.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^12.9.0",
     "canvas": "^3.2.3",
-    "connect-sqlite3": "^0.9.15",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
     "jimp": "^1.6.1",
     "multer": "^1.4.5-lts.1",
     "sharp": "^0.35.5",
     "tesseract.js": "^7.0.0"
   },
-  "allowScripts": {
-    "bcrypt@5.1.1": true,
-    "better-sqlite3@12.11.1": true,
-    "sqlite3@5.1.7": true
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

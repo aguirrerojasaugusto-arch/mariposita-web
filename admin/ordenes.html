@@ -11,67 +11,30 @@
         opacity: 0; visibility: hidden; transition: all 0.3s;
     }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    
     .modal-content {
         background: #fff; width: 90%; max-width: 800px; border-radius: 10px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;
         display: flex; flex-direction: column; max-height: 90vh;
         animation: slideUp 0.3s ease-out;
     }
-    @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    .modal-header {
-        padding: 1.5rem; border-bottom: 1px solid #eee;
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--color-primario); color: #fff;
-    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.2rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
-    
     .modal-body { padding: 1.5rem; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-    
     .modal-section h4 { color: var(--color-primario); margin-bottom: 1rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
     .modal-section p { margin-bottom: 0.5rem; font-size: 0.95rem; color: #333; }
-    
-    .modal-img {
-        width: 100%; border-radius: 8px; border: 1px solid #ddd;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px;
-    }
-    
-    .btn-detalle {
-        background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;
-        padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold;
-    }
+    .modal-img { width: 100%; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px; }
+    .btn-detalle { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .btn-detalle:hover { background: #1565c0; color: #fff; }
-
-    .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1rem; margin-top: 1.5rem;
-    }
-    .pagination button {
-        background: var(--color-primario); color: #fff;
-        border: none; padding: 0.5rem 1rem; border-radius: 6px;
-        cursor: pointer; font-weight: bold;
-    }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
     .pagination span { font-weight: bold; color: #333; }
-
-    /* ESTILO DEL BUSCADOR */
-    .header-actions {
-        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-    }
-    .search-box {
-        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
-        font-size: 0.95rem; width: 300px; outline: none;
-    }
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
-
-    @media (max-width: 768px) {
-        .modal-body { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 768px) { .modal-body { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -81,10 +44,12 @@
         <a href="/admin/dashboard.html">📊 Dashboard</a>
         <a href="/admin/ordenes.html" class="active">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html">👗 Productos</a>
-        <a href="/admin/sorteos.html">🎰 Sorteos</a>
-        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+        <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
@@ -106,7 +71,6 @@
     </main>
 </div>
 
-<!-- MODAL DE DETALLES -->
 <div class="modal-overlay" id="modal-detalles">
     <div class="modal-content">
         <div class="modal-header">
@@ -127,8 +91,23 @@ let paginaActual = 1;
 const itemsPorPagina = 5;
 
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    if (d.rol !== 'admin') {
+        document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-sorteos').style.display = 'none';
+        document.getElementById('nav-carrusel').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+    }
+    cargar();
 }
 
 function ocrBox(o) {
@@ -145,7 +124,7 @@ async function cargar() {
     const r = await fetch('/api/admin/ordenes/pendientes');
     if (r.status === 401) return location.href = '/admin/login.html';
     todasLasOrdenes = await r.json();
-    filtrar(); // Llamamos a filtrar para renderizar la tabla inicial
+    filtrar();
 }
 
 function filtrar() {
@@ -181,16 +160,13 @@ function renderizarTabla() {
         <thead><tr><th>Código</th><th>Cliente</th><th>Total</th><th>OCR</th><th>Comprobante</th><th>Acciones</th></tr></thead>
         <tbody>
         ${ordenesPagina.map((o) => {
-            // Buscamos el índice real en el array original para el modal
             const indiceReal = todasLasOrdenes.findIndex(orig => orig.id === o.id);
             return `<tr>
                 <td><strong>${o.codigo}</strong><br><small>${o.creado_en}</small></td>
                 <td>${o.cliente_nombre}<br><small>${o.cliente_telefono}</small></td>
                 <td><strong>S/ ${o.total.toFixed(2)}</strong><br><small>${o.total_items} items</small></td>
                 <td>${ocrBox(o)}</td>
-                <td>
-                    <button class="btn-detalle" onclick="abrirModal(${indiceReal})">Ver Detalles</button>
-                </td>
+                <td><button class="btn-detalle" onclick="abrirModal(${indiceReal})">Ver Detalles</button></td>
                 <td>
                     <button class="btn btn-aprobar" onclick="revisar(${o.id}, 'aprobar')">✅ Aprobar</button>
                     <button class="btn btn-rechazar" onclick="revisar(${o.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>
@@ -229,6 +205,7 @@ async function abrirModal(index) {
         <div class="modal-section">
             <h4>Datos del Cliente</h4>
             <p><strong>Nombre:</strong> ${orden.cliente_nombre}</p>
+            <p><strong>DNI:</strong> ${orden.cliente_dni || '—'}</p>
             <p><strong>Teléfono:</strong> ${orden.cliente_telefono}</p>
             <p><strong>Dirección:</strong> ${orden.cliente_direccion}</p>
             <p><strong>Fecha:</strong> ${orden.creado_en}</p>
@@ -243,6 +220,7 @@ async function abrirModal(index) {
             <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
                 <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
                 <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${orden.ocr_monto !== null ? 'S/ ' + orden.ocr_monto.toFixed(2) : 'No detectado'}</p>
+                <p style="font-size:0.85rem;"><strong>Operación:</strong> ${orden.ocr_operacion || 'No detectada'}</p>
                 <p style="font-size:0.85rem;"><strong>Fecha:</strong> ${orden.ocr_fecha || 'No detectada'}</p>
             </div>
         </div>
@@ -267,7 +245,7 @@ async function revisar(id, accion) {
     if (r.ok) { alert('Orden ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
 }
 
-cargar();
+checkAuth();
 </script>
 </body>
 </html>
