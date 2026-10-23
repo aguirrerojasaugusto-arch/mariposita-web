@@ -1,10 +1,8 @@
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-
-// Función para esperar
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function extraerDatosComprobante(fileBuffer) {
-    const vacio = { monto: null, fecha: null, operacion: null, codigo_seguridad: null, error_ocr: null };
+    const vacio = { monto: null, fecha: null, operacion: null, destinatario: null, texto_completo: null, error_ocr: null };
 
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
     if (!process.env.GEMINI_API_KEY) return { ...vacio, error_ocr: 'OCR deshabilitado (falta GEMINI_API_KEY)' };
@@ -18,14 +16,15 @@ Devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura exacta:
   "monto": number | null,
   "fecha": "YYYY-MM-DD HH:mm" | null,
   "operacion": string | null,
-  "codigo_seguridad": string | null
+  "destinatario": string | null,
+  "texto_completo": string | null
 }
 
 Instrucciones ESTRICTAS:
 1. "monto": Busca el número grande con el monto de la transacción (ej. 15.00, 50). SIN el símbolo "S/".
 2. "operacion": Busca el texto "Nro. de operación" (suele tener 6 a 9 dígitos).
-3. "codigo_seguridad": Busca el número de 3 dígitos junto a "CÓDIGO DE SEGURIDAD".
-4. "fecha": Fecha y hora de la transacción.
+3. "destinatario": Busca el nombre de la persona a quien se le depositó (suele estar debajo del monto o junto a "Destino Yape", "Para:", "Nombre:", etc). Devuélvelo tal cual está escrito. Si no lo encuentras claramente, pon null.
+4. "texto_completo": Copia TODO el texto que puedas leer en la imagen (números, nombres, etc.) para tener un respaldo.
 Si no puedes leer un dato, pon null. NO inventes datos.`;
 
         const body = {
@@ -42,7 +41,6 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
         let intentos = 0;
         const maxIntentos = 3;
 
-        // Bucle para reintentar si el servidor está saturado (503)
         while (intentos < maxIntentos) {
             resp = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
                 method: 'POST',
@@ -50,16 +48,14 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
                 body: JSON.stringify(body)
             });
 
-            if (resp.ok) break; // Si responde bien, salimos
-
-            // Si es error 503 (saturado), esperamos y reintentamos
+            if (resp.ok) break;
             if (resp.status === 503) {
                 intentos++;
-                const espera = 1000 * intentos; // 1s, 2s, 3s...
-                console.warn(`⚠️ Gemini saturado. Reintentando en ${espera/1000}s... (Intento ${intentos}/${maxIntentos})`);
+                const espera = 1000 * intentos;
+                console.warn(`⚠️ Gemini saturado. Reintentando en ${espera/1000}s...`);
                 await sleep(espera);
             } else {
-                break; // Si es otro error (400, 403, etc.), no reintentamos
+                break;
             }
         }
 
@@ -70,7 +66,6 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
         }
 
         const json = await resp.json();
-        
         let texto = '';
         if (json.candidates && json.candidates.length > 0) {
             const parts = json.candidates[0].content.parts;
@@ -87,13 +82,13 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
         const datos = JSON.parse(match[0]);
         
         let opLimpia = datos.operacion ? String(datos.operacion).replace(/[^0-9]/g, '') : null;
-        let codLimpio = datos.codigo_seguridad ? String(datos.codigo_seguridad).replace(/[^0-9]/g, '') : null;
 
         return {
             monto: typeof datos.monto === 'number' ? datos.monto : null,
             fecha: datos.fecha || null,
             operacion: opLimpia || null,
-            codigo_seguridad: codLimpio || null,
+            destinatario: datos.destinatario ? String(datos.destinatario).trim() : null,
+            texto_completo: datos.texto_completo ? String(datos.texto_completo).trim() : null,
             error_ocr: null
         };
     } catch (e) {

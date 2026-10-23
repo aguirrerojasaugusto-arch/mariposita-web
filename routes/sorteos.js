@@ -6,6 +6,15 @@ const { esComprobanteYape } = require('../services/validarComprobante');
 const { extraerDatosComprobante } = require('../services/ocr');
 const router = express.Router();
 
+// Función auxiliar para limpiar y comparar textos
+function limpiarTexto(texto) {
+    if (!texto) return '';
+    return texto.toLowerCase()
+        .replace(/[*#.,\-_]/g, '') // Elimina asteriscos, puntos, comas, etc.
+        .replace(/\s+/g, ' ')      // Reemplaza múltiples espacios por uno solo
+        .trim();
+}
+
 router.post('/tickets', (req, res) => {
     uploadComprobante(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
@@ -36,29 +45,37 @@ router.post('/tickets', (req, res) => {
             const ocr = await extraerDatosComprobante(req.file.buffer);
             if (ocr.error_ocr) console.warn("OCR falló:", ocr.error_ocr);
 
-            // ⭐ 3. VALIDACIÓN DEL NOMBRE DEL TITULAR ⭐
-            // Buscamos el nombre configurado en el panel de admin
+            // ⭐ 3. VALIDACIÓN INTELIGENTE DEL NOMBRE DEL TITULAR ⭐
             const configRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'nombre_titular'");
-            const nombreTitularConfigurado = configRes.rows[0] ? configRes.rows[0].valor.toLowerCase() : '';
+            const nombreTitularConfigurado = configRes.rows[0] ? configRes.rows[0].valor : '';
 
             if (nombreTitularConfigurado) {
-                // Separamos el nombre en palabras clave (ignorando preposiciones de 2 letras o menos)
-                const palabrasClave = nombreTitularConfigurado.split(' ').filter(p => p.length > 2);
+                // Limpiamos el nombre configurado (ej: "Marcos Utc*" -> "marcos utc")
+                const nombreLimpioConfig = limpiarTexto(nombreTitularConfigurado);
                 
-                // El texto donde buscaremos: lo que la IA leyó como destinatario o todo el texto
-                const textoLeido = `${ocr.destinatario || ''} ${ocr.texto_completo || ''}`.toLowerCase();
+                // Obtenemos las palabras clave del nombre configurado (ignorando palabras de 2 letras o menos)
+                const palabrasClave = nombreLimpioConfig.split(' ').filter(p => p.length > 2);
                 
-                // Verificamos si al menos una palabra clave del titular configurado aparece en la imagen
-                const coincide = palabrasClave.some(palabra => textoLeido.includes(palabra));
+                // Limpiamos lo que la IA leyó en la imagen
+                const textoLeido = limpiarTexto(`${ocr.destinatario || ''} ${ocr.texto_completo || ''}`);
+                
+                // Contamos cuántas palabras clave del titular se encontraron en el texto de la imagen
+                let coincidencias = 0;
+                palabrasClave.forEach(palabra => {
+                    if (textoLeido.includes(palabra)) coincidencias++;
+                });
 
-                if (!coincide) {
+                // Si se encontró al menos el 50% de las palabras, lo aceptamos
+                const porcentajeCoincidencia = (coincidencias / palabrasClave.length) * 100;
+
+                if (porcentajeCoincidencia < 50) {
                     return res.status(400).json({ 
-                        error: `El comprobante no coincide con el titular configurado. Debe yapear a: "${configRes.rows[0].valor}".` 
+                        error: `El comprobante no parece estar a nombre de "${nombreTitularConfigurado}". Por favor, verifica que sea el titular correcto.` 
                     });
                 }
             }
 
-            // ⭐ 4. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH) ⭐
+            // 4. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH)
             const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
@@ -68,7 +85,6 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: '⚠️ Esta imagen de comprobante ya fue utilizada en otra compra.' });
             }
 
-            // Validar número de operación duplicado (si la IA lo leyó)
             if (ocr.operacion) {
                 const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
                 const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
@@ -77,7 +93,7 @@ router.post('/tickets', (req, res) => {
                 }
             }
 
-            // 5. Guardar el ticket (Sin validar el monto, para revisión manual)
+            // 5. Guardar el ticket
             const cantTickets = parseInt(cantidad) || 1;
             const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
             const count = countRes.rows[0].c + 1;
