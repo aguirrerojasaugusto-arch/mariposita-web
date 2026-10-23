@@ -42,6 +42,7 @@ router.get('/sorteos', async (req, res) => {
 
 router.get('/config-publica', async (req, res) => {
     try {
+        // ⭐ AQUÍ YA ESTÁ INCLUIDO 'nombre_titular' ⭐
         const keys = ['numero_yape', 'numero_plin', 'nombre_titular', 'whatsapp', 'email_contacto', 'logo_admin', 'fondo_login'];
         const placeholders = keys.map(() => '?').join(',');
         const result = await db.execute({
@@ -108,7 +109,5 @@ router.get('/consultar', async (req, res) => {
         res.status(500).json({ error: 'Error al consultar' });
     }
 });
-
-// (La ruta POST /tickets fue eliminada de aquí. Ahora vive en sorteos.js)
 
 module.exports = router;

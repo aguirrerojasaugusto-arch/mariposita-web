@@ -633,6 +633,8 @@
                             <h4>💳 Paga a:</h4>
                             <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
                             <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
+                            <!-- ⭐ MOSTRAMOS EL TITULAR AQUÍ ⭐ -->
+                            <p style="margin-top: 5px; font-size: 0.9rem; color: #ffcc00;">Titular: <span id="info-titular" style="font-weight: bold; font-size: 1rem;">...</span></p>
                         </div>
 
                         <div class="form-group">
@@ -656,9 +658,11 @@
                 </div>
             `;
 
+            // ⭐ PETICIÓN PARA ASIGNAR EL TITULAR ⭐
             fetch('/api/config-publica').then(r => r.json()).then(c => {
-                document.getElementById('info-yape').textContent = c.numero_yape;
-                document.getElementById('info-plin').textContent = c.numero_plin;
+                document.getElementById('info-yape').textContent = c.numero_yape || 'No config';
+                document.getElementById('info-plin').textContent = c.numero_plin || 'No config';
+                document.getElementById('info-titular').textContent = c.nombre_titular || 'No configurado';
             });
 
             let timeoutBusqueda = null;
@@ -692,25 +696,20 @@
                 const loaderText = document.getElementById('loader-text');
                 const loaderTimer = document.getElementById('loader-timer');
                 
-                // Mostrar overlay de carga
                 loader.style.display = 'flex';
                 btn.disabled = true; 
 
-                // ⭐ LÓGICA DEL TEMPORIZADOR Y MENSAJES ⭐
                 let segundos = 0;
                 loaderTimer.textContent = `Tiempo de espera: 0s`;
+                loaderText.textContent = "Validando tu pago...";
                 
                 const intervaloTiempo = setInterval(() => {
                     segundos++;
                     loaderTimer.textContent = `Tiempo de espera: ${segundos}s`;
                     
-                    if (segundos === 4) loaderText.textContent = "Analizando formato de imagen...";
-                    if (segundos === 8) loaderText.textContent = "La IA está leyendo los datos...";
-                    if (segundos === 14) loaderText.textContent = "Verificando nombre y monto...";
-                    if (segundos === 20) {
-                        loaderText.textContent = "Casi listo...";
-                        document.getElementById('loader-subtext').textContent = "El servidor de Render puede tardar un poco más. Por favor, no cierres esta ventana.";
-                    }
+                    if (segundos === 3) loaderText.textContent = "Analizando imagen...";
+                    if (segundos === 7) loaderText.textContent = "Extrayendo datos del comprobante...";
+                    if (segundos === 12) loaderText.textContent = "Verificando operación...";
                 }, 1000);
 
                 document.getElementById('nombre-input').disabled = false;
