@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { initDB } = require('./database');
 
-// ⭐ CORRECCIÓN GLOBAL PARA EVITAR ERROR CON BIGINT DE TURSO
 BigInt.prototype.toJSON = function() { return Number(this); };
 
 const app = express();
@@ -15,7 +14,6 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-// Middleware para leer JWT y simular req.session
 app.use((req, res, next) => {
     req.session = {}; 
     const token = req.cookies.token;
@@ -35,10 +33,10 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Rutas
 app.use('/api', require('./routes/productos')); 
 app.use('/api', require('./routes/ordenes')); 
-app.use('/api', require('./routes/sorteos'));
+// ⭐ IMPORTANTE: sorteos.js maneja la ruta /tickets. 
+app.use('/api', require('./routes/sorteos')); 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin/usuarios', require('./routes/usuarios')); 
 app.use('/api/admin', require('./routes/admin'));
@@ -51,17 +49,12 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.use((err, req, res, next) => {
     console.error(err);
     if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'La imagen es demasiado pesada. El límite es de 50MB.' });
+        return res.status(400).json({ error: 'La imagen es demasiado pesada.' });
     }
     if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Error interno' });
     res.status(500).send('Error interno');
 });
 
 initDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`\n🦋 Artesania Mariposita en http://localhost:${PORT}`);
-    });
-}).catch(err => {
-    console.error("❌ Error al inicializar la DB:", err);
-    process.exit(1);
+    app.listen(PORT, () => console.log(`\n🦋 Servidor en http://localhost:${PORT}`));
 });
