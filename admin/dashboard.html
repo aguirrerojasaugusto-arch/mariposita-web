@@ -20,17 +20,19 @@
         background: transparent !important;
     }
 
-    /* ⭐ SIDEBAR ESTILO "GLASSMORPHISM" OSCURO PARA COMBINAR CON EL PAISAJE ⭐ */
+    /* ⭐ SIDEBAR ESTILO "GLASSMORPHISM" OSCURO ⭐ */
     .sidebar {
-        background: rgba(16, 33, 50, 0.85) !important; /* Azul oscuro profundo semitransparente */
+        background: rgba(16, 33, 50, 0.85) !important; 
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
         height: 100vh;
         box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
     }
 
-    /* Título del Sidebar (Mariposita) en blanco */
+    /* Título del Sidebar */
     .sidebar h1 {
         color: #ffffff !important;
         border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -38,7 +40,49 @@
         margin-bottom: 1rem;
     }
 
-    /* Enlaces del menú en blanco/gris claro */
+    /* ⭐ TARJETA DE PERFIL DE USUARIO ⭐ */
+    .user-profile {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .user-avatar {
+        width: 45px;
+        height: 45px;
+        background: var(--color-secundario);
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .user-info strong {
+        color: #fff;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .user-info span {
+        color: #8892b0;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Enlaces del menú */
     .sidebar a {
         color: #cbd5e1 !important; 
         border-radius: 8px;
@@ -46,18 +90,19 @@
         transition: all 0.3s;
     }
 
-    /* Efecto Hover y Enlace Activo (Azul brillante para contrastar) */
+    /* Efecto Hover y Enlace Activo */
     .sidebar a:hover, 
     .sidebar a.active {
-        background: rgba(0, 210, 255, 0.15) !important; /* Fondo celeste transparente */
-        color: #00d2ff !important; /* Letra celeste brillante */
+        background: rgba(0, 210, 255, 0.15) !important; 
+        color: #00d2ff !important; 
         border-left: 4px solid #00d2ff;
         font-weight: 600;
     }
 
-    /* Botón de cerrar sesión en color rojo suave */
+    /* Botón de cerrar sesión */
     .sidebar .logout {
         color: #ff6b6b !important;
+        margin-top: auto; /* Empuja el botón al final */
     }
     .sidebar .logout:hover {
         background: rgba(255, 107, 107, 0.15) !important;
@@ -73,22 +118,13 @@
         overflow-y: auto;
     }
 
-    /* Título de bienvenida en blanco */
     .main h2 {
         color: #ffffff !important;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     }
 
-    /* Tarjetas de estadísticas con efecto de vidrio claro */
-    .stat {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
-        border: 1px solid rgba(255,255,255,0.5);
-    }
-
-    /* Contenedor de acciones rápidas */
-    .card {
+    /* Tarjetas y contenedores */
+    .stat, .card {
         background: rgba(255, 255, 255, 0.95) !important;
         backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
@@ -101,6 +137,15 @@
     <aside class="sidebar">
         <h1><img src="/admin/img/logo.png" alt="Logo" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none';"> Mariposita</h1>
         
+        <!-- ⭐ PERFIL DEL USUARIO LOGUEADO ⭐ -->
+        <div class="user-profile">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <div class="user-info">
+                <strong id="user-nombre">Cargando...</strong>
+                <span id="user-rol">Admin</span>
+            </div>
+        </div>
+
         <a href="/admin/dashboard.html" class="active">📊 Dashboard</a>
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
@@ -110,10 +155,11 @@
         <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
         <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
         <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
+        
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     <main class="main">
-        <h2 style="margin-bottom: 2rem;">Bienvenido, <span id="nombre"></span> (<span id="rol"></span>)</h2>
+        <h2 style="margin-bottom: 2rem;">Bienvenido, <span id="saludo-nombre"></span></h2>
         
         <div class="stats-grid" id="stats" style="margin-bottom: 2rem;"></div>
 
@@ -133,9 +179,15 @@ async function checkAuth() {
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     
-    document.getElementById('nombre').textContent = d.nombre;
-    document.getElementById('rol').textContent = d.rol;
+    // ⭐ ACTUALIZAMOS LOS DATOS DEL PERFIL EN EL SIDEBAR ⭐
+    document.getElementById('user-nombre').textContent = d.nombre;
+    document.getElementById('user-rol').textContent = d.rol;
+    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase(); // Primera letra del nombre
+    
+    // Saludo principal
+    document.getElementById('saludo-nombre').textContent = d.nombre;
 
+    // Ocultar menús según el rol
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';
