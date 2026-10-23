@@ -4,19 +4,10 @@
 <meta charset="UTF-8"><title>Sorteos · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
+    /* ... (Mantén tus estilos de modal aquí) ... */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-content {
-        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
-        display: flex; flex-direction: column; max-height: 90vh;
-        animation: slideUp 0.3s ease-out;
-    }
+    .modal-content { background: #fff; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.3rem; }
@@ -34,9 +25,18 @@
     .btn-editar:hover { background: #1565c0; color: #fff; }
     .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
     .btn-eliminar:hover { background: #c62828; color: #fff; }
+
+    /* Estilos nuevos para la barra de progreso */
+    .progress-container { display: none; margin-top: 1rem; background: #f0f4f8; padding: 1rem; border-radius: 8px; border: 1px solid #d9e2ec; }
+    .progress-step { font-size: 0.85rem; color: #627d98; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem; }
+    .progress-step.active { color: var(--color-primario); font-weight: bold; }
+    .progress-step.done { color: #2e7d32; }
+    .spinner-small { width: 12px; height: 12px; border: 2px solid rgba(0, 119, 182, 0.2); border-top-color: var(--color-primario); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
+<!-- ... (Mantén tu HTML de la tabla y menú lateral igual) ... -->
 <div class="admin-layout">
     <aside class="sidebar">
         <h1>🦋 Mariposita</h1>
@@ -96,6 +96,7 @@
 </div>
 
 <script>
+// ... (Mantén tu lógica de cargar, renderizar, etc. igual) ...
 let todosLosSorteos = [];
 let paginaActual = 1;
 const itemsPorPagina = 5;
@@ -109,7 +110,6 @@ async function checkAuth() {
     const r = await fetch('/api/auth/me');
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
-    
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-carrusel').style.display = 'none';
@@ -127,80 +127,19 @@ async function cargar() {
     renderizarTabla();
 }
 
-function renderizarTabla() {
-    const cont = document.getElementById('lista');
-    const totalPaginas = Math.ceil(todosLosSorteos.length / itemsPorPagina) || 1;
-    
-    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
-    document.getElementById('btn-prev').disabled = paginaActual === 1;
-    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+function renderizarTabla() { /* ... tu código ... */ }
+function cambiarPagina(dir) { /* ... tu código ... */ }
+function abrirModalNuevo() { /* ... tu código ... */ }
+function editar(s) { /* ... tu código ... */ }
+function cerrarModal() { document.getElementById('modal-sorteo').classList.remove('active'); }
 
-    if (!todosLosSorteos.length) {
-        cont.innerHTML = '<p>No hay sorteos registrados.</p>';
-        return;
-    }
-
-    const inicio = (paginaActual - 1) * itemsPorPagina;
-    const fin = inicio + itemsPorPagina;
-    const sorteosPagina = todosLosSorteos.slice(inicio, fin);
-
-    cont.innerHTML = `<table>
-        <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody>
-        ${sorteosPagina.map(s => `<tr>
-            <td>${s.imagen_base64 ? `<img class="img-tabla" src="${s.imagen_base64}">` : '—'}</td>
-            <td>${s.nombre}</td>
-            <td>S/ ${s.precio_ticket.toFixed(2)}</td>
-            <td>${s.fecha_sorteo}</td>
-            <td>${s.estado}</td>
-            <td>
-                <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
-                <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
-            </td>
-        </tr>`).join('')}
-        </tbody></table>`;
-}
-
-function cambiarPagina(dir) {
-    const totalPaginas = Math.ceil(todosLosSorteos.length / itemsPorPagina) || 1;
-    paginaActual += dir;
-    if (paginaActual < 1) paginaActual = 1;
-    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
-    renderizarTabla();
-}
-
-function abrirModalNuevo() {
-    document.getElementById('form-sorteo').reset();
-    document.getElementById('sorteo-id').value = '';
-    document.getElementById('form-title').textContent = 'Nuevo Sorteo';
-    document.getElementById('btn-guardar').textContent = 'Guardar';
-    document.getElementById('modal-sorteo').classList.add('active');
-}
-
-function editar(s) {
-    document.getElementById('sorteo-id').value = s.id;
-    document.getElementById('sorteo-nombre').value = s.nombre;
-    document.getElementById('sorteo-desc').value = s.descripcion || '';
-    document.getElementById('sorteo-precio').value = s.precio_ticket;
-    document.getElementById('sorteo-fecha').value = s.fecha_sorteo;
-    document.getElementById('sorteo-estado').value = s.estado;
-    document.getElementById('form-title').textContent = 'Editar Sorteo #' + s.id;
-    document.getElementById('btn-guardar').textContent = 'Actualizar';
-    document.getElementById('modal-sorteo').classList.add('active');
-}
-
-function cerrarModal() {
-    document.getElementById('modal-sorteo').classList.remove('active');
-}
-
-document.getElementById('modal-sorteo').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('modal-sorteo')) return;
-});
-
+// LOGICA DE ENVÍO
 document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-guardar');
     const originalText = btn.textContent;
+    
+    // Validación visual
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
@@ -213,36 +152,21 @@ document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
     try {
         const r = await fetch(url, { method, body: fd });
         const d = await r.json();
+        
         if (r.ok) { 
             alert('Sorteo guardado correctamente'); 
             cerrarModal();
             cargar(); 
         } else { 
-            alert('Error del servidor: ' + (d.error || 'Desconocido')); 
+            alert('Error: ' + (d.error || 'Desconocido')); 
         }
     } catch (error) {
-        alert('Error de red: Asegúrate de que el servidor esté corriendo.');
+        alert('Error de red. Intenta de nuevo.');
     } finally {
         btn.disabled = false;
         btn.textContent = originalText;
     }
 });
-
-async function eliminarSorteo(id) {
-    if (!confirm('¿Estás seguro de eliminar este sorteo? Se borrarán también todos los tickets asociados a él. Esta acción no se puede deshacer.')) return;
-    try {
-        const res = await fetch(`/api/admin/sorteos/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (res.ok) {
-            alert('✅ Sorteo eliminado correctamente.');
-            cargar();
-        } else {
-            alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
-        }
-    } catch (error) {
-        alert('Error de red al intentar eliminar el sorteo.');
-    }
-}
 
 checkAuth();
 </script>
