@@ -3,14 +3,15 @@ const crypto = require('crypto');
 const { db } = require('../database');
 const { uploadComprobante } = require('../middleware/upload');
 const { esComprobanteYape } = require('../services/validarComprobante');
-const { extraerDatosComprobante } = require('../services/ocr');
+const sharp = require('sharp');
+const { createWorker } = require('tesseract.js');
 const router = express.Router();
 
 // Función auxiliar para limpiar textos (quita asteriscos, puntos, etc.)
 function limpiarTexto(texto) {
     if (!texto) return '';
     return texto.toLowerCase()
-        .replace(/[^a-záéíóúñ\s]/g, '') // Deja solo letras y espacios
+        .replace(/[^a-z0-9áéíóúñ\s]/g, '') // Deja letras, números y espacios
         .replace(/\s+/g, ' ')          // Reemplaza múltiples espacios por uno solo
         .trim();
 }
@@ -21,7 +22,7 @@ router.post('/tickets', (req, res) => {
         if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
 
         try {
-            // 1. Validación visual (Colores y orientación)
+            // 1. Validación visual básica (Colores y orientación)
             const validacion = await esComprobanteYape(req.file.buffer);
             if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
@@ -41,56 +42,94 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T23:59:59`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
-            // 2. Procesar OCR
-            const ocr = await extraerDatosComprobante(req.file.buffer);
-            if (ocr.error_ocr) console.warn("OCR falló:", ocr.error_ocr);
+            // ⭐ 2. PROCESAR IMAGEN CON TESSERACT (OCR LOCAL) ⭐
+            console.log("⏳ Iniciando lectura de imagen (Tesseract Local)...");
+            let textoImagen = "";
+            try {
+                const processedImage = await sharp(req.file.buffer)
+                    .resize(1200, null, { withoutEnlargement: true })
+                    .grayscale()
+                    .threshold(180)
+                    .toBuffer();
 
-            // ⭐ 3. VALIDACIÓN POR 3 LETRAS DEL NOMBRE Y APELLIDO ⭐
-            const configRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'nombre_titular'");
-            const nombreTitularConfigurado = configRes.rows[0] ? configRes.rows[0].valor : '';
+                const worker = await createWorker('spa');
+                const { data: { text } } = await worker.recognize(processedImage);
+                await worker.terminate();
 
-            if (nombreTitularConfigurado) {
-                // Limpiamos el nombre configurado (ej: "Marcos Utc*" -> "marcos utc")
-                const nombreLimpioConfig = limpiarTexto(nombreTitularConfigurado);
-                const palabrasConfig = nombreLimpioConfig.split(' ').filter(p => p.length > 1);
-                
-                // Tomamos las 3 primeras letras del Nombre (palabra 0) y Apellido (palabra 1)
-                let prefijoNombre = '';
-                let prefijoApellido = '';
+                textoImagen = text;
+                console.log("✅ Texto detectado en la imagen.");
+            } catch (ocrError) {
+                console.error("Error crítico en OCR Local:", ocrError);
+                return res.status(400).json({ error: 'No se pudo procesar la imagen. Asegúrate de subir una captura clara y recortada de Yape o Plin.' });
+            }
 
-                if (palabrasConfig.length >= 1) {
-                    prefijoNombre = palabrasConfig[0].substring(0, 3);
-                }
-                if (palabrasConfig.length >= 2) {
-                    prefijoApellido = palabrasConfig[1].substring(0, 3);
-                }
+            const textoLimpio = limpiarTexto(textoImagen);
+            const cantTickets = parseInt(cantidad) || 1;
+            const montoEsperado = sorteo.precio_ticket * cantTickets;
 
-                // Limpiamos el texto leído por la IA
-                const textoLeido = limpiarTexto(`${ocr.destinatario || ''} ${ocr.texto_completo || ''}`);
-                
-                // Validación: El texto debe contener el prefijo del nombre Y el prefijo del apellido
-                let esValido = false;
+            // ⭐ 3. VALIDACIÓN DE DESTINO (ÚLTIMOS 3 DÍGITOS DEL TELÉFONO) ⭐
+            const configYapeRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'numero_yape'");
+            const numeroYapeConfig = configYapeRes.rows[0] ? configYapeRes.rows[0].valor : '';
 
-                if (prefijoNombre && prefijoApellido) {
-                    // Buscamos si ambas partes (ej: "mar" y "utc") están presentes
-                    if (textoLeido.includes(prefijoNombre) && textoLeido.includes(prefijoApellido)) {
-                        esValido = true;
-                    }
-                } else if (prefijoNombre) {
-                    // Si solo hay un nombre, validamos solo ese prefijo
-                    if (textoLeido.includes(prefijoNombre)) {
-                        esValido = true;
-                    }
-                }
+            if (numeroYapeConfig) {
+                const soloNumeros = numeroYapeConfig.replace(/\D/g, '');
+                const ultimos3Digitos = soloNumeros.slice(-3);
 
-                if (!esValido) {
+                if (!textoLimpio.includes(ultimos3Digitos)) {
                     return res.status(400).json({ 
-                        error: `El comprobante no coincide con el titular configurado ("${nombreTitularConfigurado}"). Asegúrate de que el nombre y apellido sean legibles.` 
+                        error: `El comprobante no parece haber sido enviado a la cuenta correcta. Asegúrate de yapear al número configurado.` 
                     });
                 }
             }
 
-            // 4. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH)
+            // ⭐ 4. VALIDACIÓN DE MONTO ⭐
+            // Buscamos números con o sin decimales que coincidan con el monto esperado
+            const montoStr = montoEsperado.toString();
+            const montoConCeros = montoEsperado.toFixed(2).replace('.', '');
+            
+            // Reemplazamos comas por puntos por si la IA lee "35,00"
+            const textoMontoLimpio = textoLimpio.replace(/,/g, '.');
+            
+            const montoEncontrado = textoMontoLimpio.includes(montoStr) || textoMontoLimpio.includes(montoConCeros);
+
+            if (!montoEncontrado) {
+                return res.status(400).json({ 
+                    error: `El monto del comprobante no coincide con el total a pagar (S/ ${montoEsperado.toFixed(2)}). Verifica la imagen.` 
+                });
+            }
+
+            // ⭐ 5. VALIDACIÓN DE FECHA (QUE SEA DEL DÍA DE HOY) ⭐
+            const hoy = new Date();
+            const diaHoy = hoy.getDate().toString();
+            const añoHoy = hoy.getFullYear().toString();
+            
+            // Verificamos si el texto contiene el día de hoy y el año
+            if (!textoLimpio.includes(diaHoy) || !textoLimpio.includes(añoHoy)) {
+                return res.status(400).json({ 
+                    error: `La fecha del comprobante no parece ser de hoy. Asegúrate de subir el comprobante del pago reciente.` 
+                });
+            }
+
+            // ⭐ 6. VALIDACIÓN DE NÚMERO DE OPERACIÓN ÚNICO ⭐
+            const matchOperacion = textoImagen.match(/\b\d{6,9}\b/g);
+            let operacionDetectada = null;
+
+            if (matchOperacion && matchOperacion.length > 0) {
+                operacionDetectada = matchOperacion.sort((a, b) => b.length - a.length)[0];
+
+                const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [operacionDetectada] });
+                const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [operacionDetectada] });
+                
+                if (opTicket.rows.length > 0 || opOrden.rows.length > 0) {
+                    return res.status(400).json({ error: '⚠️ Este número de operación ya fue registrado en otra compra.' });
+                }
+            } else {
+                return res.status(400).json({ 
+                    error: 'No se pudo leer el Número de Operación en la imagen. Asegúrate de que la captura sea clara.' 
+                });
+            }
+
+            // 7. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH DE IMAGEN)
             const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
@@ -100,16 +139,7 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: '⚠️ Esta imagen de comprobante ya fue utilizada en otra compra.' });
             }
 
-            if (ocr.operacion) {
-                const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
-                const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
-                if (opTicket.rows.length > 0 || opOrden.rows.length > 0) {
-                    return res.status(400).json({ error: '⚠️ Este número de operación ya fue registrado en otra compra.' });
-                }
-            }
-
-            // 5. Guardar el ticket
-            const cantTickets = parseInt(cantidad) || 1;
+            // 8. Guardar el ticket
             const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
             const count = countRes.rows[0].c + 1;
             const numero = `S${sorteo.id}-${String(count).padStart(5, '0')}`;
@@ -118,7 +148,7 @@ router.post('/tickets', (req, res) => {
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_monto, ocr_operacion)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
-                args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, cantTickets, base64Image, hash, ocr.monto || null, ocr.operacion || null]
+                args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, cantTickets, base64Image, hash, montoEsperado, operacionDetectada]
             });
 
             res.json({ 
