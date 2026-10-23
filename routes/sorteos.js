@@ -39,8 +39,8 @@ router.post('/tickets', (req, res) => {
                 console.warn("OCR falló, requiere revisión manual:", ocr.error_ocr);
             }
 
-            // ⭐ SE ELIMINÓ EL BLOQUEO POR MONTO INCORRECTO ⭐
-            // Ahora cualquier ticket pasa a revisión manual.
+            // ⭐ SE ELIMINÓ TOTALMENTE LA VALIDACIÓN DEL MONTO ⭐
+            // El sistema ya no bloqueará la compra si el monto no coincide exactamente.
 
             // 3. Validar que no se repita la operación (si se logró leer)
             if (ocr.operacion) {
