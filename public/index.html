@@ -189,7 +189,12 @@
 
     <div class="header-sticky">
         <div class="top-bar">
-            <div class="top-bar-info"><span>📞 (0125) 456 78 90</span><span>✉️ ventas@mariposita.pe</span><span>📍 Huancavelica, Perú</span></div>
+            <!-- ⭐ IDs PARA ACTUALIZAR LOS DATOS DINÁMICAMENTE ⭐ -->
+            <div class="top-bar-info">
+                <span id="top-telefono">📞 (0125) 456 78 90</span>
+                <span id="top-email">✉️ ventas@mariposita.pe</span>
+                <span id="top-ubicacion">📍 Huancavelica, Perú</span>
+            </div>
         </div>
         <div class="header-wrap">
             <div class="header">
@@ -300,9 +305,16 @@
             try {
                 const res = await fetch('/api/config-publica');
                 const config = await res.json();
+                
                 if (config.logo_admin) {
                     document.getElementById('logo-header').innerHTML = `<img src="${config.logo_admin}" class="logo-img-dinamico">`;
                 }
+
+                // ⭐ ACTUALIZAMOS LA BARRA SUPERIOR CON LOS DATOS DE LA BD ⭐
+                if (config.telefono_contacto) document.getElementById('top-telefono').textContent = `📞 ${config.telefono_contacto}`;
+                if (config.email_contacto) document.getElementById('top-email').textContent = `✉️ ${config.email_contacto}`;
+                if (config.ubicacion) document.getElementById('top-ubicacion').textContent = `📍 ${config.ubicacion}`;
+
                 const btnWhatsApp = document.getElementById('btn-whatsapp');
                 if (config.whatsapp) {
                     const numeroLimpio = config.whatsapp.replace(/\D/g, '');
@@ -633,7 +645,7 @@
                             <h4>💳 Paga a:</h4>
                             <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
                             <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
-                            <!-- ⭐ MOSTRAMOS EL TITULAR AQUÍ ⭐ -->
+                            <!-- ⭐ TITULAR DINÁMICO ⭐ -->
                             <p style="margin-top: 5px; font-size: 0.9rem; color: #ffcc00;">Titular: <span id="info-titular" style="font-weight: bold; font-size: 1rem;">...</span></p>
                         </div>
 
@@ -658,7 +670,6 @@
                 </div>
             `;
 
-            // ⭐ PETICIÓN PARA ASIGNAR EL TITULAR ⭐
             fetch('/api/config-publica').then(r => r.json()).then(c => {
                 document.getElementById('info-yape').textContent = c.numero_yape || 'No config';
                 document.getElementById('info-plin').textContent = c.numero_plin || 'No config';
