@@ -40,7 +40,7 @@ router.post('/tickets', (req, res) => {
             }
 
             // ⭐ SE ELIMINÓ EL BLOQUEO POR MONTO INCORRECTO ⭐
-            // Ahora cualquier ticket pasa a revisión manual, y tú decides en el admin.
+            // Ahora cualquier ticket pasa a revisión manual.
 
             // 3. Validar que no se repita la operación (si se logró leer)
             if (ocr.operacion) {
