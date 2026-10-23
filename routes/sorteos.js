@@ -12,6 +12,7 @@ router.post('/tickets', (req, res) => {
         if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
 
         try {
+            // 1. Validación visual (Colores y orientación)
             const validacion = await esComprobanteYape(req.file.buffer);
             if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
@@ -31,20 +32,17 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T23:59:59`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
+            // 2. Procesar OCR (Lectura de imagen)
             const ocr = await extraerDatosComprobante(req.file.buffer);
             
             if (ocr.error_ocr) {
                 console.warn("OCR falló, requiere revisión manual:", ocr.error_ocr);
-            } else if (ocr.monto !== null) {
-                const cantTickets = parseInt(cantidad) || 1;
-                const totalEsperado = sorteo.precio_ticket * cantTickets;
-                if (Math.abs(totalEsperado - ocr.monto) > 0.01) {
-                    return res.status(400).json({ 
-                        error: `El monto del comprobante (S/ ${ocr.monto.toFixed(2)}) no coincide con el total a pagar (S/ ${totalEsperado.toFixed(2)}).` 
-                    });
-                }
             }
 
+            // ⭐ SE ELIMINÓ EL BLOQUEO POR MONTO INCORRECTO ⭐
+            // Ahora cualquier ticket pasa a revisión manual, y tú decides en el admin.
+
+            // 3. Validar que no se repita la operación (si se logró leer)
             if (ocr.operacion) {
                 const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
                 const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
@@ -53,6 +51,7 @@ router.post('/tickets', (req, res) => {
                 }
             }
 
+            // 4. Guardar el ticket
             const cantTickets = parseInt(cantidad) || 1;
             const countRes = await db.execute({
                 sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?',
@@ -66,7 +65,7 @@ router.post('/tickets', (req, res) => {
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_monto, ocr_operacion)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
-                args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, cantTickets, base64Image, hash, ocr.monto, ocr.operacion]
+                args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, cantTickets, base64Image, hash, ocr.monto || null, ocr.operacion || null]
             });
 
             res.json({ 

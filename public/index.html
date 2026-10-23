@@ -816,6 +816,12 @@
                     btn.disabled = false; 
                     btn.innerHTML = 'Confirmar Compra';
                     progreso.style.display = 'none';
+                } finally {
+                    // ⭐ RESTAURAR EL BOTÓN POR SI ACASO
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Confirmar Compra';
+                    }
                 }
             });
 
