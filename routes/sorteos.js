@@ -32,34 +32,43 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T23:59:59`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
-            // 2. Procesar OCR
+            // 2. Procesar OCR (Lectura de imagen con IA)
             const ocr = await extraerDatosComprobante(req.file.buffer);
             if (ocr.error_ocr) console.warn("OCR falló:", ocr.error_ocr);
 
             // ⭐ 3. VALIDACIÓN DEL NOMBRE DEL TITULAR ⭐
-            if (ocr.destinatario) {
-                const nombreParaValidar = nombre.trim().toLowerCase();
-                const palabrasNombre = nombreParaValidar.split(' ').filter(p => p.length > 2);
-                const textoDestinatario = ocr.destinatario.toLowerCase();
-                
-                const nombreCoincide = palabrasNombre.some(palabra => textoDestinatario.includes(palabra));
+            // Buscamos el nombre configurado en el panel de admin
+            const configRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'nombre_titular'");
+            const nombreTitularConfigurado = configRes.rows[0] ? configRes.rows[0].valor.toLowerCase() : '';
 
-                if (!nombreCoincide) {
+            if (nombreTitularConfigurado) {
+                // Separamos el nombre en palabras clave (ignorando preposiciones de 2 letras o menos)
+                const palabrasClave = nombreTitularConfigurado.split(' ').filter(p => p.length > 2);
+                
+                // El texto donde buscaremos: lo que la IA leyó como destinatario o todo el texto
+                const textoLeido = `${ocr.destinatario || ''} ${ocr.texto_completo || ''}`.toLowerCase();
+                
+                // Verificamos si al menos una palabra clave del titular configurado aparece en la imagen
+                const coincide = palabrasClave.some(palabra => textoLeido.includes(palabra));
+
+                if (!coincide) {
                     return res.status(400).json({ 
-                        error: `El nombre ingresado ("${nombre}") no coincide con el destinatario del comprobante ("${ocr.destinatario}").` 
+                        error: `El comprobante no coincide con el titular configurado. Debe yapear a: "${configRes.rows[0].valor}".` 
                     });
                 }
             }
 
-            // 4. Validar duplicados
+            // ⭐ 4. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH) ⭐
             const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+            
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
             const ordenDup = await db.execute({ sql: 'SELECT id FROM ordenes WHERE hash_comprobante = ?', args: [hash] });
             
             if (ticketDup.rows.length > 0 || ordenDup.rows.length > 0) {
-                return res.status(400).json({ error: '⚠️ Esta imagen de comprobante ya fue utilizada.' });
+                return res.status(400).json({ error: '⚠️ Esta imagen de comprobante ya fue utilizada en otra compra.' });
             }
 
+            // Validar número de operación duplicado (si la IA lo leyó)
             if (ocr.operacion) {
                 const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
                 const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
@@ -68,7 +77,7 @@ router.post('/tickets', (req, res) => {
                 }
             }
 
-            // 5. Guardar el ticket (Sin validar monto)
+            // 5. Guardar el ticket (Sin validar el monto, para revisión manual)
             const cantTickets = parseInt(cantidad) || 1;
             const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
             const count = countRes.rows[0].c + 1;
