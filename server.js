@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { initDB } = require('./database');
 
+// ⭐ SOLUCIÓN AL ERROR "Do not know how to serialize a BigInt"
+// Le dice a Node.js cómo convertir automáticamente los BigInt a Number al enviar JSON
+BigInt.prototype.toJSON = function() { return Number(this); };
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -12,9 +16,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-// Middleware JWT (reemplaza express-session)
+// Middleware JWT
 app.use((req, res, next) => {
-    req.session = {}; // Simulamos session para mantener compatibilidad con el código existente
+    req.session = {}; 
     const token = req.cookies.token;
     if (token) {
         try {

@@ -56,7 +56,8 @@ router.post('/', async (req, res) => {
             args: [req.user.userId, 'CREAR_USUARIO', `Creó usuario: ${email} (${rol})`, req.ip, ahora]
         });
 
-        res.json({ success: true, id: result.lastInsertRowid });
+        // ⭐ CORRECCIÓN BIGINT
+        res.json({ success: true, id: Number(result.lastInsertRowid) });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
