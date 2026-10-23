@@ -46,18 +46,18 @@ router.post('/tickets', (req, res) => {
             console.log("⏳ Iniciando lectura de imagen (Tesseract Local)...");
             let textoImagen = "";
             try {
+                // Pre-procesamiento suavizado para no perder los asteriscos
                 const processedImage = await sharp(req.file.buffer)
-                    .resize(1200, null, { withoutEnlargement: true })
+                    .resize(1500, null, { withoutEnlargement: true })
                     .grayscale()
-                    .threshold(180)
-                    .toBuffer();
+                    .toBuffer(); // Ya no usamos threshold para no borrar los asteriscos
 
                 const worker = await createWorker('spa');
                 const { data: { text } } = await worker.recognize(processedImage);
                 await worker.terminate();
 
                 textoImagen = text;
-                console.log("Texto detectado:", textoImagen); // Esto te ayudará a depurar en Render
+                console.log("Texto detectado:", textoImagen); 
             } catch (ocrError) {
                 console.error("Error crítico en OCR Local:", ocrError);
                 return res.status(400).json({ error: 'No se pudo procesar la imagen. Asegúrate de subir una captura clara y recortada de Yape o Plin.' });
@@ -67,49 +67,69 @@ router.post('/tickets', (req, res) => {
             const cantTickets = parseInt(cantidad) || 1;
             const montoEsperado = sorteo.precio_ticket * cantTickets;
 
-            // ⭐ 3. VALIDACIÓN DE DESTINO (ÚLTIMOS 4 DÍGITOS DEL TELÉFONO) ⭐
-            const configYapeRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'numero_yape'");
-            const numeroYapeConfig = configYapeRes.rows[0] ? configYapeRes.rows[0].valor : '';
+            // ⭐ 3. VALIDACIÓN DEL TITULAR CONFIGURADO ⭐
+            const configTitularRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'nombre_titular'");
+            const nombreTitular = configTitularRes.rows[0] ? configTitularRes.rows[0].valor : '';
 
-            if (numeroYapeConfig) {
-                // Extraemos solo los números (ej: "993897939" -> "993897939")
-                const soloNumeros = numeroYapeConfig.replace(/\D/g, '');
-                // Tomamos los últimos 4 dígitos (ej: "7939")
-                const ultimos4Digitos = soloNumeros.slice(-4);
+            if (nombreTitular) {
+                const nombreLimpio = limpiarTexto(nombreTitular);
+                const palabras = nombreLimpio.split(' ').filter(p => p.length > 1);
+                
+                // Tomamos las primeras 3 letras del nombre y apellido
+                let prefijoNombre = palabras[0] ? palabras[0].substring(0, 3) : '';
+                let prefijoApellido = palabras[1] ? palabras[1].substring(0, 3) : '';
 
-                // Buscamos esos 4 dígitos en el texto limpio
-                if (!textoLimpio.includes(ultimos4Digitos)) {
+                let coincide = false;
+                if (prefijoNombre && textoLimpio.includes(prefijoNombre)) coincide = true;
+                if (prefijoApellido && textoLimpio.includes(prefijoApellido)) coincide = true;
+
+                if (!coincide) {
                     return res.status(400).json({ 
-                        error: `El comprobante no parece haber sido enviado a la cuenta correcta. Asegúrate de yapear al número configurado (termina en ${ultimos4Digitos}).` 
+                        error: `El comprobante no coincide con el titular configurado ("${nombreTitular}").` 
                     });
                 }
             }
 
-            // ⭐ 4. VALIDACIÓN DE MONTO ⭐
+            // ⭐ 4. VALIDACIÓN DEL NÚMERO (ÚLTIMOS 3 DÍGITOS) ⭐
+            // Yape muestra "*** *** 939". Al limpiar el texto, buscamos el "939"
+            const configYapeRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'numero_yape'");
+            const numeroYapeConfig = configYapeRes.rows[0] ? configYapeRes.rows[0].valor : '';
+
+            if (numeroYapeConfig) {
+                const soloNumeros = numeroYapeConfig.replace(/\D/g, '');
+                const ultimos3Digitos = soloNumeros.slice(-3); // "939"
+
+                // Buscamos "939" en el texto leído
+                if (!textoLimpio.includes(ultimos3Digitos)) {
+                    return res.status(400).json({ 
+                        error: `No se pudo verificar el número de destino en el comprobante.` 
+                    });
+                }
+            }
+
+            // ⭐ 5. VALIDACIÓN DE MONTO ⭐
             const montoStr = montoEsperado.toString();
             const montoConCeros = montoEsperado.toFixed(2).replace('.', '');
             const textoMontoLimpio = textoLimpio.replace(/,/g, '.');
             
-            const montoEncontrado = textoMontoLimpio.includes(montoStr) || textoMontoLimpio.includes(montoConCeros);
-
-            if (!montoEncontrado) {
+            if (!textoMontoLimpio.includes(montoStr) && !textoMontoLimpio.includes(montoConCeros)) {
                 return res.status(400).json({ 
-                    error: `El monto del comprobante no coincide con el total a pagar (S/ ${montoEsperado.toFixed(2)}). Verifica la imagen.` 
+                    error: `El monto del comprobante no coincide con el total a pagar (S/ ${montoEsperado.toFixed(2)}).` 
                 });
             }
 
-            // ⭐ 5. VALIDACIÓN DE FECHA (QUE SEA DEL DÍA DE HOY) ⭐
+            // ⭐ 6. VALIDACIÓN DE FECHA (QUE SEA DEL DÍA DE HOY) ⭐
             const hoy = new Date();
             const diaHoy = hoy.getDate().toString();
             const añoHoy = hoy.getFullYear().toString();
             
             if (!textoLimpio.includes(diaHoy) || !textoLimpio.includes(añoHoy)) {
                 return res.status(400).json({ 
-                    error: `La fecha del comprobante no parece ser de hoy. Asegúrate de subir el comprobante del pago reciente.` 
+                    error: `La fecha del comprobante no parece ser de hoy.` 
                 });
             }
 
-            // ⭐ 6. VALIDACIÓN DE NÚMERO DE OPERACIÓN ÚNICO ⭐
+            // ⭐ 7. VALIDACIÓN DE NÚMERO DE OPERACIÓN ÚNICO ⭐
             const matchOperacion = textoImagen.match(/\b\d{6,9}\b/g);
             let operacionDetectada = null;
 
@@ -128,7 +148,7 @@ router.post('/tickets', (req, res) => {
                 });
             }
 
-            // 7. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH DE IMAGEN)
+            // 8. VALIDACIÓN DE COMPROBANTE ÚNICO (HASH DE IMAGEN)
             const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
@@ -138,7 +158,7 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: '⚠️ Esta imagen de comprobante ya fue utilizada en otra compra.' });
             }
 
-            // 8. Guardar el ticket
+            // 9. Guardar el ticket
             const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
             const count = countRes.rows[0].c + 1;
             const numero = `S${sorteo.id}-${String(count).padStart(5, '0')}`;
