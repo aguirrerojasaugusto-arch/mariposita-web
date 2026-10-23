@@ -124,11 +124,7 @@
         .upload-title { color: #ffcc00; font-weight: 800; font-size: 0.9rem; }
         .btn-submit { width: 100%; padding: 0.9rem; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 10px; }
         
-        /* ⭐ ANIMACIÓN DE CARGA (SPINNER) */
-        .spinner { width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.3); border-radius: 50%; border-top-color: #000; animation: spin 1s ease-in-out infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .btn-submit:disabled { background: #e0e0e0; color: #888; cursor: not-allowed; }
-        .btn-submit:disabled .spinner { border-top-color: #888; }
 
         /* ⭐ ESTILOS DEL TICKET DE ÉXITO */
         .success-ticket-wrapper { text-align: center; padding: 1rem; color: #fff; }
@@ -184,8 +180,11 @@
     <!-- OVERLAY DE CARGA GLOBAL -->
     <div class="loader-overlay" id="loader-overlay">
         <div class="loader-spinner"></div>
-        <div class="loader-text">Validando tu pago...</div>
-        <div class="loader-subtext">Por favor, espera un momento mientras verificamos el comprobante.</div>
+        <div class="loader-text" id="loader-text">Validando tu pago...</div>
+        <div class="loader-subtext" id="loader-subtext">Por favor, espera un momento mientras verificamos el comprobante.</div>
+        <div id="loader-timer" style="margin-top: 15px; font-size: 0.85rem; color: #ffcc00; font-weight: bold;">
+            Tiempo de espera: 0s
+        </div>
     </div>
 
     <div class="header-sticky">
@@ -690,10 +689,29 @@
                 e.preventDefault(); 
                 const btn = document.getElementById('btn-comprar');
                 const loader = document.getElementById('loader-overlay');
+                const loaderText = document.getElementById('loader-text');
+                const loaderTimer = document.getElementById('loader-timer');
                 
                 // Mostrar overlay de carga
                 loader.style.display = 'flex';
                 btn.disabled = true; 
+
+                // ⭐ LÓGICA DEL TEMPORIZADOR Y MENSAJES ⭐
+                let segundos = 0;
+                loaderTimer.textContent = `Tiempo de espera: 0s`;
+                
+                const intervaloTiempo = setInterval(() => {
+                    segundos++;
+                    loaderTimer.textContent = `Tiempo de espera: ${segundos}s`;
+                    
+                    if (segundos === 4) loaderText.textContent = "Analizando formato de imagen...";
+                    if (segundos === 8) loaderText.textContent = "La IA está leyendo los datos...";
+                    if (segundos === 14) loaderText.textContent = "Verificando nombre y monto...";
+                    if (segundos === 20) {
+                        loaderText.textContent = "Casi listo...";
+                        document.getElementById('loader-subtext').textContent = "El servidor de Render puede tardar un poco más. Por favor, no cierres esta ventana.";
+                    }
+                }, 1000);
 
                 document.getElementById('nombre-input').disabled = false;
                 
@@ -754,6 +772,7 @@
                 } catch (error) {
                     alert("⚠️ Error: " + error.message); 
                 } finally {
+                    clearInterval(intervaloTiempo);
                     loader.style.display = 'none';
                     btn.disabled = false; 
                 }

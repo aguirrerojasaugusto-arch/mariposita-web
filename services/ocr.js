@@ -1,4 +1,6 @@
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+// Función para esperar
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function extraerDatosComprobante(fileBuffer) {
@@ -9,6 +11,7 @@ async function extraerDatosComprobante(fileBuffer) {
 
     try {
         const base64 = fileBuffer.toString('base64');
+        
         const prompt = `Analiza esta captura de pantalla de un pago móvil peruano (Yape o Plin).
 Devuelve EXCLUSIVAMENTE un objeto JSON válido con esta estructura exacta:
 {
@@ -26,36 +29,37 @@ Instrucciones ESTRICTAS:
 Si no puedes leer un dato, pon null. NO inventes datos.`;
 
         const body = {
-            model: "gemini-3.8-flash",
-            input: [
-                { type: "text", text: prompt },
-                { type: "image", data: base64, mime_type: "image/jpeg" }
-            ],
-            generation_config: { temperature: 0.1, max_output_tokens: 512 }
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    { inline_data: { mime_type: "image/jpeg", data: base64 } }
+                ]
+            }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 256 }
         };
 
         let resp;
         let intentos = 0;
         const maxIntentos = 3;
 
+        // Bucle para reintentar si el servidor está saturado (503)
         while (intentos < maxIntentos) {
-            resp = await fetch(GEMINI_URL, {
+            resp = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': process.env.GEMINI_API_KEY 
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
-            if (resp.ok) break;
+            if (resp.ok) break; // Si responde bien, salimos
+
+            // Si es error 503 (saturado), esperamos y reintentamos
             if (resp.status === 503) {
                 intentos++;
-                const espera = 2000 * intentos;
+                const espera = 1000 * intentos; // 1s, 2s, 3s...
                 console.warn(`⚠️ Gemini saturado. Reintentando en ${espera/1000}s... (Intento ${intentos}/${maxIntentos})`);
                 await sleep(espera);
             } else {
-                break;
+                break; // Si es otro error (400, 403, etc.), no reintentamos
             }
         }
 
@@ -68,13 +72,11 @@ Si no puedes leer un dato, pon null. NO inventes datos.`;
         const json = await resp.json();
         
         let texto = '';
-        if (json.steps && json.steps.length > 0) {
-            const lastStep = json.steps[json.steps.length - 1];
-            if (lastStep.content && lastStep.content.length > 0) {
-                texto = lastStep.content[0].text || '';
+        if (json.candidates && json.candidates.length > 0) {
+            const parts = json.candidates[0].content.parts;
+            if (parts && parts.length > 0) {
+                texto = parts[0].text || '';
             }
-        } else if (json.outputs && json.outputs.length > 0) {
-            texto = json.outputs[json.outputs.length - 1].text || '';
         }
         
         const limpio = texto.replace(/```json|```/g, '').trim();
