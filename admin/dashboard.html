@@ -7,28 +7,65 @@
 <style>
     /* ⭐ FONDO DE PANTALLA CON PAISAJE DE LA SIERRA ⭐ */
     body {
-        background: linear-gradient(rgba(11, 27, 43, 0.85), rgba(11, 27, 43, 0.85)), 
+        background: linear-gradient(rgba(11, 27, 43, 0.75), rgba(11, 27, 43, 0.75)), 
                     url('https://images.unsplash.com/photo-1580619305218-8423a7ef79b4?q=80&w=2070&auto=format&fit=crop') 
                     no-repeat center center fixed !important;
         background-size: cover !important;
         height: 100vh;
         margin: 0;
-        overflow: hidden; /* Evita el scroll en el body */
+        overflow: hidden;
     }
 
-    /* Hacemos que el fondo del layout sea transparente para que se vea la imagen */
     .admin-layout {
         background: transparent !important;
     }
 
-    /* El sidebar lo dejamos semi-transparente para que se lea bien */
+    /* ⭐ SIDEBAR ESTILO "GLASSMORPHISM" OSCURO PARA COMBINAR CON EL PAISAJE ⭐ */
     .sidebar {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(5px);
+        background: rgba(16, 33, 50, 0.85) !important; /* Azul oscuro profundo semitransparente */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
         height: 100vh;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.3);
     }
 
-    /* El contenedor principal también transparente */
+    /* Título del Sidebar (Mariposita) en blanco */
+    .sidebar h1 {
+        color: #ffffff !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Enlaces del menú en blanco/gris claro */
+    .sidebar a {
+        color: #cbd5e1 !important; 
+        border-radius: 8px;
+        margin-bottom: 0.2rem;
+        transition: all 0.3s;
+    }
+
+    /* Efecto Hover y Enlace Activo (Azul brillante para contrastar) */
+    .sidebar a:hover, 
+    .sidebar a.active {
+        background: rgba(0, 210, 255, 0.15) !important; /* Fondo celeste transparente */
+        color: #00d2ff !important; /* Letra celeste brillante */
+        border-left: 4px solid #00d2ff;
+        font-weight: 600;
+    }
+
+    /* Botón de cerrar sesión en color rojo suave */
+    .sidebar .logout {
+        color: #ff6b6b !important;
+    }
+    .sidebar .logout:hover {
+        background: rgba(255, 107, 107, 0.15) !important;
+        color: #ff4d4d !important;
+        border-left: 4px solid #ff4d4d;
+    }
+
+    /* Contenedor principal */
     .main {
         background: transparent !important;
         padding: 2rem 3rem;
@@ -36,24 +73,26 @@
         overflow-y: auto;
     }
 
-    /* Hacemos que las letras del título sean blancas para que resalten en el paisaje */
+    /* Título de bienvenida en blanco */
     .main h2 {
         color: #ffffff !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     }
 
-    /* Estilos de las tarjetas de estadísticas con un poco de transparencia */
+    /* Tarjetas de estadísticas con efecto de vidrio claro */
     .stat {
         background: rgba(255, 255, 255, 0.95) !important;
         backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        border: 1px solid rgba(255,255,255,0.5);
     }
 
-    /* El contenedor de acciones rápidas */
+    /* Contenedor de acciones rápidas */
     .card {
         background: rgba(255, 255, 255, 0.95) !important;
         backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        border: 1px solid rgba(255,255,255,0.5);
     }
 </style>
 </head>
@@ -97,7 +136,6 @@ async function checkAuth() {
     document.getElementById('nombre').textContent = d.nombre;
     document.getElementById('rol').textContent = d.rol;
 
-    // Ocultar menús según el rol
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';
