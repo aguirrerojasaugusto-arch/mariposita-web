@@ -57,7 +57,7 @@ router.post('/tickets', (req, res) => {
                 await worker.terminate();
 
                 textoImagen = text;
-                console.log("✅ Texto detectado en la imagen.");
+                console.log("Texto detectado:", textoImagen); // Esto te ayudará a depurar en Render
             } catch (ocrError) {
                 console.error("Error crítico en OCR Local:", ocrError);
                 return res.status(400).json({ error: 'No se pudo procesar la imagen. Asegúrate de subir una captura clara y recortada de Yape o Plin.' });
@@ -67,27 +67,27 @@ router.post('/tickets', (req, res) => {
             const cantTickets = parseInt(cantidad) || 1;
             const montoEsperado = sorteo.precio_ticket * cantTickets;
 
-            // ⭐ 3. VALIDACIÓN DE DESTINO (ÚLTIMOS 3 DÍGITOS DEL TELÉFONO) ⭐
+            // ⭐ 3. VALIDACIÓN DE DESTINO (ÚLTIMOS 4 DÍGITOS DEL TELÉFONO) ⭐
             const configYapeRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'numero_yape'");
             const numeroYapeConfig = configYapeRes.rows[0] ? configYapeRes.rows[0].valor : '';
 
             if (numeroYapeConfig) {
+                // Extraemos solo los números (ej: "993897939" -> "993897939")
                 const soloNumeros = numeroYapeConfig.replace(/\D/g, '');
-                const ultimos3Digitos = soloNumeros.slice(-3);
+                // Tomamos los últimos 4 dígitos (ej: "7939")
+                const ultimos4Digitos = soloNumeros.slice(-4);
 
-                if (!textoLimpio.includes(ultimos3Digitos)) {
+                // Buscamos esos 4 dígitos en el texto limpio
+                if (!textoLimpio.includes(ultimos4Digitos)) {
                     return res.status(400).json({ 
-                        error: `El comprobante no parece haber sido enviado a la cuenta correcta. Asegúrate de yapear al número configurado.` 
+                        error: `El comprobante no parece haber sido enviado a la cuenta correcta. Asegúrate de yapear al número configurado (termina en ${ultimos4Digitos}).` 
                     });
                 }
             }
 
             // ⭐ 4. VALIDACIÓN DE MONTO ⭐
-            // Buscamos números con o sin decimales que coincidan con el monto esperado
             const montoStr = montoEsperado.toString();
             const montoConCeros = montoEsperado.toFixed(2).replace('.', '');
-            
-            // Reemplazamos comas por puntos por si la IA lee "35,00"
             const textoMontoLimpio = textoLimpio.replace(/,/g, '.');
             
             const montoEncontrado = textoMontoLimpio.includes(montoStr) || textoMontoLimpio.includes(montoConCeros);
@@ -103,7 +103,6 @@ router.post('/tickets', (req, res) => {
             const diaHoy = hoy.getDate().toString();
             const añoHoy = hoy.getFullYear().toString();
             
-            // Verificamos si el texto contiene el día de hoy y el año
             if (!textoLimpio.includes(diaHoy) || !textoLimpio.includes(añoHoy)) {
                 return res.status(400).json({ 
                     error: `La fecha del comprobante no parece ser de hoy. Asegúrate de subir el comprobante del pago reciente.` 
