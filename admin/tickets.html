@@ -34,6 +34,54 @@
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
+
+    /* ⭐ ESTILOS PARA EL HOVER DE COMPROBANTE ⭐ */
+    .cliente-hover {
+        position: relative;
+        cursor: pointer;
+        display: inline-block;
+    }
+    .comprobante-hover {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 200px;
+        height: auto;
+        background: #fff;
+        border: 2px solid var(--color-primario);
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s;
+        pointer-events: none;
+    }
+    .cliente-hover:hover .comprobante-hover {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* ⭐ ESTILOS PARA ALERTAS EN LA TABLA ⭐ */
+    .badge-alerta {
+        background: #ffebee;
+        color: #c62828;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-top: 4px;
+    }
+    .alert-box {
+        background: #fff3e0;
+        border-left: 4px solid #ef6c00;
+        color: #e65100;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 5px;
+        font-size: 0.85rem;
+    }
 </style>
 </head>
 <body>
@@ -58,7 +106,7 @@
         </div>
         
         <div class="alert alert-info">
-            ⚠️ <strong>Recuerda:</strong> Abre tu app Yape y confirma que el monto del ticket esté en tu cuenta ANTES de aprobar.
+            ⚠️ <strong>Recuerda:</strong> Pasa el mouse sobre el nombre del cliente para ver la foto del comprobante. Confirma el monto en tu app Yape antes de aprobar.
         </div>
         
         <div id="lista"></div>
@@ -109,14 +157,22 @@ async function checkAuth() {
     cargar();
 }
 
-function ocrBox(t) {
-    const clase = t.alerta_ocr ? 'ocr-error' : (t.alerta_monto ? 'ocr-alerta' : '');
-    return `<div class="ocr-box ${clase}">
-        <strong>OCR:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : '❌ No leído'}<br>
-        <small>Op: ${t.ocr_operacion || '—'}</small>
-        ${t.alerta_monto ? '<div class="badge-alerta">⚠️ Monto no coincide</div>' : ''}
-        ${t.alerta_ocr ? '<div class="badge-alerta">⚠️ OCR falló</div>' : ''}
-    </div>`;
+// ⭐ LÓGICA DE ALERTAS Y HOVER ⭐
+function celdaCliente(t) {
+    // Si tiene alerta, mostramos el mensaje en rojo
+    const alertaHTML = t.notas_admin 
+        ? `<div class="alert-box" style="margin-top:5px; padding:4px 8px; font-size:0.75rem;">${t.notas_admin}</div>` 
+        : '';
+
+    return `
+        <div class="cliente-hover">
+            <strong>${t.cliente_nombre}</strong>
+            <br><small>DNI: ${t.cliente_dni || '—'}</small>
+            ${alertaHTML}
+            <!-- IMAGEN FLOTANTE AL PASAR EL MOUSE -->
+            ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="comprobante-hover">` : ''}
+        </div>
+    `;
 }
 
 async function cargar() {
@@ -156,20 +212,26 @@ function renderizarTabla() {
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
     cont.innerHTML = `<table>
-        <thead><tr><th>Ticket</th><th>Sorteo</th><th>Cliente</th><th>Cant.</th><th>OCR</th><th>Comprobante</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Ticket</th><th>Sorteo</th><th>Cliente (Pasa el mouse)</th><th>Cant.</th><th>Datos OCR</th><th>Acciones</th></tr></thead>
         <tbody>
         ${ticketsPagina.map((t) => {
             const indiceReal = todosLosTickets.findIndex(orig => orig.id === t.id);
             return `<tr>
                 <td><strong>${t.numero_ticket}</strong><br><small>${t.creado_en}</small></td>
                 <td>${t.sorteo_nombre}</td>
-                <td>${t.cliente_nombre}<br><small>DNI: ${t.cliente_dni || '—'}</small></td>
+                <td>${celdaCliente(t)}</td>
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
-                <td>${ocrBox(t)}</td>
-                <td><button class="btn-detalle" onclick="abrirModal(${indiceReal})">Ver Detalles</button></td>
                 <td>
+                    <div style="font-size:0.85rem;">
+                        <strong>Monto:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No leído'}<br>
+                        <strong>Op:</strong> ${t.ocr_operacion || '—'}
+                        ${t.alerta_monto ? `<br><span class="badge-alerta">⚠️ Monto no coincide</span>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <button class="btn-detalle" onclick="abrirModal(${indiceReal})" style="margin-bottom:5px;">Ver Detalles</button><br>
                     <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')">✅ Aprobar</button>
-                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>
+                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')">❌ Rechazar</button>
                 </td>
             </tr>`
         }).join('')}
@@ -184,10 +246,22 @@ function cambiarPagina(dir) {
     renderizarTabla();
 }
 
+// ⭐ MODAL DE DETALLES MEJORADO ⭐
 function abrirModal(index) {
     const t = todosLosTickets[index];
     document.getElementById('modal-title').textContent = `Ticket ${t.numero_ticket}`;
+    
+    // Bloque de alerta en el modal
+    const alertaModal = t.notas_admin 
+        ? `<div style="background:#ffebee; border-left:4px solid #c62828; padding:10px; border-radius:6px; margin-bottom:15px;">
+             <strong style="color:#c62828;">⚠️ Alerta del sistema:</strong><br>
+             <span style="color:#c62828; font-size:0.9rem;">${t.notas_admin}</span>
+           </div>` 
+        : '';
+
     document.getElementById('modal-body').innerHTML = `
+        ${alertaModal}
+        
         <h4>Datos del Cliente</h4>
         <p><strong>Nombre:</strong> ${t.cliente_nombre}</p>
         <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
@@ -195,12 +269,14 @@ function abrirModal(index) {
         <p><strong>Departamento:</strong> ${t.cliente_departamento || 'No registrado'}</p>
         <p><strong>Cantidad de Tickets:</strong> ${t.cantidad_tickets}</p>
         <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-        <h4 style="margin-top:1.5rem;">Comprobante</h4>
+        
+        <h4 style="margin-top:1.5rem;">Comprobante de Pago</h4>
         ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
+        
         <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
-            <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
+            <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos extraídos por el sistema</h4>
             <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No detectado'}</p>
-            <p style="font-size:0.85rem;"><strong>Operación:</strong> ${t.ocr_operacion || 'No detectada'}</p>
+            <p style="font-size:0.85rem;"><strong>Nro. de Operación:</strong> ${t.ocr_operacion || 'No detectado'}</p>
         </div>
     `;
     document.getElementById('modal-detalles').classList.add('active');
@@ -214,7 +290,7 @@ async function revisar(id, accion) {
         notas = prompt('Motivo del rechazo:');
         if (notas === null) return;
     } else {
-        if (!confirm('¿Ya verificaste en tu app Yape que el pago del ticket llegó?')) return;
+        if (!confirm('¿Ya verificaste en tu app Yape que el pago del ticket llegó a tu cuenta?')) return;
     }
     const r = await fetch(`/api/admin/tickets/${id}/revisar`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })

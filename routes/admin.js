@@ -29,7 +29,7 @@ router.get('/dashboard', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ============ CONFIGURACIÓN (solo admin) ============
+// ============ CONFIGURACIÓN ============
 router.get('/configuracion', requireAdmin, async (req, res) => {
     try {
         const result = await db.execute('SELECT clave, valor FROM configuracion');
@@ -138,10 +138,24 @@ router.post('/ordenes/:id/revisar', async (req, res) => {
 });
 
 // ============ TICKETS ============
+// ⭐ RUTA MODIFICADA PARA ENVIAR LAS ALERTAS Y NOTAS ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
-        const result = await db.execute(`SELECT t.*, s.nombre as sorteo_nombre, s.precio_ticket FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.estado_pago = 'pendiente' ORDER BY t.creado_en DESC`);
-        res.json(result.rows.map(t => ({ ...t, alerta_monto: t.ocr_monto !== null && Math.abs(t.precio_ticket - t.ocr_monto) > 0.01, alerta_ocr: !!t.ocr_error })));
+        const result = await db.execute(`
+            SELECT t.*, s.nombre as sorteo_nombre, s.precio_ticket 
+            FROM tickets t 
+            JOIN sorteos s ON s.id = t.sorteo_id 
+            WHERE t.estado_pago = 'pendiente' 
+            ORDER BY t.creado_en DESC
+        `);
+        
+        res.json(result.rows.map(t => ({ 
+            ...t, 
+            // Verificamos si el monto leído por el OCR difiere del precio del ticket
+            alerta_monto: t.ocr_monto !== null && Math.abs(t.precio_ticket - t.ocr_monto) > 0.01, 
+            alerta_ocr: !!t.ocr_error,
+            notas_admin: t.notas_admin // Enviamos explícitamente las notas para que el frontend las muestre
+        })));
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -159,7 +173,7 @@ router.post('/tickets/:id/revisar', async (req, res) => {
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
         await db.batch([
-            { sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || null, t.id] },
+            { sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || t.notas_admin || null, t.id] },
             { sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket ${t.numero_ticket}`, req.ip, ahora] }
         ], "write");
 
@@ -186,7 +200,6 @@ router.post('/productos', requireAdmin, (req, res) => {
                 sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`,
                 args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_path, categoria || 'ropa_tipica']
             });
-            // ⭐ CORRECCIÓN BIGINT
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -240,7 +253,6 @@ router.post('/sorteos', requireAdmin, (req, res) => {
                 sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?)`,
                 args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, estado || 'activo']
             });
-            // ⭐ CORRECCIÓN BIGINT
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
