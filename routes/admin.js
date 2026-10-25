@@ -59,7 +59,6 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             
-            // ⭐ SOPORTAMOS LOGO, FONDO Y FLYER ⭐
             let clave = 'logo_admin';
             if (tipo === 'fondo') clave = 'fondo_login';
             if (tipo === 'flyer') clave = 'flyer_inicio';
@@ -267,9 +266,18 @@ router.post('/productos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        // ⭐ CONVERTIMOS LA IMAGEN A BASE64 ⭐
+        let imagen_base64 = null;
+        if (req.file) {
+            imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
         try {
-            const r = await db.execute({ sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`, args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_path, categoria || 'ropa_tipica'] });
+            const r = await db.execute({ 
+                sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`, 
+                args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_base64, categoria || 'ropa_tipica'] 
+            });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -283,9 +291,17 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
             const pRes = await db.execute({ sql: 'SELECT * FROM productos WHERE id = ?', args: [req.params.id] });
             const p = pRes.rows[0];
             if (!p) return res.status(404).json({ error: 'No encontrado' });
-            let imagen_path = p.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
-            await db.execute({ sql: `UPDATE productos SET nombre=?, descripcion=?, precio=?, stock=?, imagen_base64=?, categoria=?, activo=? WHERE id=?`, args: [nombre || p.nombre, descripcion ?? p.descripcion, precio ? parseFloat(precio) : p.precio, stock !== undefined ? parseInt(stock) : p.stock, imagen_path, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id] });
+            
+            // ⭐ SI HAY NUEVA IMAGEN, LA CONVERTIMOS A BASE64. SI NO, MANTENEMOS LA ANTERIOR ⭐
+            let imagen_base64 = p.imagen_base64;
+            if (req.file) {
+                imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            }
+
+            await db.execute({ 
+                sql: `UPDATE productos SET nombre=?, descripcion=?, precio=?, stock=?, imagen_base64=?, categoria=?, activo=? WHERE id=?`, 
+                args: [nombre || p.nombre, descripcion ?? p.descripcion, precio ? parseFloat(precio) : p.precio, stock !== undefined ? parseInt(stock) : p.stock, imagen_base64, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id] 
+            });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -304,9 +320,18 @@ router.post('/sorteos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        // ⭐ CONVERTIMOS LA IMAGEN A BASE64 ⭐
+        let imagen_base64 = null;
+        if (req.file) {
+            imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
         try {
-            const r = await db.execute({ sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`, args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, hora_sorteo || '23:59', estado || 'activo'] });
+            const r = await db.execute({ 
+                sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_base64, fecha_sorteo, hora_sorteo || '23:59', estado || 'activo'] 
+            });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -320,9 +345,17 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             const sRes = await db.execute({ sql: 'SELECT * FROM sorteos WHERE id = ?', args: [req.params.id] });
             const sorteo = sRes.rows[0];
             if (!sorteo) return res.status(404).json({ error: 'No encontrado' });
-            let imagen_path = sorteo.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
-            await db.execute({ sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`, args: [nombre || sorteo.nombre, descripcion ?? sorteo.descripcion, precio_ticket ? parseFloat(precio_ticket) : sorteo.precio_ticket, imagen_path, fecha_sorteo || sorteo.fecha_sorteo, hora_sorteo || sorteo.hora_sorteo, estado || sorteo.estado, sorteo.id] });
+            
+            // ⭐ SI HAY NUEVA IMAGEN, LA CONVERTIMOS A BASE64. SI NO, MANTENEMOS LA ANTERIOR ⭐
+            let imagen_base64 = sorteo.imagen_base64;
+            if (req.file) {
+                imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            }
+
+            await db.execute({ 
+                sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`, 
+                args: [nombre || sorteo.nombre, descripcion ?? sorteo.descripcion, precio_ticket ? parseFloat(precio_ticket) : sorteo.precio_ticket, imagen_base64, fecha_sorteo || sorteo.fecha_sorteo, hora_sorteo || sorteo.hora_sorteo, estado || sorteo.estado, sorteo.id] 
+            });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -330,7 +363,6 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
 
 router.delete('/sorteos/:id', requireAdmin, async (req, res) => {
     try { 
-        // Al eliminar el sorteo, eliminamos primero los tickets asociados para no romper la llave foránea
         await db.execute({ sql: 'DELETE FROM tickets WHERE sorteo_id = ?', args: [req.params.id] });
         await db.execute({ sql: 'DELETE FROM sorteos WHERE id = ?', args: [req.params.id] }); 
         res.json({ success: true }); 
@@ -339,5 +371,4 @@ router.delete('/sorteos/:id', requireAdmin, async (req, res) => {
     }
 });
 
-// ⭐ EXPORTACIÓN DEL ROUTER (Obligatorio al final del archivo) ⭐
 module.exports = router;
