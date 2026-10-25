@@ -23,28 +23,44 @@
         .header-search button:hover { opacity: 0.8; }
 
         /* --- HERO CON FONDO DINÁMICO --- */
-        .hero-nuevo { background: #03131d; padding: 4rem 5%; position: relative; display: flex; justify-content: flex-start; align-items: center; min-height: 500px; overflow: hidden; }
+        .hero-nuevo { background: #03131d; padding: 4rem 5%; position: relative; display: flex; justify-content: flex-start; align-items: center; min-height: 550px; overflow: hidden; }
         .hero-bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         .hero-bg-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
         .hero-bg-slide.active { opacity: 1; }
         .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(3, 19, 29, 0.85) 0%, rgba(3, 19, 29, 0.1) 100%); z-index: 2; }
         
-        .hero-nuevo-container { position: relative; z-index: 3; display: flex; align-items: stretch; background: rgba(17, 34, 64, 0.85); backdrop-filter: blur(12px); border: 2px solid var(--accent-cyan); border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); max-width: 480px; width: 100%; height: 230px; padding: 1.2rem; gap: 1rem; overflow: hidden; }
-        .hero-imagen-container { flex: 0 0 150px; height: 100%; border-radius: 8px; overflow: hidden; background: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        /* ⭐ CONTENEDOR MÁS ALTO Y ESPACIOSO ⭐ */
+        .hero-nuevo-container { 
+            position: relative; z-index: 3; 
+            display: flex; align-items: stretch; 
+            background: rgba(17, 34, 64, 0.85); 
+            backdrop-filter: blur(12px); 
+            border: 2px solid var(--accent-cyan); 
+            border-radius: 16px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
+            max-width: 480px; 
+            width: 100%; 
+            height: 260px; /* Aumentado de 220px a 260px */
+            padding: 1.2rem; 
+            gap: 1rem; 
+            overflow: hidden; 
+        }
+        
+        .hero-imagen-container { flex: 0 0 160px; height: 100%; border-radius: 8px; overflow: hidden; background: #fff; border: 1px solid rgba(255,255,255,0.2); }
         .hero-imagen-container img { width: 100%; height: 100%; object-fit: cover; }
+        
         .hero-info { flex: 1; color: #fff; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         
-        /* ⭐ CORRECCIÓN DEL TÍTULO DEL SORTEO ⭐ */
+        /* ⭐ TÍTULO AJUSTADO PARA 2 LÍNEAS PERFECTAS ⭐ */
         .hero-titulo-fijo { 
-            font-size: 1.9rem; 
-            line-height: 1.2; 
-            height: 4.5rem; 
+            font-size: 1.8rem; /* Ligeramente más pequeño para encajar */
+            line-height: 1.3; 
+            height: 4.7rem; /* Altura exacta para 2 líneas */
             overflow: hidden; 
             display: -webkit-box; 
             -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical; 
-            margin-bottom: 0.5rem;
-            padding-bottom: 2px; /* Evita que las letras choquen con el borde */
+            margin-bottom: 0.3rem;
         }
         
         .hero-desc-fija { font-size: 0.95rem; color: #ccc; height: 2.8rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0; }
