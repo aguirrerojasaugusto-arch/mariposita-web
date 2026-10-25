@@ -53,8 +53,8 @@
             <div style="display: flex; gap: 1rem;">
                 <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
                 
-                <!-- ⭐ BOTÓN PARA IR A LA VISTA DE IMPRESIÓN ⭐ -->
-                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.location.href='/admin/imprimir_tickets.html'">
+                <!-- ⭐ BOTÓN PARA IMPRIMIR EN NUEVA PESTAÑA ⭐ -->
+                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">
                     🖨️ Imprimir Tickets
                 </button>
 
