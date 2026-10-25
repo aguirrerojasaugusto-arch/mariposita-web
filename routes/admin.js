@@ -11,13 +11,10 @@ router.use(requireVendedor);
 const storageMemory = multer.memoryStorage();
 const uploadConfig = multer({ storage: storageMemory, limits: { fileSize: 10 * 1024 * 1024 } }).single('imagen');
 
+// ⭐ FUNCIÓN MODIFICADA: GENERAR NÚMEROS ALEATORIOS DE 5 DÍGITOS (Desde 10000) ⭐
 function generarCodigoTicket() {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let resultado = '';
-    for (let i = 0; i < 6; i++) {
-        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    return `TKT-${resultado}`;
+    // Genera un número entero entre 10000 y 99999
+    return Math.floor(10000 + Math.random() * 90000).toString();
 }
 
 // ============ DASHBOARD ============
