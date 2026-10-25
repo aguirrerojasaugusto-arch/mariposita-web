@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><title>Consultar Estado · Mariposita</title>
+<meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
     .search-container {
-        max-width: 800px; margin: 0 auto; background: #fff;
-        padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 800px; 
+        margin: 2rem auto; 
+        background: rgba(255, 255, 255, 0.95);
+        padding: 3rem; 
+        border-radius: 12px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         text-align: center;
+        backdrop-filter: blur(10px);
     }
-    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; }
-    .search-subtitle { color: #666; margin-bottom: 2rem; }
+    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; font-weight: 800; }
+    .search-subtitle { color: #555; margin-bottom: 2rem; font-size: 1rem; }
     
     .search-input-group {
         display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;
@@ -25,7 +30,7 @@
         border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer;
         font-weight: bold; transition: background 0.3s;
     }
-    .search-input-group button:hover { background: #5a1a24; }
+    .search-input-group button:hover { background: #005f8f; }
 
     /* Resultados */
     .resultado-card {
@@ -52,15 +57,16 @@
         <a href="/admin/dashboard.html">📊 Dashboard</a>
         <a href="/admin/ordenes.html">📦 Órdenes</a>
         <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html">👗 Productos</a>
-        <a href="/admin/sorteos.html">🎰 Sorteos</a>
-        <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
         <a href="/admin/buscar.html" class="active">🔍 Consultar Estado</a>
-        <a href="/admin/configuracion.html">⚙️ Configuración</a>
+        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
     
-    <main class="main" style="background: #f4f1ec;">
+    <main class="main">
         <div class="search-container">
             <h2 class="search-title">Consultar mi Pedido</h2>
             <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
@@ -76,8 +82,31 @@
 </div>
 
 <script>
+// ⭐ FUNCIÓN PARA VERIFICAR EL ROL Y OCULTAR MENÚS ⭐
+async function checkAuth() {
+    try {
+        const r = await fetch('/api/auth/me');
+        const d = await r.json();
+        
+        if (!d.logged) {
+            return location.href = '/admin/login.html';
+        }
+        
+        // Si es vendedor, ocultar las opciones de administrador
+        if (d.rol !== 'admin') {
+            document.getElementById('nav-productos').style.display = 'none';
+            document.getElementById('nav-sorteos').style.display = 'none';
+            document.getElementById('nav-carrusel').style.display = 'none';
+            document.getElementById('nav-usuarios').style.display = 'none';
+            document.getElementById('nav-config').style.display = 'none';
+        }
+    } catch (e) {
+        location.href = '/admin/login.html';
+    }
+}
+
 async function logout() {
-    await fetch('/api/auth/admin/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST' });
     location.href = '/admin/login.html';
 }
 
@@ -86,18 +115,18 @@ async function buscar() {
     const cont = document.getElementById('resultados');
 
     if (!query) {
-        cont.innerHTML = '<p style="color:red;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa tu DNI o Teléfono.</p>';
         return;
     }
 
-    cont.innerHTML = '<p>Buscando en la base de datos...</p>';
+    cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold;">Buscando en la base de datos...</p>';
 
     try {
         const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
         const data = await res.json();
 
         if (!data.ordenes.length && !data.tickets.length) {
-            cont.innerHTML = '<div class="alert alert-info">No se encontraron compras registradas con ese número.</div>';
+            cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px;">No se encontraron compras ni tickets registrados con ese número.</div>';
             return;
         }
 
@@ -105,7 +134,7 @@ async function buscar() {
 
         // Mostrar Órdenes de Ropa
         if (data.ordenes.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem;">Tus Compras de Ropa</h3>';
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
             data.ordenes.forEach(o => {
                 const estadoClass = `estado-${o.estado}`;
                 html += `
@@ -117,7 +146,7 @@ async function buscar() {
                         <p><strong>Fecha:</strong> ${o.creado_en}</p>
                         <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
                         <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
-                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
+                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
@@ -125,18 +154,18 @@ async function buscar() {
 
         // Mostrar Tickets de Sorteo
         if (data.tickets.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem;">Tus Tickets de Sorteo</h3>';
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             data.tickets.forEach(t => {
                 const estadoClass = `estado-${t.estado_pago}`;
                 html += `
-                    <div class="resultado-card">
+                    <div class="resultado-card" style="border-left-color: #ff9800;">
                         <div class="resultado-header">
                             <strong>Ticket: ${t.numero_ticket}</strong>
                             <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
                         </div>
                         <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                         <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
+                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
@@ -145,9 +174,12 @@ async function buscar() {
         cont.innerHTML = html;
 
     } catch (error) {
-        cont.innerHTML = '<p style="color:red;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
 }
+
+// Ejecutar la verificación de roles al cargar la página
+checkAuth();
 </script>
 </body>
 </html>
