@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Imprimir Tickets · Admin</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .no-print {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #0077b6;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .btn:hover { background: #005f8f; }
+
+        /* Configuración de la hoja A4 */
+        .hoja-a4 {
+            width: 210mm;
+            height: 297mm;
+            background: #fff;
+            padding: 10mm;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 columnas */
+            grid-template-rows: repeat(4, 1fr); /* 4 filas */
+            gap: 5mm;
+        }
+
+        /* Diseño del Ticket */
+        .ticket {
+            background-color: #FDF8F0;
+            border-radius: 10px;
+            border: 1px dashed #ccc;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .ticket::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(#e0d6c8 1px, transparent 1px);
+            background-size: 15px 15px;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        .ticket-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .ticket-numero {
+            background-color: #1B1464;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 900;
+            padding: 5px 10px;
+            border-radius: 8px;
+            letter-spacing: 1px;
+        }
+
+        .ticket-logo {
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: #4B2C20;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .ticket-logo span { color: #C0392B; }
+
+        .ticket-body {
+            text-align: center;
+            margin: 5px 0;
+        }
+
+        .ticket-evento {
+            font-size: 12px;
+            color: #1B1464;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .ticket-datos {
+            background: rgba(255,255,255,0.7);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #E5D9C5;
+            margin-bottom: 5px;
+        }
+
+        .ticket-datos h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #1B1464;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ticket-datos p {
+            margin: 2px 0 0 0;
+            font-size: 14px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .ticket-footer {
+            font-size: 9px;
+            text-align: center;
+            color: #666;
+            border-top: 1px dashed #ccc;
+            padding-top: 5px;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; margin: 0; }
+            .no-print { display: none; }
+            .hoja-a4 { box-shadow: none; border: none; width: 100%; height: 100vh; page-break-after: always; }
+            .ticket { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button class="btn" onclick="window.print()">🖨️ Imprimir Hoja Actual</button>
+        <button class="btn" onclick="window.location.href='/admin/tickets.html'" style="background:#555;">Volver a Tickets</button>
+    </div>
+
+    <div id="contenedor-hojas"></div>
+
+    <script>
+        async function cargarEImprimir() {
+            try {
+                const res = await fetch('/api/admin/tickets/aprobados');
+                const tickets = await res.json();
+
+                if (tickets.length === 0) {
+                    alert('No hay tickets aprobados para imprimir.');
+                    return;
+                }
+
+                const contenedor = document.getElementById('contenedor-hojas');
+                const tamañoPagina = 8;
+
+                for (let i = 0; i < tickets.length; i += tamañoPagina) {
+                    const paginaTickets = tickets.slice(i, i + tamañoPagina);
+                    const hoja = document.createElement('div');
+                    hoja.className = 'hoja-a4';
+
+                    paginaTickets.forEach(t => {
+                        const ticketDiv = document.createElement('div');
+                        ticketDiv.className = 'ticket';
+                        
+                        const codigoCorto = t.numero_ticket.replace('TKT-', '');
+
+                        ticketDiv.innerHTML = `
+                            <div class="ticket-content">
+                                <div class="ticket-header">
+                                    <div class="ticket-numero">#${codigoCorto}</div>
+                                    <div class="ticket-logo">
+                                        Rifa de<br><span>Reyes</span>
+                                    </div>
+                                </div>
+                                <div class="ticket-body">
+                                    <div class="ticket-evento">${t.sorteo_nombre}</div>
+                                    <div class="ticket-datos">
+                                        <h3>${t.cliente_nombre}</h3>
+                                        <p>📞 ${t.cliente_telefono || 'Sin teléfono'}</p>
+                                    </div>
+                                </div>
+                                <div class="ticket-footer">
+                                    ¡Participa y gana! Sorteo en Vivo.
+                                </div>
+                            </div>
+                        `;
+                        hoja.appendChild(ticketDiv);
+                    });
+
+                    const faltantes = tamañoPagina - paginaTickets.length;
+                    for (let j = 0; j < faltantes; j++) {
+                        const ticketVacio = document.createElement('div');
+                        ticketVacio.className = 'ticket';
+                        ticketVacio.style.opacity = '0.2';
+                        hoja.appendChild(ticketVacio);
+                    }
+
+                    contenedor.appendChild(hoja);
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert('Error al cargar los tickets.');
+            }
+        }
+
+        cargarEImprimir();
+    </script>
+</body>
+</html>

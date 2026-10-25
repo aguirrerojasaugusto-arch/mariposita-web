@@ -52,6 +52,12 @@
             <h2 style="margin:0;">Tickets pendientes</h2>
             <div style="display: flex; gap: 1rem;">
                 <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
+                
+                <!-- ⭐ BOTÓN PARA IR A LA VISTA DE IMPRESIÓN ⭐ -->
+                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.location.href='/admin/imprimir_tickets.html'">
+                    🖨️ Imprimir Tickets
+                </button>
+
                 <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
             </div>
         </div>
@@ -272,7 +278,7 @@ function renderizarTabla() {
                 <th>Ticket</th>
                 <th>Sorteo</th>
                 <th>Cliente (Pasa el mouse)</th>
-                <th>Teléfono</th> <!-- ⭐ NUEVA COLUMNA ⭐ -->
+                <th>Teléfono</th>
                 <th>Cant.</th>
                 <th>Costo Ticket</th>
                 <th>Datos OCR</th>
@@ -285,7 +291,7 @@ function renderizarTabla() {
                 <td><strong>${t.numero_ticket}</strong><br><small>${t.creado_en}</small></td>
                 <td>${t.sorteo_nombre}</td>
                 <td>${celdaCliente(t)}</td>
-                <td>${t.cliente_telefono || '—'}</td> <!-- ⭐ DATO DEL TELÉFONO ⭐ -->
+                <td>${t.cliente_telefono || '—'}</td>
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
                 <td><strong>S/ ${t.precio_ticket ? t.precio_ticket.toFixed(2) : '0.00'}</strong></td>
                 <td>
@@ -358,7 +364,7 @@ async function revisar(id, accion) {
     if (r.ok) { alert('Ticket ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
 }
 
-// ⭐ LÓGICA DE VENTA PRESENCIAL (CON BÚSQUEDA POR DNI) ⭐
+// LÓGICA DE VENTA PRESENCIAL
 async function abrirModalVentaPresencial() {
     const select = document.getElementById('vp-sorteo');
     select.innerHTML = '<option value="">Cargando...</option>';
@@ -379,7 +385,6 @@ async function abrirModalVentaPresencial() {
 
 function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
 
-// ⭐ BÚSQUEDA AUTOMÁTICA POR DNI ⭐
 document.getElementById('vp-dni').addEventListener('input', async function(e) {
     const dni = e.target.value;
     if (dni.length === 8) {

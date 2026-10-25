@@ -128,6 +128,20 @@ router.get('/tickets/pendientes', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ NUEVA RUTA: TICKETS APROBADOS PARA IMPRIMIR ⭐
+router.get('/tickets/aprobados', async (req, res) => {
+    try {
+        const result = await db.execute(`
+            SELECT t.*, s.nombre as sorteo_nombre 
+            FROM tickets t 
+            JOIN sorteos s ON s.id = t.sorteo_id 
+            WHERE t.estado_pago = 'aprobado' 
+            ORDER BY t.creado_en DESC
+        `);
+        res.json(result.rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 router.post('/tickets/:id/revisar', async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -162,7 +176,6 @@ router.post('/tickets/vender', async (req, res) => {
 
         const cantTickets = parseInt(cantidad) || 1;
         
-        // ⭐ GENERAMOS EL CÓDIGO ALEATORIO ⭐
         let numero;
         let isUnique = false;
         while (!isUnique) {
