@@ -110,10 +110,54 @@
         .resultado-content, .sorteos-content, .ticket-content { background: #112240; border-radius: 12px; border: 1px solid var(--accent-cyan); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; position: relative; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .resultado-content { width: 90%; max-width: 700px; max-height: 85vh; }
-        .resultado-header, .sorteos-header, .ticket-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: #1a365d; }
+        
+        /* ⭐ ENCABEZADO DEL MODAL RESULTADOS ⭐ */
+        .resultado-header, .sorteos-header, .ticket-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: #1a365d; border-top-left-radius: 12px; border-top-right-radius: 12px; flex-shrink: 0; }
         .resultado-header h2, .sorteos-header h2, .ticket-header h2 { color: #fff; margin: 0; font-size: 1.5rem; }
         .resultado-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+        
+        /* ⭐ CUERPO CON SCROLL INTERNO ⭐ */
         .resultado-body, .sorteos-body, .ticket-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
+
+        /* ⭐ ESTILOS DEL RESUMEN FIJO (NUEVO) ⭐ */
+        .resumen-cliente-fijo {
+            background: rgba(13, 37, 63, 0.95);
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            flex-shrink: 0; /* Evita que se encoja o desplace */
+            border-bottom: 1px solid rgba(0, 210, 255, 0.2);
+        }
+        .resumen-cliente-fijo .info h4 {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .resumen-cliente-fijo .info h3 {
+            margin: 3px 0 0 0;
+            font-size: 1.2rem;
+            color: #00d2ff;
+        }
+        .resumen-cliente-fijo .total-box-resumen {
+            text-align: right;
+        }
+        .resumen-cliente-fijo .total-box-resumen h4 {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .resumen-cliente-fijo .total-box-resumen h2 {
+            margin: 3px 0 0 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffcc00;
+        }
 
         /* Sorteos */
         .sorteos-content { width: 100%; max-width: 660px; max-height: 85vh; }
@@ -362,9 +406,27 @@
         </svg>
     </a>
 
+    <!-- ⭐ MODAL DE RESULTADOS CON ENCABEZADO FIJO ⭐ -->
     <div class="resultado-overlay" id="resultado-overlay">
         <div class="resultado-content">
-            <div class="resultado-header"><h2>Resultados</h2><button class="resultado-close" onclick="cerrarResultado()">✕</button></div>
+            <div class="resultado-header">
+                <h2>Resultados</h2>
+                <button class="resultado-close" onclick="cerrarResultado()">✕</button>
+            </div>
+            
+            <!-- ⭐ AQUÍ VA EL RESUMEN FIJO (NOMBRE Y TOTAL) ⭐ -->
+            <div class="resumen-cliente-fijo" id="resumen-cliente-fijo" style="display: none;">
+                <div class="info">
+                    <h4>Participante</h4>
+                    <h3 id="resumen-nombre-cliente">-</h3>
+                </div>
+                <div class="total-box-resumen">
+                    <h4>Total Tickets</h4>
+                    <h2 id="resumen-total-tickets">0</h2>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR CON SCROLL PARA LOS TICKETS -->
             <div class="resultado-body" id="resultado-body"></div>
         </div>
     </div>
@@ -1006,7 +1068,14 @@
             }
 
             const body = document.getElementById('resultado-body');
-            body.innerHTML = '<p style="color:#00d2ff; text-align:center;">Buscando en la base de datos...</p>';
+            const resumenBox = document.getElementById('resumen-cliente-fijo');
+            const resumenNombre = document.getElementById('resumen-nombre-cliente');
+            const resumenTotal = document.getElementById('resumen-total-tickets');
+
+            // Ocultar resumen y limpiar buscador visual
+            resumenBox.style.display = 'none';
+            body.innerHTML = '<p style="color:#00d2ff; text-align:center; padding-top:2rem;">Buscando en la base de datos...</p>';
+            
             document.getElementById('resultado-overlay').classList.add('active');
             bloquearScroll();
 
@@ -1029,6 +1098,14 @@
                         </div>
                     `;
                     return;
+                }
+
+                // ⭐ ACTUALIZAMOS EL RESUMEN FIJO ⭐
+                if (data.tickets.length > 0) {
+                    const primerTicket = data.tickets[0];
+                    resumenNombre.textContent = primerTicket.cliente_nombre;
+                    resumenTotal.textContent = data.tickets.length;
+                    resumenBox.style.display = 'flex';
                 }
 
                 let html = '';
@@ -1068,16 +1145,19 @@
                 }
                 
                 body.innerHTML = html;
+                body.scrollTop = 0; // Reiniciar scroll al principio
 
             } catch (error) {
                 console.error("Error al buscar:", error);
-                body.innerHTML = '<p style="color:#ff4d4d; text-align:center;">Error al conectar con el servidor. Intenta más tarde.</p>';
+                body.innerHTML = '<p style="color:#ff4d4d; text-align:center; padding-top:2rem;">Error al conectar con el servidor. Intenta más tarde.</p>';
             }
         }
 
         function cerrarResultado() {
             document.getElementById('resultado-overlay').classList.remove('active');
             document.getElementById('input-dni').value = '';
+            document.getElementById('resumen-cliente-fijo').style.display = 'none'; // Ocultar resumen al cerrar
+            document.getElementById('resultado-body').innerHTML = ''; // Limpiar el cuerpo
             
             if(!document.getElementById('ticket-modal').classList.contains('active') && !document.getElementById('sorteos-modal').classList.contains('active')) {
                 desbloquearScroll();
