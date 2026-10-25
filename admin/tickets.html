@@ -97,7 +97,8 @@
             <form id="form-venta-presencial">
                 <div class="form-group">
                     <label>Sorteo *</label>
-                    <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                    <!-- ⭐ AGREGADO ONCHANGE PARA CALCULAR EL TOTAL ⭐ -->
+                    <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
                         <option value="">Cargando sorteos...</option>
                     </select>
                 </div>
@@ -148,10 +149,19 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Cantidad de Tickets *</label>
-                    <input type="number" id="vp-cantidad" min="1" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Cantidad de Tickets *</label>
+                        <!-- ⭐ AGREGADO ONINPUT PARA CALCULAR EL TOTAL ⭐ -->
+                        <input type="number" id="vp-cantidad" min="1" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" oninput="calcularTotalVenta()">
+                    </div>
+                    <!-- ⭐ NUEVO CAMPO DE TOTAL A PAGAR ⭐ -->
+                    <div class="form-group">
+                        <label>Total a Pagar (S/)</label>
+                        <input type="text" id="vp-total-pagar" readonly value="0.00" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background-color: #e9ecef; font-weight: bold; color: #2e7d32; font-size: 1.1rem;">
+                    </div>
                 </div>
+
                 <button type="submit" class="btn btn-aprobar" style="width: 100%; padding: 1rem; margin-top: 1rem;" id="btn-vender">Registrar Venta</button>
             </form>
         </div>
@@ -390,10 +400,12 @@ async function abrirModalVentaPresencial() {
         const res = await fetch('/api/sorteos');
         const sorteos = await res.json();
         
+        // ⭐ GUARDAMOS EL PRECIO EN UN ATRIBUTO DATA-PRECIO ⭐
         select.innerHTML = '<option value="">Selecciona un sorteo</option>' + 
-            sorteos.map(s => `<option value="${s.id}">${s.nombre} (S/ ${s.precio_ticket.toFixed(2)})</option>`).join('');
+            sorteos.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket.toFixed(2)})</option>`).join('');
             
         document.getElementById('form-venta-presencial').reset();
+        document.getElementById('vp-total-pagar').value = '0.00'; // Reiniciar total
         document.getElementById('modal-venta-presencial').classList.add('active');
     } catch (e) {
         alert('Error al cargar los sorteos');
@@ -402,11 +414,28 @@ async function abrirModalVentaPresencial() {
 
 function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
 
+// ⭐ FUNCIÓN PARA CALCULAR EL TOTAL A PAGAR ⭐
+function calcularTotalVenta() {
+    const selectSorteo = document.getElementById('vp-sorteo');
+    const cantidad = parseInt(document.getElementById('vp-cantidad').value) || 1;
+    
+    // Obtener el precio de la opción seleccionada
+    const opcionSeleccionada = selectSorteo.options[selectSorteo.selectedIndex];
+    const precio = opcionSeleccionada ? parseFloat(opcionSeleccionada.getAttribute('data-precio')) : 0;
+    
+    const total = precio * cantidad;
+    
+    // Mostrar el total formateado
+    document.getElementById('vp-total-pagar').value = total.toFixed(2);
+}
+
+// ⭐ AUTOCOMPLETAR DATOS POR DNI (AHORA INCLUYE DEPARTAMENTO) ⭐
 document.getElementById('vp-dni').addEventListener('input', async function(e) {
     const dni = e.target.value;
     if (dni.length === 8) {
         const inputNombre = document.getElementById('vp-nombre');
         const inputTelefono = document.getElementById('vp-telefono');
+        const selectDepartamento = document.getElementById('vp-departamento');
         
         inputNombre.value = 'Buscando...';
         try {
@@ -415,6 +444,11 @@ document.getElementById('vp-dni').addEventListener('input', async function(e) {
             if (data.encontrado) {
                 inputNombre.value = data.cliente.nombre;
                 if (data.cliente.telefono) inputTelefono.value = data.cliente.telefono;
+                
+                // ⭐ RELLENAR DEPARTAMENTO SI EXISTE ⭐
+                if (data.cliente.departamento) {
+                    selectDepartamento.value = data.cliente.departamento;
+                }
             } else {
                 inputNombre.value = '';
                 inputNombre.placeholder = 'Escribe el nombre';
