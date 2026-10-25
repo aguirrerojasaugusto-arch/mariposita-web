@@ -375,7 +375,6 @@
     <!-- ⭐ FOOTER (PIE DE PÁGINA) ⭐ -->
     <footer class="footer-principal">
         <div class="footer-contenido">
-            <!-- Columna 1: Sobre Nosotros -->
             <div class="footer-col">
                 <h3>🦋 Artesanía Mariposita</h3>
                 <p>Llevamos el arte y la tradición de la sierra peruana a tu hogar. Prendas bordadas a mano con dedicación y amor por nuestras raíces.</p>
@@ -386,7 +385,6 @@
                 </div>
             </div>
 
-            <!-- Columna 2: Enlaces Rápidos -->
             <div class="footer-col">
                 <h3>Enlaces Rápidos</h3>
                 <ul>
@@ -397,7 +395,6 @@
                 </ul>
             </div>
 
-            <!-- Columna 3: Contacto -->
             <div class="footer-col">
                 <h3>Contáctanos</h3>
                 <p><strong>📞 Teléfono:</strong> <span id="footer-telefono">(0125) 456 78 90</span></p>
@@ -440,12 +437,10 @@
                     document.getElementById('logo-header').innerHTML = `<img src="${config.logo_admin}" class="logo-img-dinamico">`;
                 }
 
-                // Actualizar Barra Superior
                 if (config.telefono_contacto) document.getElementById('top-telefono').textContent = `📞 ${config.telefono_contacto}`;
                 if (config.email_contacto) document.getElementById('top-email').textContent = `✉️ ${config.email_contacto}`;
                 if (config.ubicacion) document.getElementById('top-ubicacion').textContent = `📍 ${config.ubicacion}`;
 
-                // ⭐ Actualizar Footer ⭐
                 if (config.telefono_contacto) document.getElementById('footer-telefono').textContent = config.telefono_contacto;
                 if (config.email_contacto) document.getElementById('footer-email').textContent = config.email_contacto;
                 if (config.ubicacion) document.getElementById('footer-ubicacion').textContent = config.ubicacion;
@@ -463,7 +458,6 @@
                     footerWhatsApp.style.display = 'none';
                 }
 
-                // Poner el año actual en el footer
                 document.getElementById('year').textContent = new Date().getFullYear();
 
             } catch (e) { console.error("Error al cargar config", e); }
@@ -683,8 +677,11 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                const fechaSorteo = new Date(`${s.fecha_sorteo}T23:59:59`).getTime();
-                const yaFinalizo = new Date().getTime() > fechaSorteo;
+                // ⭐ COMPARAMOS FECHA Y HORA PARA BLOQUEAR ⭐
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
+                const ahora = new Date().getTime();
+                const yaFinalizo = ahora > fechaHoraSorteo;
+                
                 const boton = yaFinalizo 
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
@@ -695,6 +692,10 @@
                         <div class="info">
                             <h3>${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
+                            <!-- Mostramos la fecha y hora -->
+                            <div style="font-size: 0.75rem; color: #8892b0; margin-bottom: 0.5rem;">
+                                📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
+                            </div>
                             ${boton}
                         </div>
                     </div>

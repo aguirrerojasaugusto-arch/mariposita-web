@@ -4,74 +4,22 @@
 <meta charset="UTF-8"><title>Sorteos · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    
-    .modal-content {
-        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
-        display: flex; flex-direction: column; max-height: 90vh;
-        animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    .modal-header {
-        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--color-primario); color: #fff;
-    }
+    .modal-content { background: #fff; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.3rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-close:hover { color: #ff4d4d; }
-    
     .modal-body { padding: 2rem; overflow-y: auto; }
-    .modal-footer {
-        padding: 1.5rem 2rem; border-top: 1px solid #eee;
-        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
-    }
-
-    /* PAGINACIÓN */
-    .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1rem; margin-top: 1.5rem;
-    }
-    .pagination button {
-        background: var(--color-primario); color: #fff;
-        border: none; padding: 0.5rem 1rem; border-radius: 6px;
-        cursor: pointer; font-weight: bold;
-    }
+    .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
     .pagination span { font-weight: bold; color: #333; }
-
-    /* ESTILO PARA LAS IMÁGENES EN LA TABLA */
-    .img-tabla {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        display: block;
-        margin: 0 auto;
-    }
-    
-    /* Estilo para los botones de acción */
-    .btn-accion {
-        padding: 0.4rem 0.8rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 0.85rem;
-        margin: 0 2px;
-    }
+    .img-tabla { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; margin: 0 auto; }
+    .btn-accion { padding: 0.4rem 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin: 0 2px; }
     .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar:hover { background: #1565c0; color: #fff; }
     .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
@@ -107,7 +55,6 @@
     </main>
 </div>
 
-<!-- MODAL FLOTANTE -->
 <div class="modal-overlay" id="modal-sorteo">
     <div class="modal-content">
         <div class="modal-header">
@@ -120,7 +67,13 @@
                 <div class="form-group"><label>Nombre</label><input name="nombre" id="sorteo-nombre" required></div>
                 <div class="form-group"><label>Descripción</label><textarea name="descripcion" id="sorteo-desc" rows="2"></textarea></div>
                 <div class="form-group"><label>Precio del ticket (S/)</label><input type="number" step="0.01" name="precio_ticket" id="sorteo-precio" required></div>
-                <div class="form-group"><label>Fecha del sorteo</label><input type="date" name="fecha_sorteo" id="sorteo-fecha" required></div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex: 1;"><label>Fecha del sorteo</label><input type="date" name="fecha_sorteo" id="sorteo-fecha" required></div>
+                    <!-- ⭐ NUEVO CAMPO DE HORA ⭐ -->
+                    <div class="form-group" style="flex: 1;"><label>Hora exacta</label><input type="time" name="hora_sorteo" id="sorteo-hora" required></div>
+                </div>
+
                 <div class="form-group"><label>Estado</label>
                     <select name="estado" id="sorteo-estado">
                         <option value="activo">Activo</option>
@@ -153,7 +106,6 @@ async function checkAuth() {
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     
-    // Ocultar menús según el rol
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-carrusel').style.display = 'none';
@@ -193,17 +145,13 @@ function renderizarTabla() {
     const sorteosPagina = todosLosSorteos.slice(inicio, fin);
 
     cont.innerHTML = `<table>
-        <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha y Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
         ${sorteosPagina.map(s => `<tr>
-            <td>
-                ${s.imagen_base64 
-                    ? `<img class="img-tabla" src="${s.imagen_base64}">` 
-                    : '—'}
-            </td>
+            <td>${s.imagen_base64 ? `<img class="img-tabla" src="${s.imagen_base64}">` : '—'}</td>
             <td>${s.nombre}</td>
             <td>S/ ${s.precio_ticket.toFixed(2)}</td>
-            <td>${s.fecha_sorteo}</td>
+            <td>${s.fecha_sorteo} a las ${s.hora_sorteo || '23:59'}</td>
             <td>${s.estado}</td>
             <td>
                 <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
@@ -235,6 +183,7 @@ function editar(s) {
     document.getElementById('sorteo-desc').value = s.descripcion || '';
     document.getElementById('sorteo-precio').value = s.precio_ticket;
     document.getElementById('sorteo-fecha').value = s.fecha_sorteo;
+    document.getElementById('sorteo-hora').value = s.hora_sorteo || '23:59';
     document.getElementById('sorteo-estado').value = s.estado;
     document.getElementById('form-title').textContent = 'Editar Sorteo #' + s.id;
     document.getElementById('btn-guardar').textContent = 'Actualizar';
@@ -284,20 +233,12 @@ document.getElementById('form-sorteo').addEventListener('submit', async (e) => {
 
 async function eliminarSorteo(id) {
     if (!confirm('¿Estás seguro de eliminar este sorteo? Se borrarán también todos los tickets asociados a él. Esta acción no se puede deshacer.')) return;
-    
     try {
         const res = await fetch(`/api/admin/sorteos/${id}`, { method: 'DELETE' });
         const data = await res.json();
-        
-        if (res.ok) {
-            alert('✅ Sorteo eliminado correctamente.');
-            cargar();
-        } else {
-            alert('❌ Error al eliminar: ' + (data.error || 'Desconocido'));
-        }
-    } catch (error) {
-        alert('Error de red al intentar eliminar el sorteo.');
-    }
+        if (res.ok) { alert('✅ Sorteo eliminado correctamente.'); cargar(); } 
+        else { alert('❌ Error al eliminar: ' + (data.error || 'Desconocido')); }
+    } catch (error) { alert('Error de red al intentar eliminar el sorteo.'); }
 }
 
 checkAuth();
