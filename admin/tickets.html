@@ -53,7 +53,6 @@
             <div style="display: flex; gap: 1rem;">
                 <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
                 
-                <!-- ⭐ BOTÓN PARA IMPRIMIR EN NUEVA PESTAÑA ⭐ -->
                 <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">
                     🖨️ Imprimir Tickets
                 </button>
@@ -63,7 +62,8 @@
         </div>
         
         <div class="alert alert-info">
-            ⚠️ <strong>Recuerda:</strong> Pasa el mouse sobre el nombre del cliente para ver la foto del comprobante. Confirma el monto en tu app Yape antes de aprobar.
+            ⚠️ <strong>Recuerda:</strong> Pasa el mouse sobre el nombre del cliente para ver la foto del comprobante. 
+            <span id="mensaje-vendedor" style="display:none; color:#c62828; font-weight:bold;">(Como vendedor, solo puedes ver los datos y vender presencialmente, pero no aprobar/rechazar).</span>
         </div>
         
         <div id="lista"></div>
@@ -167,6 +167,7 @@
 let todosLosTickets = [];
 let ticketsFiltrados = [];
 let paginaActual = 1;
+let rolUsuario = 'vendedor'; // Por defecto asumimos vendedor hasta consultar
 const itemsPorPagina = 5;
 
 async function logout() {
@@ -179,12 +180,15 @@ async function checkAuth() {
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     
+    rolUsuario = d.rol;
+
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';
         document.getElementById('nav-carrusel').style.display = 'none';
         document.getElementById('nav-usuarios').style.display = 'none';
         document.getElementById('nav-config').style.display = 'none';
+        document.getElementById('mensaje-vendedor').style.display = 'inline';
     }
     cargar();
 }
@@ -272,6 +276,20 @@ function renderizarTabla() {
     const fin = inicio + itemsPorPagina;
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
+    // ⭐ BOTONES DE ACCIÓN DINÁMICOS SEGÚN EL ROL ⭐
+    const botonesAccion = (t) => {
+        if (rolUsuario === 'admin') {
+            return `
+                <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
+                <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
+            `;
+        } else {
+            return `
+                <button class="btn" onclick="abrirModal(${todosLosTickets.findIndex(orig => orig.id === t.id)})" style="width: 100%; background: #0077b6; color: #fff;">👁️ Ver Detalles</button>
+            `;
+        }
+    };
+
     cont.innerHTML = `<table>
         <thead>
             <tr>
@@ -301,10 +319,7 @@ function renderizarTabla() {
                         ${t.alerta_monto ? `<br><span class="badge-alerta">⚠️ Monto no coincide</span>` : ''}
                     </div>
                 </td>
-                <td>
-                    <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
-                    <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
-                </td>
+                <td>${botonesAccion(t)}</td>
             </tr>`
         }).join('')}
         </tbody></table>`;
@@ -350,6 +365,7 @@ function abrirModal(index) {
 function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
 
 async function revisar(id, accion) {
+    // Esta función solo debería ser llamada por el admin gracias a los botones dinámicos
     let notas = null;
     if (accion === 'rechazar') {
         notas = prompt('Motivo del rechazo:');
