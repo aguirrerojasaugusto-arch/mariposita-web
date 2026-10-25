@@ -11,18 +11,17 @@
         padding: 3rem; 
         border-radius: 12px; 
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        text-align: center;
         backdrop-filter: blur(10px);
         display: flex;
         flex-direction: column;
-        max-height: 80vh; /* Para limitar la altura total */
+        max-height: 85vh; /* Altura máxima de todo el modal */
     }
-    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; font-weight: 800; }
-    .search-subtitle { color: #555; margin-bottom: 2rem; font-size: 1rem; }
+    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; font-weight: 800; text-align: center; }
+    .search-subtitle { color: #555; margin-bottom: 2rem; font-size: 1rem; text-align: center; }
     
     .search-input-group {
         display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;
-        flex-shrink: 0; /* Evita que el buscador se encoja */
+        flex-shrink: 0; /* El buscador no se encoge */
     }
     .search-input-group input {
         width: 60%; max-width: 400px; padding: 1rem; border: 2px solid #ddd;
@@ -36,11 +35,29 @@
     }
     .search-input-group button:hover { background: #005f8f; }
 
-    /* ⭐ NUEVO CONTENEDOR CON SCROLL INTERNO ⭐ */
+    /* ⭐ ESTILO DEL RESUMEN DEL CLIENTE (AHORA ES FIJO) ⭐ */
+    .resumen-cliente {
+        background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%);
+        border-radius: 10px;
+        padding: 1.2rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: none; /* Oculto por defecto, se activa con JS */
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        flex-shrink: 0; /* Evita que el resumen se encoja */
+    }
+    .resumen-cliente h3 { margin: 0; font-size: 1.2rem; color: #00d2ff; }
+    .resumen-cliente p { margin: 0; font-size: 0.85rem; color: #ccc; text-transform: uppercase; letter-spacing: 1px; }
+    .resumen-total { text-align: right; }
+    .resumen-total h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 900; }
+
+    /* ⭐ CONTENEDOR CON SCROLL INTERNO (SOLO PARA LOS TICKETS) ⭐ */
     #resultados {
         flex-grow: 1;
         overflow-y: auto;
-        padding-right: 10px; /* Espacio para la barra de scroll */
+        padding-right: 10px; 
         text-align: left;
     }
 
@@ -49,23 +66,6 @@
     #resultados::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
     #resultados::-webkit-scrollbar-thumb { background: #0077b6; border-radius: 4px; }
     #resultados::-webkit-scrollbar-thumb:hover { background: #005f8f; }
-
-    /* ⭐ ESTILO DEL RESUMEN DEL CLIENTE ⭐ */
-    .resumen-cliente {
-        background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%);
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: #fff;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .resumen-cliente h3 { margin: 0; font-size: 1.2rem; color: #00d2ff; }
-    .resumen-cliente p { margin: 0; font-size: 0.85rem; color: #ccc; text-transform: uppercase; letter-spacing: 1px; }
-    .resumen-total { text-align: right; }
-    .resumen-total h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 900; }
 
     /* Resultados */
     .resultado-card {
@@ -111,7 +111,19 @@
                 <button onclick="buscar()">Buscar</button>
             </div>
 
-            <!-- ⭐ CONTENEDOR DE RESULTADOS CON SCROLL ⭐ -->
+            <!-- ⭐ RESUMEN FIJO (Fuera del div con scroll) ⭐ -->
+            <div id="resumen-cliente-box" class="resumen-cliente">
+                <div>
+                    <p>Participante</p>
+                    <h3 id="resumen-nombre">-</h3>
+                </div>
+                <div class="resumen-total">
+                    <p>Total Tickets</p>
+                    <h2 id="resumen-total">0</h2>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DE RESULTADOS CON SCROLL -->
             <div id="resultados"></div>
         </div>
     </main>
@@ -149,6 +161,12 @@ async function logout() {
 async function buscar() {
     const query = document.getElementById('input-busqueda').value.trim();
     const cont = document.getElementById('resultados');
+    const resumenBox = document.getElementById('resumen-cliente-box');
+
+    // Ocultar resumen al iniciar nueva búsqueda
+    resumenBox.style.display = 'none';
+    document.getElementById('resumen-nombre').textContent = '-';
+    document.getElementById('resumen-total').textContent = '0';
 
     if (!query) {
         cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Por favor, ingresa tu DNI o Teléfono.</p>';
@@ -166,27 +184,15 @@ async function buscar() {
             return;
         }
 
-        let html = '';
-
-        // ⭐ MOSTRAR RESUMEN DEL CLIENTE (Si tiene tickets) ⭐
+        // ⭐ ACTUALIZAR Y MOSTRAR EL RESUMEN FIJO ⭐
         if (data.tickets.length > 0) {
             const primerTicket = data.tickets[0];
-            const nombreCliente = primerTicket.cliente_nombre;
-            const totalTickets = data.tickets.length;
-
-            html += `
-                <div class="resumen-cliente">
-                    <div>
-                        <p>Participante</p>
-                        <h3>${nombreCliente}</h3>
-                    </div>
-                    <div class="resumen-total">
-                        <p>Total Tickets</p>
-                        <h2>${totalTickets}</h2>
-                    </div>
-                </div>
-            `;
+            document.getElementById('resumen-nombre').textContent = primerTicket.cliente_nombre;
+            document.getElementById('resumen-total').textContent = data.tickets.length;
+            resumenBox.style.display = 'flex'; // Lo mostramos
         }
+
+        let html = '';
 
         // Mostrar Órdenes de Ropa
         if (data.ordenes.length > 0) {
@@ -228,6 +234,8 @@ async function buscar() {
         }
 
         cont.innerHTML = html;
+        // Hacer scroll al principio del contenedor al mostrar nuevos resultados
+        cont.scrollTop = 0; 
 
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
