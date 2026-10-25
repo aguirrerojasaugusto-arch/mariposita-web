@@ -22,9 +22,23 @@ router.get('/dashboard', async (req, res) => {
     try {
         const op = await db.execute("SELECT COUNT(*) as c FROM ordenes WHERE estado='pendiente'");
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
-        const va = await db.execute("SELECT COALESCE(SUM(total),0) as t FROM ordenes WHERE estado='aprobado'");
+        
+        // ⭐ MODIFICADO: Suma solo los tickets aprobados (Precio * Cantidad) ⭐
+        const va = await db.execute(`
+            SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t 
+            FROM tickets t 
+            JOIN sorteos s ON s.id = t.sorteo_id 
+            WHERE t.estado_pago = 'aprobado'
+        `);
+        
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
-        res.json({ ordenes_pendientes: op.rows[0].c, tickets_pendientes: tp.rows[0].c, ventas_aprobadas: va.rows[0].t, total_ordenes: to.rows[0].c });
+        
+        res.json({ 
+            ordenes_pendientes: op.rows[0].c, 
+            tickets_pendientes: tp.rows[0].c, 
+            ventas_aprobadas: va.rows[0].t, 
+            total_ordenes: to.rows[0].c 
+        });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

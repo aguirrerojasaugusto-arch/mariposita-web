@@ -130,6 +130,17 @@
         box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
         border: 1px solid rgba(255,255,255,0.5);
     }
+
+    /* ⭐ ANIMACIÓN DEL NÚMERO AL ACTUALIZARSE ⭐ */
+    @keyframes flashGreen {
+        0% { background-color: transparent; }
+        30% { background-color: rgba(46, 125, 50, 0.2); }
+        100% { background-color: transparent; }
+    }
+    .actualizado {
+        animation: flashGreen 1s ease-out;
+        border-radius: 4px;
+    }
 </style>
 </head>
 <body>
@@ -197,16 +208,40 @@ async function checkAuth() {
     }
 }
 
+let ventasAnteriores = 0;
+
 async function loadStats() {
-    const r = await fetch('/api/admin/dashboard');
-    if (r.status === 401) return location.href = '/admin/login.html';
-    const d = await r.json();
-    document.getElementById('stats').innerHTML = `
-        <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
-        <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
-        <div class="stat"><div class="num">S/ ${d.ventas_aprobadas.toFixed(2)}</div><div class="label">Ventas aprobadas</div></div>
-        <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
-    `;
+    try {
+        const r = await fetch('/api/admin/dashboard');
+        if (r.status === 401) return location.href = '/admin/login.html';
+        const d = await r.json();
+        
+        // Formatear el número con comas
+        const ventasFormateadas = d.ventas_aprobadas.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        document.getElementById('stats').innerHTML = `
+            <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
+            <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
+            <div class="stat">
+                <div class="num" id="stat-ventas" style="display:inline-block; padding: 0 5px;">S/ ${ventasFormateadas}</div>
+                <div class="label">Ventas aprobadas</div>
+            </div>
+            <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
+        `;
+
+        // Efecto visual si el monto aumentó
+        if (d.ventas_aprobadas > ventasAnteriores && ventasAnteriores !== 0) {
+            const elVentas = document.getElementById('stat-ventas');
+            if (elVentas) {
+                elVentas.classList.add('actualizado');
+                setTimeout(() => elVentas.classList.remove('actualizado'), 1000);
+            }
+        }
+        ventasAnteriores = d.ventas_aprobadas;
+
+    } catch (error) {
+        console.error("Error actualizando dashboard", error);
+    }
 }
 
 async function logout() {
@@ -214,7 +249,12 @@ async function logout() {
     location.href = '/admin/login.html';
 }
 
-checkAuth(); loadStats();
+// Iniciar
+checkAuth(); 
+loadStats();
+
+// ⭐ ACTUALIZAR AUTOMÁTICAMENTE CADA 10 SEGUNDOS ⭐
+setInterval(loadStats, 10000); 
 </script>
 </body>
 </html>
