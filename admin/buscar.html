@@ -13,12 +13,16 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         text-align: center;
         backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        max-height: 80vh; /* Para limitar la altura total */
     }
     .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; font-weight: 800; }
     .search-subtitle { color: #555; margin-bottom: 2rem; font-size: 1rem; }
     
     .search-input-group {
         display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;
+        flex-shrink: 0; /* Evita que el buscador se encoja */
     }
     .search-input-group input {
         width: 60%; max-width: 400px; padding: 1rem; border: 2px solid #ddd;
@@ -31,6 +35,37 @@
         font-weight: bold; transition: background 0.3s;
     }
     .search-input-group button:hover { background: #005f8f; }
+
+    /* ⭐ NUEVO CONTENEDOR CON SCROLL INTERNO ⭐ */
+    #resultados {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-right: 10px; /* Espacio para la barra de scroll */
+        text-align: left;
+    }
+
+    /* Estilos de la barra de scroll para que se vea bonita */
+    #resultados::-webkit-scrollbar { width: 8px; }
+    #resultados::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    #resultados::-webkit-scrollbar-thumb { background: #0077b6; border-radius: 4px; }
+    #resultados::-webkit-scrollbar-thumb:hover { background: #005f8f; }
+
+    /* ⭐ ESTILO DEL RESUMEN DEL CLIENTE ⭐ */
+    .resumen-cliente {
+        background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .resumen-cliente h3 { margin: 0; font-size: 1.2rem; color: #00d2ff; }
+    .resumen-cliente p { margin: 0; font-size: 0.85rem; color: #ccc; text-transform: uppercase; letter-spacing: 1px; }
+    .resumen-total { text-align: right; }
+    .resumen-total h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 900; }
 
     /* Resultados */
     .resultado-card {
@@ -76,6 +111,7 @@
                 <button onclick="buscar()">Buscar</button>
             </div>
 
+            <!-- ⭐ CONTENEDOR DE RESULTADOS CON SCROLL ⭐ -->
             <div id="resultados"></div>
         </div>
     </main>
@@ -115,26 +151,46 @@ async function buscar() {
     const cont = document.getElementById('resultados');
 
     if (!query) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Por favor, ingresa tu DNI o Teléfono.</p>';
         return;
     }
 
-    cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold;">Buscando en la base de datos...</p>';
+    cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold; text-align:center; margin-top:2rem;">Buscando en la base de datos...</p>';
 
     try {
         const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
         const data = await res.json();
 
         if (!data.ordenes.length && !data.tickets.length) {
-            cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px;">No se encontraron compras ni tickets registrados con ese número.</div>';
+            cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px; text-align:center;">No se encontraron compras ni tickets registrados con ese número.</div>';
             return;
         }
 
         let html = '';
 
+        // ⭐ MOSTRAR RESUMEN DEL CLIENTE (Si tiene tickets) ⭐
+        if (data.tickets.length > 0) {
+            const primerTicket = data.tickets[0];
+            const nombreCliente = primerTicket.cliente_nombre;
+            const totalTickets = data.tickets.length;
+
+            html += `
+                <div class="resumen-cliente">
+                    <div>
+                        <p>Participante</p>
+                        <h3>${nombreCliente}</h3>
+                    </div>
+                    <div class="resumen-total">
+                        <p>Total Tickets</p>
+                        <h2>${totalTickets}</h2>
+                    </div>
+                </div>
+            `;
+        }
+
         // Mostrar Órdenes de Ropa
         if (data.ordenes.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
+            html += '<h3 style="color:#333; margin: 1rem 0; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
             data.ordenes.forEach(o => {
                 const estadoClass = `estado-${o.estado}`;
                 html += `
@@ -154,7 +210,7 @@ async function buscar() {
 
         // Mostrar Tickets de Sorteo
         if (data.tickets.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
+            html += '<h3 style="color:#333; margin: 1.5rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             data.tickets.forEach(t => {
                 const estadoClass = `estado-${t.estado_pago}`;
                 html += `
@@ -174,7 +230,7 @@ async function buscar() {
         cont.innerHTML = html;
 
     } catch (error) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
 }
 
