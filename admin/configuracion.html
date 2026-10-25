@@ -64,6 +64,17 @@
                         <button type="submit" class="btn btn-primario">Subir</button>
                     </form>
                 </div>
+
+                <!-- ⭐ NUEVO FLYER DE INICIO ⭐ -->
+                <div class="image-box">
+                    <h4>Flyer de Inicio (Emergente)</h4>
+                    <div id="preview-flyer" class="preview-box"><span style="color:#999;">Sin Flyer</span></div>
+                    <form id="form-flyer" enctype="multipart/form-data" class="file-input-group">
+                        <input type="hidden" name="tipo" value="flyer">
+                        <input type="file" name="imagen" accept="image/*" required>
+                        <button type="submit" class="btn btn-primario">Subir</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -76,7 +87,6 @@
                 <div class="form-group"><label>WhatsApp (Enlace flotante)</label><input name="whatsapp"></div>
                 <div class="form-group"><label>Email de contacto</label><input name="email_contacto"></div>
                 
-                <!-- ⭐ NUEVOS CAMPOS PARA LA BARRA SUPERIOR ⭐ -->
                 <div class="form-group"><label>Teléfono (Barra superior)</label><input name="telefono_contacto" placeholder="Ej: (0125) 456 78 90"></div>
                 <div class="form-group"><label>Ubicación (Barra superior)</label><input name="ubicacion" placeholder="Ej: Huancavelica, Perú"></div>
 
@@ -116,6 +126,11 @@ async function cargar() {
         preview.style.backgroundImage = `url('${cfg.fondo_login}')`;
         preview.innerHTML = '';
     }
+    if (cfg.flyer_inicio) {
+        const preview = document.getElementById('preview-flyer');
+        preview.style.backgroundImage = `url('${cfg.flyer_inicio}')`;
+        preview.innerHTML = '';
+    }
 }
 
 document.getElementById('form-config').addEventListener('submit', async (e) => {
@@ -127,35 +142,26 @@ document.getElementById('form-config').addEventListener('submit', async (e) => {
     if (r.ok) alert('Datos guardados correctamente'); else alert('Error al guardar');
 });
 
-document.getElementById('form-logo').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.disabled = true; btn.textContent = '...';
-    
-    const fd = new FormData(e.target);
-    try {
-        const r = await fetch('/api/admin/configuracion-imagenes', { method: 'POST', body: fd });
-        const d = await r.json();
-        if (r.ok) { alert('Logo actualizado'); cargar(); } 
-        else { alert('Error: ' + d.error); }
-    } catch (err) { alert('Error de red'); }
-    btn.disabled = false; btn.textContent = 'Subir';
-});
+// Subida de imágenes genérica
+function configurarSubida(idForm) {
+    document.getElementById(idForm).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.disabled = true; btn.textContent = '...';
+        const fd = new FormData(e.target);
+        try {
+            const r = await fetch('/api/admin/configuracion-imagenes', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (r.ok) { alert('Imagen actualizada'); cargar(); } 
+            else { alert('Error: ' + d.error); }
+        } catch (err) { alert('Error de red'); }
+        btn.disabled = false; btn.textContent = 'Subir';
+    });
+}
 
-document.getElementById('form-fondo').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.disabled = true; btn.textContent = '...';
-    
-    const fd = new FormData(e.target);
-    try {
-        const r = await fetch('/api/admin/configuracion-imagenes', { method: 'POST', body: fd });
-        const d = await r.json();
-        if (r.ok) { alert('Fondo actualizado'); cargar(); } 
-        else { alert('Error: ' + d.error); }
-    } catch (err) { alert('Error de red'); }
-    btn.disabled = false; btn.textContent = 'Subir';
-});
+configurarSubida('form-logo');
+configurarSubida('form-fondo');
+configurarSubida('form-flyer'); 
 
 checkAuth();
 </script>

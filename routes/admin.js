@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const crypto = require('crypto'); // ⭐ IMPORTACIÓN AGREGADA ⭐
+const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -58,7 +58,12 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         if (!tipo || !req.file) return res.status(400).json({ error: 'Faltan datos' });
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            const clave = tipo === 'logo' ? 'logo_admin' : 'fondo_login';
+            
+            // ⭐ SOPORTAMOS LOGO, FONDO Y FLYER ⭐
+            let clave = 'logo_admin';
+            if (tipo === 'fondo') clave = 'fondo_login';
+            if (tipo === 'flyer') clave = 'flyer_inicio';
+
             await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, base64Image] });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) { res.status(500).json({ error: 'Error al guardar en la base de datos' }); }
@@ -221,7 +226,7 @@ router.post('/tickets/vender', async (req, res) => {
 
         const cantTickets = parseInt(cantidad) || 1;
         const codigosGenerados = [];
-        const hashBase = crypto.randomBytes(16).toString('hex'); // Ahora crypto sí está importado
+        const hashBase = crypto.randomBytes(16).toString('hex');
 
         for (let i = 0; i < cantTickets; i++) {
             let numero;
@@ -312,49 +317,4 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         try {
-            const sRes = await db.execute({ sql: 'SELECT * FROM sorteos WHERE id = ?', args: [req.params.id] });
-            const s = sRes.rows[0];
-            if (!s) return res.status(404).json({ error: 'No encontrado' });
-            let imagen_path = s.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
-            await db.execute({ sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`, args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_path, fecha_sorteo || s.fecha_sorteo, hora_sorteo || s.hora_sorteo, estado || s.estado, s.id] });
-            res.json({ success: true });
-        } catch (e) { res.status(500).json({ error: e.message }); }
-    });
-});
-
-router.delete('/sorteos/:id', requireAdmin, async (req, res) => {
-    try {
-        await db.batch([
-            { sql: 'DELETE FROM tickets WHERE sorteo_id = ?', args: [req.params.id] },
-            { sql: 'DELETE FROM sorteos WHERE id = ?', args: [req.params.id] }
-        ], "write");
-        res.json({ success: true, mensaje: 'Sorteo eliminado' });
-    } catch (error) { res.status(500).json({ error: 'Error al eliminar el sorteo' }); }
-});
-
-// ============ CARRUSEL ============
-router.get('/carrusel', async (req, res) => {
-    try { const result = await db.execute('SELECT * FROM carrusel ORDER BY orden ASC, id ASC'); res.json(result.rows); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.post('/carrusel', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
-        if (err) return res.status(400).json({ error: err.message });
-        if (!req.file) return res.status(400).json({ error: 'Debes subir una imagen' });
-        try {
-            const countRes = await db.execute('SELECT COUNT(*) as c FROM carrusel');
-            const count = countRes.rows[0].c;
-            if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
-            const imagen_path = `/uploads/imagenes/${req.file.filename}`;
-            await db.execute({ sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)', args: [imagen_path, count] });
-            res.json({ success: true });
-        } catch (e) { res.status(500).json({ error: e.message }); }
-    });
-});
-
-router.delete('/carrusel/:id', requireAdmin, async (req, res) => {
-    try { await db.execute({ sql: 'DELETE FROM carrusel WHERE id = ?', args: [req.params.id] }); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-module.exports = router;
+            const sRes = await db.execute({ sql: 'SELECT * FROM sorteos WHERE id = ?', args: [req.params.id
