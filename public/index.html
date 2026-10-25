@@ -1036,6 +1036,26 @@
 
                 let html = '';
                 
+                // ⭐ RESUMEN EN LA CABECERA (NOMBRE Y CANTIDAD) ⭐
+                if (data.tickets.length > 0) {
+                    const primerTicket = data.tickets[0];
+                    const nombreCliente = primerTicket.cliente_nombre;
+                    const totalTickets = data.tickets.length;
+
+                    html += `
+                        <div style="background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%); border: 1px solid rgba(0, 210, 255, 0.4); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <div>
+                                <p style="color: #8892b0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">Participante</p>
+                                <h3 style="color: #fff; font-size: 1.2rem; margin: 0;">${nombreCliente}</h3>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="color: #8892b0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">Total Tickets</p>
+                                <h3 style="color: var(--accent-cyan); font-size: 1.5rem; margin: 0; font-weight: 800;">${totalTickets}</h3>
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 if (data.ordenes.length > 0) {
                     html += '<h3 style="color: #00d2ff; margin-bottom: 1rem;">🛍️ Tus Compras de Ropa</h3>';
                     data.ordenes.forEach(o => {
