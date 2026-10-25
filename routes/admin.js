@@ -120,7 +120,6 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
 });
 
 // ============ TICKETS ============
-// ⭐ AGRUPACIÓN MASIVA POR COMPROBANTE ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
         const result = await db.execute(`
@@ -142,6 +141,7 @@ router.get('/tickets/pendientes', async (req, res) => {
                     cliente_nombre: t.cliente_nombre,
                     cliente_dni: t.cliente_dni,
                     cliente_telefono: t.cliente_telefono,
+                    cliente_departamento: t.cliente_departamento,
                     comprobante_base64: t.comprobante_base64,
                     ocr_monto: t.ocr_monto,
                     ocr_operacion: t.ocr_operacion,
@@ -185,7 +185,6 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ APROBAR/RECHAZAR MÚLTIPLES TICKETS A LA VEZ ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas, ids_tickets } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -221,7 +220,7 @@ router.post('/tickets/vender', async (req, res) => {
 
         const cantTickets = parseInt(cantidad) || 1;
         const codigosGenerados = [];
-        const hashBase = crypto.randomBytes(16).toString('hex'); // Hash base para agrupar
+        const hashBase = crypto.randomBytes(16).toString('hex');
 
         for (let i = 0; i < cantTickets; i++) {
             let numero;

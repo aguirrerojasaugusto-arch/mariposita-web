@@ -34,40 +34,39 @@
         }
         .btn:hover { background: #005f8f; }
 
-        /* ⭐ CONFIGURACIÓN DE LA HOJA A4 (10 TICKETS) ⭐ */
+        /* ⭐ CONFIGURACIÓN DE LA HOJA A4 (15 TICKETS) ⭐ */
         .hoja-a4 {
             width: 210mm;
             height: 297mm;
             background: #fff;
-            padding: 8mm; /* Margen reducido */
+            padding: 6mm; 
             box-sizing: border-box;
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 columnas */
+            grid-template-columns: repeat(3, 1fr); /* 3 columnas */
             grid-template-rows: repeat(5, 1fr); /* 5 filas */
-            gap: 4mm; /* Espacio entre tickets reducido */
+            gap: 3mm; 
         }
 
         /* Diseño del Ticket */
         .ticket {
             background-color: #FDF8F0;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px dashed #ccc;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 6px;
+            padding: 4px;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
 
-        /* Patrón de fondo simulado */
         .ticket::before {
             content: '';
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background-image: radial-gradient(#e0d6c8 1px, transparent 1px);
-            background-size: 12px 12px;
+            background-size: 10px 10px;
             opacity: 0.5;
             z-index: 0;
         }
@@ -81,27 +80,27 @@
             justify-content: space-between;
         }
 
-        /* Número de ticket centrado y grande */
+        /* Número de ticket */
         .ticket-header {
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .ticket-numero {
             background-color: #1B1464;
             color: #fff;
-            font-size: 26px; /* Ligeramente más pequeño para que quepa */
+            font-size: 18px; 
             font-weight: 900;
-            padding: 4px 10px;
-            border-radius: 6px;
-            letter-spacing: 1px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
             display: inline-block;
         }
 
         /* Cuerpo del ticket */
         .ticket-body {
             text-align: center;
-            margin: 2px 0;
+            margin: 1px 0;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
@@ -110,15 +109,15 @@
 
         .ticket-datos {
             background: rgba(255,255,255,0.8);
-            padding: 8px;
-            border-radius: 6px;
+            padding: 4px;
+            border-radius: 4px;
             border: 1px solid #E5D9C5;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .ticket-datos h3 {
             margin: 0;
-            font-size: 15px; /* Ajustado para que el nombre no se desborde */
+            font-size: 10px; 
             color: #1B1464;
             font-weight: 900;
             text-transform: uppercase;
@@ -128,30 +127,39 @@
         }
 
         .ticket-datos p {
-            margin: 3px 0 0 0;
-            font-size: 13px;
+            margin: 1px 0 0 0;
+            font-size: 9px;
             color: #333;
             font-weight: 700;
         }
 
-        /* Nombre del evento debajo del nombre */
+        /* Departamento */
+        .ticket-datos .dept {
+            font-size: 8px;
+            color: #666;
+            margin-top: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Nombre del evento */
         .ticket-evento {
-            font-size: 10px;
+            font-size: 7px;
             color: #666;
             font-weight: 700;
             text-transform: uppercase;
-            margin-top: 5px;
+            margin-top: 2px;
             letter-spacing: 0.5px;
         }
 
         /* Pie del ticket */
         .ticket-footer {
-            font-size: 8px;
+            font-size: 6px;
             text-align: center;
             color: #888;
             border-top: 1px dashed #ccc;
-            padding-top: 4px;
-            margin-top: 2px;
+            padding-top: 2px;
+            margin-top: 1px;
         }
 
         /* Al imprimir */
@@ -164,7 +172,7 @@
                 width: 100%; 
                 height: 100vh; 
                 page-break-after: always; 
-                padding: 5mm; /* Ajuste fino al imprimir */
+                padding: 4mm; 
             }
             .ticket { border: 1px solid #ccc; }
         }
@@ -177,9 +185,7 @@
         <button class="btn" onclick="window.close()" style="background:#555;">Cerrar Pestaña</button>
     </div>
 
-    <div id="contenedor-hojas">
-        <!-- Aquí se inyectan las hojas A4 generadas por JS -->
-    </div>
+    <div id="contenedor-hojas"></div>
 
     <script>
         async function cargarEImprimir() {
@@ -194,22 +200,20 @@
 
                 const contenedor = document.getElementById('contenedor-hojas');
                 
-                // ⭐ AGRUPAR EN BLOQUES DE 10 (NUEVO TAMAÑO) ⭐
-                const tamañoPagina = 10;
+                // ⭐ AGRUPAR EN BLOQUES DE 15 ⭐
+                const tamañoPagina = 15;
                 for (let i = 0; i < tickets.length; i += tamañoPagina) {
                     const paginaTickets = tickets.slice(i, i + tamañoPagina);
                     
-                    // Crear la hoja A4
                     const hoja = document.createElement('div');
                     hoja.className = 'hoja-a4';
 
-                    // Crear los 10 tickets
                     paginaTickets.forEach(t => {
                         const ticketDiv = document.createElement('div');
                         ticketDiv.className = 'ticket';
                         
-                        // Tomamos solo los últimos 4 caracteres para que se vea grande y limpio
                         const codigoCorto = t.numero_ticket.replace('TKT-', '');
+                        const departamento = t.cliente_departamento || 'No especificado';
 
                         ticketDiv.innerHTML = `
                             <div class="ticket-content">
@@ -220,6 +224,7 @@
                                     <div class="ticket-datos">
                                         <h3>${t.cliente_nombre}</h3>
                                         <p>📞 ${t.cliente_telefono || 'Sin teléfono'}</p>
+                                        <div class="dept">📍 ${departamento}</div>
                                     </div>
                                     <div class="ticket-evento">${t.sorteo_nombre}</div>
                                 </div>
@@ -231,8 +236,6 @@
                         hoja.appendChild(ticketDiv);
                     });
 
-                    // Si la última hoja no se llena con 10, rellenamos con tickets vacíos
-                    // para que el grid mantenga la estructura y no se estire feo.
                     const faltantes = tamañoPagina - paginaTickets.length;
                     for (let j = 0; j < faltantes; j++) {
                         const ticketVacio = document.createElement('div');
@@ -250,7 +253,6 @@
             }
         }
 
-        // Ejecutar al cargar la página
         cargarEImprimir();
     </script>
 </body>
