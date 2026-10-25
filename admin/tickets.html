@@ -449,6 +449,9 @@ document.getElementById('form-venta-presencial').addEventListener('submit', asyn
         if (res.ok) {
             alert(`✅ Venta registrada. Ticket: ${data.numero_ticket}`);
             cerrarModalVenta();
+            
+            // ⭐ RECARGA AUTOMÁTICA PARA ACTUALIZAR LA TABLA ⭐
+            location.reload(); 
         } else {
             alert('Error: ' + data.error);
         }
