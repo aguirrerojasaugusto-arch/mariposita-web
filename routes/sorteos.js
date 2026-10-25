@@ -7,6 +7,7 @@ const sharp = require('sharp');
 const { createWorker } = require('tesseract.js');
 const router = express.Router();
 
+// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
 function generarCodigoTicket() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let resultado = '';
@@ -41,6 +42,7 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T${sorteo.hora_sorteo || '23:59'}:00`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
+            // 1. PROCESAR OCR
             let textoImagen = "";
             try {
                 const processedImage = await sharp(req.file.buffer)
@@ -56,6 +58,7 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: 'No se pudo procesar la imagen.' });
             }
 
+            // 2. VALIDAR OPERACIÓN
             const matchOperacion = textoImagen.match(/\b\d{6,9}\b/g);
             let operacionDetectada = null;
 
@@ -70,13 +73,15 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: 'No se encontró el número de operación.' });
             }
 
-            const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-            const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
+            // 3. VALIDAR IMAGEN DUPLICADA (Usamos hash base)
+            const hashBase = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+            const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hashBase}%`] });
+            
             if (ticketDup.rows.length > 0) {
                 return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
             }
 
-            // ⭐ GENERACIÓN MÚLTIPLE DE TICKETS ⭐
+            // 4. GENERACIÓN MÚLTIPLE DE TICKETS
             const cantTickets = parseInt(cantidad) || 1;
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             const codigosGenerados = [];
@@ -91,10 +96,13 @@ router.post('/tickets', (req, res) => {
                 }
                 codigosGenerados.push(numero);
 
+                // ⭐ HASH ÚNICO POR TICKET (Evita el error UNIQUE de la BD) ⭐
+                const hashUnico = `${hashBase}-${numero}`;
+
                 await db.execute({
                     sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion)
                           VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?)`,
-                    args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, base64Image, hash, operacionDetectada]
+                    args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, base64Image, hashUnico, operacionDetectada]
                 });
             }
 
@@ -106,7 +114,8 @@ router.post('/tickets', (req, res) => {
 
         } catch (e) {
             console.error("Error al crear ticket:", e);
-            res.status(500).json({ error: 'Error interno al guardar el ticket.' });
+            // ⭐ DEVOLVEMOS EL ERROR REAL PARA SABER QUÉ PASA ⭐
+            res.status(500).json({ error: 'Error interno: ' + e.message });
         }
     });
 });
