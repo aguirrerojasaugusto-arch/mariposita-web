@@ -279,8 +279,8 @@ function renderizarTabla() {
     const botonesAccion = (t) => {
         if (rolUsuario === 'admin') {
             return `
-                <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
-                <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
+                <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar', '${t.ids_tickets.join(",")}')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
+                <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar', '${t.ids_tickets.join(",")}')" style="width: 100%;">❌ Rechazar</button>
             `;
         } else {
             return `
@@ -310,7 +310,7 @@ function renderizarTabla() {
                 <td>${celdaCliente(t)}</td>
                 <td>${t.cliente_telefono || '—'}</td>
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
-                <td><strong>S/ ${t.precio_ticket ? t.precio_ticket.toFixed(2) : '0.00'}</strong></td>
+                <td><strong>S/ ${t.total ? t.total.toFixed(2) : '0.00'}</strong></td>
                 <td>
                     <div style="font-size:0.85rem;">
                         <strong>Monto:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No leído'}<br>
@@ -363,19 +363,22 @@ function abrirModal(index) {
 
 function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
 
-async function revisar(id, accion) {
+async function revisar(id, accion, idsString) {
     let notas = null;
     if (accion === 'rechazar') {
         notas = prompt('Motivo del rechazo:');
         if (notas === null) return;
     } else {
-        if (!confirm('¿Ya verificaste en tu app Yape que el pago del ticket llegó a tu cuenta?')) return;
+        if (!confirm('¿Ya verificaste en tu app Yape que el pago total de estos tickets llegó a tu cuenta?')) return;
     }
+
+    const ids_tickets = idsString ? idsString.split(',').map(Number) : [id];
+
     const r = await fetch(`/api/admin/tickets/${id}/revisar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas, ids_tickets })
     });
     const d = await r.json();
-    if (r.ok) { alert('Ticket ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
+    if (r.ok) { alert('Tickets ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
 }
 
 // LÓGICA DE VENTA PRESENCIAL
@@ -445,7 +448,7 @@ document.getElementById('form-venta-presencial').addEventListener('submit', asyn
         const data = await res.json();
         
         if (res.ok) {
-            alert(`✅ Venta registrada. Se generaron ${data.codigos.length} tickets. Primer código: ${data.codigos[0]}`);
+            alert(`✅ Venta registrada. Se generaron ${data.codigos.length} tickets.`);
             cerrarModalVenta();
             location.reload(); 
         } else {
