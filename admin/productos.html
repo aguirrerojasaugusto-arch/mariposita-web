@@ -78,8 +78,11 @@
                 <input type="hidden" name="id" id="prod-id">
                 <div class="form-group"><label>Nombre</label><input name="nombre" id="prod-nombre" required></div>
                 <div class="form-group"><label>Descripción</label><textarea name="descripcion" id="prod-desc" rows="2"></textarea></div>
-                <div class="form-group"><label>Precio (S/)</label><input type="number" step="0.01" name="precio" id="prod-precio" required></div>
-                <div class="form-group"><label>Stock</label><input type="number" name="stock" id="prod-stock" value="0"></div>
+                
+                <!-- ⭐ SE QUITÓ EL "required" A PRECIO Y STOCK ⭐ -->
+                <div class="form-group"><label>Precio (Opcional)</label><input type="number" step="0.01" name="precio" id="prod-precio"></div>
+                <div class="form-group"><label>Stock (Opcional)</label><input type="number" name="stock" id="prod-stock" value="0"></div>
+                
                 <div class="form-group"><label>Categoría</label>
                     <select name="categoria" id="prod-cat">
                         <option value="ropa_tipica">Ropa típica</option>
@@ -162,7 +165,7 @@ function renderizarTabla() {
         ${productosPagina.map(p => `<tr>
             <td>${p.imagen_base64 ? `<img class="img-tabla" src="${p.imagen_base64}">` : '—'}</td>
             <td>${p.nombre}<br><small>${p.categoria}</small></td>
-            <td>S/ ${p.precio.toFixed(2)}</td>
+            <td>${p.precio ? 'S/ ' + p.precio.toFixed(2) : '—'}</td>
             <td>${p.stock}</td>
             <td>${p.activo ? '✅' : '❌'}</td>
             <td>

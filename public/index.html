@@ -40,7 +40,7 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
             max-width: 480px; 
             width: 100%; 
-            height: 260px; /* Aumentado de 220px a 260px */
+            height: 260px; 
             padding: 1.2rem; 
             gap: 1rem; 
             overflow: hidden; 
@@ -53,9 +53,9 @@
         
         /* ⭐ TÍTULO AJUSTADO PARA 2 LÍNEAS PERFECTAS ⭐ */
         .hero-titulo-fijo { 
-            font-size: 1.8rem; /* Ligeramente más pequeño para encajar */
+            font-size: 1.8rem; 
             line-height: 1.3; 
-            height: 4.7rem; /* Altura exacta para 2 líneas */
+            height: 4.7rem; 
             overflow: hidden; 
             display: -webkit-box; 
             -webkit-line-clamp: 2; 
@@ -80,8 +80,6 @@
         .card-producto .info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
         .card-producto h3 { color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-producto p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; flex-grow: 1; height: 2.5rem; overflow: hidden; }
-        .card-producto .precio { color: var(--accent-cyan); font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .card-producto .stock { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem; }
         
         .card-producto .btn-deshabilitado { width: 100%; padding: 0.6rem; background: #1a365d; border: 1px dashed #4a5568; color: #a0aec0; font-weight: 600; border-radius: 4px; text-align: center; font-size: 0.85rem; }
 
@@ -610,6 +608,7 @@
                 return; 
             }
 
+            // ⭐ SE ELIMINÓ EL PRECIO Y EL STOCK DE LA TARJETA PÚBLICA ⭐
             track.innerHTML = productosFiltrados.map(p => `
                 <div class="card-producto">
                     <img 
@@ -621,8 +620,6 @@
                     <div class="info">
                         <h3 title="${p.nombre}">${p.nombre}</h3>
                         <p>${p.descripcion || ''}</p>
-                        <div class="precio">S/ ${p.precio.toFixed(2)}</div>
-                        <div class="stock">Stock: ${p.stock} unidades</div>
                         <div class="btn-deshabilitado">Solo para visualización</div>
                     </div>
                 </div>
@@ -1035,26 +1032,6 @@
                 }
 
                 let html = '';
-                
-                // ⭐ RESUMEN EN LA CABECERA (NOMBRE Y CANTIDAD) ⭐
-                if (data.tickets.length > 0) {
-                    const primerTicket = data.tickets[0];
-                    const nombreCliente = primerTicket.cliente_nombre;
-                    const totalTickets = data.tickets.length;
-
-                    html += `
-                        <div style="background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%); border: 1px solid rgba(0, 210, 255, 0.4); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                            <div>
-                                <p style="color: #8892b0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">Participante</p>
-                                <h3 style="color: #fff; font-size: 1.2rem; margin: 0;">${nombreCliente}</h3>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="color: #8892b0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">Total Tickets</p>
-                                <h3 style="color: var(--accent-cyan); font-size: 1.5rem; margin: 0; font-weight: 800;">${totalTickets}</h3>
-                            </div>
-                        </div>
-                    `;
-                }
                 
                 if (data.ordenes.length > 0) {
                     html += '<h3 style="color: #00d2ff; margin-bottom: 1rem;">🛍️ Tus Compras de Ropa</h3>';
