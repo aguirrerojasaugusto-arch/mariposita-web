@@ -137,6 +137,45 @@ router.post('/tickets/:id/revisar', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ NUEVA RUTA: VENTA PRESENCIAL DE TICKETS ⭐
+router.post('/tickets/vender', async (req, res) => {
+    const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
+    
+    if (!sorteo_id || !cliente_nombre || !cliente_dni) {
+        return res.status(400).json({ error: 'Faltan datos (Sorteo, Nombre y DNI son obligatorios)' });
+    }
+
+    try {
+        const sorteoRes = await db.execute({ sql: "SELECT * FROM sorteos WHERE id = ?", args: [sorteo_id] });
+        const sorteo = sorteoRes.rows[0];
+        if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
+
+        const cantTickets = parseInt(cantidad) || 1;
+        const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
+        const count = countRes.rows[0].c + 1;
+        const numero = `S${sorteo.id}-${String(count).padStart(5, '0')}`;
+
+        // Insertamos el ticket directamente como 'aprobado' porque el admin ya recibió el dinero en mano.
+        await db.execute({
+            sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
+            args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
+        });
+
+        // Registrar en logs
+        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        await db.execute({
+            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)',
+            args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip, ahora]
+        });
+
+        res.json({ success: true, numero_ticket: numero, mensaje: 'Venta registrada correctamente' });
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({ error: e.message }); 
+    }
+});
+
 // ============ PRODUCTOS ============
 router.get('/productos', async (req, res) => {
     try { const result = await db.execute('SELECT * FROM productos ORDER BY creado_en DESC'); res.json(result.rows); } catch (e) { res.status(500).json({ error: e.message }); }
@@ -187,7 +226,6 @@ router.post('/sorteos', requireAdmin, (req, res) => {
 
         try {
             const r = await db.execute({
-                // ⭐ AGREGAMOS hora_sorteo ⭐
                 sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, hora_sorteo || '23:59', estado || 'activo']
             });
@@ -210,7 +248,6 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
             await db.execute({
-                // ⭐ ACTUALIZAMOS hora_sorteo ⭐
                 sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`,
                 args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_path, fecha_sorteo || s.fecha_sorteo, hora_sorteo || s.hora_sorteo, estado || s.estado, s.id]
             });

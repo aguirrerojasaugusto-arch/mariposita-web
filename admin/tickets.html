@@ -4,54 +4,19 @@
 <meta charset="UTF-8"><title>Tickets · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    /* ⭐ ESTILOS PARA EL HOVER DEL COMPROBANTE ⭐ */
-    .cliente-hover {
-        position: relative;
-        cursor: pointer;
-        display: inline-block;
-    }
-    .comprobante-hover {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 250px; /* Tamaño un poco más grande para ver mejor el Yape */
-        height: auto;
-        background: #fff;
-        border: 2px solid var(--color-primario);
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        z-index: 9999;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.2s;
-        pointer-events: none;
-    }
-    .cliente-hover:hover .comprobante-hover {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    /* ⭐ ESTILOS PARA ALERTAS EN LA TABLA ⭐ */
-    .badge-alerta {
-        background: #ffebee;
-        color: #c62828;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        display: inline-block;
-        margin-top: 4px;
-    }
-    .alert-box {
-        background: #fff3e0;
-        border-left: 4px solid #ef6c00;
-        color: #e65100;
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 5px;
-        font-size: 0.85rem;
-    }
-
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-content { background: #fff; width: 90%; max-width: 600px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 1.5rem; overflow-y: auto; }
+    .modal-body h4 { color: var(--color-primario); margin-bottom: 0.5rem; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+    .modal-body p { margin-bottom: 0.5rem; font-size: 0.95rem; color: #333; }
+    .modal-img { width: 100%; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; max-height: 400px; }
+    .btn-detalle { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-detalle:hover { background: #1565c0; color: #fff; }
     .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
     .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
@@ -59,6 +24,12 @@
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
+
+    .cliente-hover { cursor: pointer; color: #0077b6; font-weight: 600; text-decoration: underline; text-decoration-style: dashed; }
+    #tooltip-comprobante { position: fixed; display: none; z-index: 99999; background: #fff; padding: 5px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid var(--color-primario); pointer-events: none; }
+    #tooltip-comprobante img { width: 300px; height: auto; border-radius: 4px; display: block; }
+    .badge-alerta { background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; }
+    .alert-box { background: #fff3e0; border-left: 4px solid #ef6c00; color: #e65100; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -79,7 +50,11 @@
     <main class="main">
         <div class="header-actions">
             <h2 style="margin:0;">Tickets pendientes</h2>
-            <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
+            <div style="display: flex; gap: 1rem;">
+                <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
+                <!-- ⭐ NUEVO BOTÓN DE VENTA PRESENCIAL ⭐ -->
+                <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
+            </div>
         </div>
         
         <div class="alert alert-info">
@@ -93,6 +68,53 @@
             <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
         </div>
     </main>
+</div>
+
+<!-- MODAL DE DETALLES -->
+<div class="modal-overlay" id="modal-detalles">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Detalles del Ticket</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+<!-- ⭐ MODAL DE VENTA PRESENCIAL ⭐ -->
+<div class="modal-overlay" id="modal-venta-presencial">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header" style="background: #2e7d32;">
+            <h3>Venta Presencial de Ticket</h3>
+            <button class="modal-close" onclick="cerrarModalVenta()">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-venta-presencial">
+                <div class="form-group">
+                    <label>Sorteo *</label>
+                    <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                        <option value="">Cargando sorteos...</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Nombre del Cliente *</label><input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                <div class="form-group"><label>DNI *</label><input type="text" id="vp-dni" maxlength="8" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="vp-telefono" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                    <div class="form-group"><label>Departamento</label><input type="text" id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad de Tickets *</label>
+                    <input type="number" id="vp-cantidad" min="1" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                </div>
+                <button type="submit" class="btn btn-aprobar" style="width: 100%; padding: 1rem; margin-top: 1rem;" id="btn-vender">Registrar Venta</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ELEMENTO FLOTANTE PARA LA IMAGEN -->
+<div id="tooltip-comprobante">
+    <img id="tooltip-img" src="" alt="Comprobante">
 </div>
 
 <script>
@@ -121,18 +143,48 @@ async function checkAuth() {
     cargar();
 }
 
-// ⭐ LÓGICA DE ALERTAS Y HOVER ⭐
+function mostrarTooltip(e, base64) {
+    if (!base64) return;
+    const tooltip = document.getElementById('tooltip-comprobante');
+    const img = document.getElementById('tooltip-img');
+    img.src = base64;
+    tooltip.style.display = 'block';
+    moverTooltip(e);
+}
+
+function moverTooltip(e) {
+    const tooltip = document.getElementById('tooltip-comprobante');
+    if (tooltip.style.display === 'none') return;
+    let x = e.clientX + 15;
+    let y = e.clientY + 15;
+    if (x + 300 > window.innerWidth) x = e.clientX - 315;
+    if (y + 300 > window.innerHeight) y = window.innerHeight - 310;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+}
+
+function ocultarTooltip() {
+    document.getElementById('tooltip-comprobante').style.display = 'none';
+}
+
 function celdaCliente(t) {
     const alertaHTML = t.notas_admin 
         ? `<div class="alert-box" style="margin-top:5px; padding:4px 8px; font-size:0.75rem;">${t.notas_admin}</div>` 
         : '';
 
     return `
-        <div class="cliente-hover">
-            <strong>${t.cliente_nombre}</strong>
+        <div>
+            <span 
+                class="cliente-hover" 
+                onmouseenter="mostrarTooltip(event, '${t.comprobante_base64 || ''}')" 
+                onmousemove="moverTooltip(event)" 
+                onmouseleave="ocultarTooltip()"
+                onclick="abrirModal(${todosLosTickets.findIndex(orig => orig.id === t.id)})"
+            >
+                ${t.cliente_nombre}
+            </span>
             <br><small>DNI: ${t.cliente_dni || '—'}</small>
             ${alertaHTML}
-            ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="comprobante-hover">` : ''}
         </div>
     `;
 }
@@ -165,7 +217,7 @@ function renderizarTabla() {
     document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
-        cont.innerHTML = '<div class="alert alert-success">No se encontraron tickets.</div>';
+        cont.innerHTML = '<div class="alert alert-success">No se encontraron tickets pendientes.</div>';
         return;
     }
 
@@ -180,7 +232,7 @@ function renderizarTabla() {
                 <th>Sorteo</th>
                 <th>Cliente (Pasa el mouse)</th>
                 <th>Cant.</th>
-                <th>Costo Ticket</th> <!-- ⭐ NUEVA COLUMNA -->
+                <th>Costo Ticket</th>
                 <th>Datos OCR</th>
                 <th>Acciones</th>
             </tr>
@@ -192,7 +244,6 @@ function renderizarTabla() {
                 <td>${t.sorteo_nombre}</td>
                 <td>${celdaCliente(t)}</td>
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
-                <!-- ⭐ MOSTRAMOS EL PRECIO DEL TICKET ⭐ -->
                 <td><strong>S/ ${t.precio_ticket ? t.precio_ticket.toFixed(2) : '0.00'}</strong></td>
                 <td>
                     <div style="font-size:0.85rem;">
@@ -202,7 +253,6 @@ function renderizarTabla() {
                     </div>
                 </td>
                 <td>
-                    <!-- ⭐ BOTÓN DE DETALLES ELIMINADO, SOLO QUEDAN LOS DE ACCIÓN ⭐ -->
                     <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
                     <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
                 </td>
@@ -219,6 +269,37 @@ function cambiarPagina(dir) {
     renderizarTabla();
 }
 
+function abrirModal(index) {
+    const t = todosLosTickets[index];
+    document.getElementById('modal-title').textContent = `Ticket ${t.numero_ticket}`;
+    document.getElementById('modal-body').innerHTML = `
+        <h4>Datos del Cliente</h4>
+        <p><strong>Nombre:</strong> ${t.cliente_nombre}</p>
+        <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
+        <p><strong>Teléfono:</strong> ${t.cliente_telefono || 'No registrado'}</p>
+        <p><strong>Departamento:</strong> ${t.cliente_departamento || 'No registrado'}</p>
+        <p><strong>Cantidad de Tickets:</strong> ${t.cantidad_tickets}</p>
+        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+        
+        ${t.notas_admin ? `<div style="background:#ffebee; padding:10px; border-radius:6px; margin: 10px 0; border-left: 4px solid #c62828;">
+            <strong style="color:#c62828;">Alerta del Sistema:</strong><br>
+            <span style="color:#c62828; font-size: 0.9rem;">${t.notas_admin}</span>
+        </div>` : ''}
+
+        <h4 style="margin-top:1.5rem;">Comprobante</h4>
+        ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
+        
+        <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
+            <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
+            <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No detectado'}</p>
+            <p style="font-size:0.85rem;"><strong>Operación:</strong> ${t.ocr_operacion || 'No detectada'}</p>
+        </div>
+    `;
+    document.getElementById('modal-detalles').classList.add('active');
+}
+
+function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
+
 async function revisar(id, accion) {
     let notas = null;
     if (accion === 'rechazar') {
@@ -233,6 +314,61 @@ async function revisar(id, accion) {
     const d = await r.json();
     if (r.ok) { alert('Ticket ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
 }
+
+// ⭐ LÓGICA DE VENTA PRESENCIAL ⭐
+async function abrirModalVentaPresencial() {
+    // Cargar sorteos activos
+    const select = document.getElementById('vp-sorteo');
+    select.innerHTML = '<option value="">Cargando...</option>';
+    
+    try {
+        const res = await fetch('/api/sorteos');
+        const sorteos = await res.json();
+        
+        select.innerHTML = '<option value="">Selecciona un sorteo</option>' + 
+            sorteos.map(s => `<option value="${s.id}">${s.nombre} (S/ ${s.precio_ticket.toFixed(2)})</option>`).join('');
+            
+        document.getElementById('form-venta-presencial').reset();
+        document.getElementById('modal-venta-presencial').classList.add('active');
+    } catch (e) {
+        alert('Error al cargar los sorteos');
+    }
+}
+
+function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
+
+document.getElementById('form-venta-presencial').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-vender');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+
+    const body = {
+        sorteo_id: document.getElementById('vp-sorteo').value,
+        cliente_nombre: document.getElementById('vp-nombre').value,
+        cliente_dni: document.getElementById('vp-dni').value,
+        cliente_telefono: document.getElementById('vp-telefono').value,
+        cliente_departamento: document.getElementById('vp-departamento').value,
+        cantidad: document.getElementById('vp-cantidad').value
+    };
+
+    try {
+        const res = await fetch('/api/admin/tickets/vender', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert(`✅ Venta registrada. Ticket: ${data.numero_ticket}`);
+            cerrarModalVenta();
+            // No recargamos la tabla de "pendientes" porque este ticket se creó como "aprobado".
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (err) { alert('Error de red'); } 
+    finally { btn.disabled = false; btn.textContent = 'Registrar Venta'; }
+});
 
 checkAuth();
 </script>
