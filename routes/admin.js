@@ -23,7 +23,7 @@ router.get('/dashboard', async (req, res) => {
         const op = await db.execute("SELECT COUNT(*) as c FROM ordenes WHERE estado='pendiente'");
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
         
-        // ⭐ MODIFICADO: Suma solo los tickets aprobados (Precio * Cantidad) ⭐
+        // ⭐ Suma solo los tickets aprobados (Precio * Cantidad) ⭐
         const va = await db.execute(`
             SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t 
             FROM tickets t 
@@ -120,7 +120,6 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
         if (orden.estado !== 'pendiente') return res.status(400).json({ error: 'Ya fue revisada' });
 
         const nuevoEstado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
-        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         const queries = [{ sql: 'UPDATE ordenes SET estado = ?, notas_admin = ? WHERE id = ?', args: [nuevoEstado, notas || null, orden.id] }];
 
         if (accion === 'aprobar') {
@@ -129,7 +128,9 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
                 queries.push({ sql: 'UPDATE productos SET stock = stock - ? WHERE id = ?', args: [it.cantidad, it.producto_id] });
             }
         }
-        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip, ahora] });
+        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
+        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip] });
+        
         await db.batch(queries, "write");
         res.json({ success: true, nuevo_estado: nuevoEstado });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -207,7 +208,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
 
     try {
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
-        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
         const idsAProcesar = Array.isArray(ids_tickets) && ids_tickets.length > 0 ? ids_tickets : [req.params.id];
 
@@ -215,7 +215,8 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         for (const id of idsAProcesar) {
             queries.push({ sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || null, id] });
         }
-        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_TICKETS`, `Aprobó/Rechazó ${idsAProcesar.length} tickets`, req.ip, ahora] });
+        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
+        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_TICKETS`, `Aprobó/Rechazó ${idsAProcesar.length} tickets`, req.ip] });
 
         await db.batch(queries, "write");
         res.json({ success: true, nuevo_estado: nuevo });
@@ -248,6 +249,7 @@ router.post('/tickets/vender', async (req, res) => {
             }
             codigosGenerados.push(numero);
 
+            // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
                       VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
@@ -255,10 +257,10 @@ router.post('/tickets/vender', async (req, res) => {
             });
         }
 
-        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         await db.execute({
-            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)',
-            args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip, ahora]
+            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))',
+            args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
         });
 
         res.json({ success: true, codigos: codigosGenerados, mensaje: 'Venta registrada correctamente' });
@@ -287,7 +289,7 @@ router.post('/productos', requireAdmin, (req, res) => {
         try {
             const r = await db.execute({ 
                 sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`, 
-                args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_base64, categoria || 'ropa_tipica'] 
+                args: [nombre, descripcion || null, parseFloat(precio) || 0, parseInt(stock) || 0, imagen_base64, categoria || 'ropa_tipica'] 
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
