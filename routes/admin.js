@@ -10,6 +10,16 @@ router.use(requireVendedor);
 const storageMemory = multer.memoryStorage();
 const uploadConfig = multer({ storage: storageMemory, limits: { fileSize: 10 * 1024 * 1024 } }).single('imagen');
 
+// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
+function generarCodigoTicket() {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let resultado = '';
+    for (let i = 0; i < 6; i++) {
+        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return `TKT-${resultado}`;
+}
+
 // ============ DASHBOARD ============
 router.get('/dashboard', async (req, res) => {
     try {
@@ -137,7 +147,7 @@ router.post('/tickets/:id/revisar', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ NUEVA RUTA: VENTA PRESENCIAL DE TICKETS ⭐
+// ⭐ VENTA PRESENCIAL CON CÓDIGO ALEATORIO ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -151,18 +161,22 @@ router.post('/tickets/vender', async (req, res) => {
         if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
 
         const cantTickets = parseInt(cantidad) || 1;
-        const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM tickets WHERE sorteo_id = ?', args: [sorteo_id] });
-        const count = countRes.rows[0].c + 1;
-        const numero = `S${sorteo.id}-${String(count).padStart(5, '0')}`;
+        
+        // ⭐ GENERAMOS EL CÓDIGO ALEATORIO ⭐
+        let numero;
+        let isUnique = false;
+        while (!isUnique) {
+            numero = generarCodigoTicket();
+            const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+            if (check.rows.length === 0) isUnique = true;
+        }
 
-        // Insertamos el ticket directamente como 'aprobado' porque el admin ya recibió el dinero en mano.
         await db.execute({
             sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
                   VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
             args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
         });
 
-        // Registrar en logs
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         await db.execute({
             sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)',
