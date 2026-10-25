@@ -52,7 +52,6 @@
             <h2 style="margin:0;">Tickets pendientes</h2>
             <div style="display: flex; gap: 1rem;">
                 <input type="text" id="buscador" class="search-box" placeholder="Buscar por ticket, cliente, DNI..." onkeyup="filtrar()">
-                <!-- ⭐ NUEVO BOTÓN DE VENTA PRESENCIAL ⭐ -->
                 <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
             </div>
         </div>
@@ -81,7 +80,7 @@
     </div>
 </div>
 
-<!-- ⭐ MODAL DE VENTA PRESENCIAL ⭐ -->
+<!-- MODAL DE VENTA PRESENCIAL -->
 <div class="modal-overlay" id="modal-venta-presencial">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header" style="background: #2e7d32;">
@@ -96,12 +95,53 @@
                         <option value="">Cargando sorteos...</option>
                     </select>
                 </div>
-                <div class="form-group"><label>Nombre del Cliente *</label><input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
-                <div class="form-group"><label>DNI *</label><input type="text" id="vp-dni" maxlength="8" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>DNI *</label>
+                        <input type="text" id="vp-dni" maxlength="8" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Cliente *</label>
+                        <input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                    </div>
+                </div>
+
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group"><label>Teléfono</label><input type="tel" id="vp-telefono" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
-                    <div class="form-group"><label>Departamento</label><input type="text" id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <select id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                            <option value="">Seleccione...</option>
+                            <option value="Amazonas">Amazonas</option>
+                            <option value="Áncash">Áncash</option>
+                            <option value="Apurímac">Apurímac</option>
+                            <option value="Arequipa">Arequipa</option>
+                            <option value="Ayacucho">Ayacucho</option>
+                            <option value="Cajamarca">Cajamarca</option>
+                            <option value="Callao">Callao</option>
+                            <option value="Cusco">Cusco</option>
+                            <option value="Huancavelica">Huancavelica</option>
+                            <option value="Huánuco">Huánuco</option>
+                            <option value="Ica">Ica</option>
+                            <option value="Junín">Junín</option>
+                            <option value="La Libertad">La Libertad</option>
+                            <option value="Lambayeque">Lambayeque</option>
+                            <option value="Lima">Lima</option>
+                            <option value="Loreto">Loreto</option>
+                            <option value="Madre de Dios">Madre de Dios</option>
+                            <option value="Moquegua">Moquegua</option>
+                            <option value="Pasco">Pasco</option>
+                            <option value="Piura">Piura</option>
+                            <option value="Puno">Puno</option>
+                            <option value="San Martín">San Martín</option>
+                            <option value="Tacna">Tacna</option>
+                            <option value="Tumbes">Tumbes</option>
+                            <option value="Ucayali">Ucayali</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div class="form-group">
                     <label>Cantidad de Tickets *</label>
                     <input type="number" id="vp-cantidad" min="1" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
@@ -202,6 +242,7 @@ function filtrar() {
         t.numero_ticket.toLowerCase().includes(texto) ||
         t.cliente_nombre.toLowerCase().includes(texto) ||
         (t.cliente_dni && t.cliente_dni.toLowerCase().includes(texto)) ||
+        (t.cliente_telefono && t.cliente_telefono.toLowerCase().includes(texto)) ||
         (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto))
     );
     paginaActual = 1;
@@ -231,6 +272,7 @@ function renderizarTabla() {
                 <th>Ticket</th>
                 <th>Sorteo</th>
                 <th>Cliente (Pasa el mouse)</th>
+                <th>Teléfono</th> <!-- ⭐ NUEVA COLUMNA ⭐ -->
                 <th>Cant.</th>
                 <th>Costo Ticket</th>
                 <th>Datos OCR</th>
@@ -243,6 +285,7 @@ function renderizarTabla() {
                 <td><strong>${t.numero_ticket}</strong><br><small>${t.creado_en}</small></td>
                 <td>${t.sorteo_nombre}</td>
                 <td>${celdaCliente(t)}</td>
+                <td>${t.cliente_telefono || '—'}</td> <!-- ⭐ DATO DEL TELÉFONO ⭐ -->
                 <td><strong>${t.cantidad_tickets || 1}</strong></td>
                 <td><strong>S/ ${t.precio_ticket ? t.precio_ticket.toFixed(2) : '0.00'}</strong></td>
                 <td>
@@ -315,9 +358,8 @@ async function revisar(id, accion) {
     if (r.ok) { alert('Ticket ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);
 }
 
-// ⭐ LÓGICA DE VENTA PRESENCIAL ⭐
+// ⭐ LÓGICA DE VENTA PRESENCIAL (CON BÚSQUEDA POR DNI) ⭐
 async function abrirModalVentaPresencial() {
-    // Cargar sorteos activos
     const select = document.getElementById('vp-sorteo');
     select.innerHTML = '<option value="">Cargando...</option>';
     
@@ -336,6 +378,30 @@ async function abrirModalVentaPresencial() {
 }
 
 function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
+
+// ⭐ BÚSQUEDA AUTOMÁTICA POR DNI ⭐
+document.getElementById('vp-dni').addEventListener('input', async function(e) {
+    const dni = e.target.value;
+    if (dni.length === 8) {
+        const inputNombre = document.getElementById('vp-nombre');
+        const inputTelefono = document.getElementById('vp-telefono');
+        
+        inputNombre.value = 'Buscando...';
+        try {
+            const res = await fetch(`/api/buscar-dni/${dni}`);
+            const data = await res.json();
+            if (data.encontrado) {
+                inputNombre.value = data.cliente.nombre;
+                if (data.cliente.telefono) inputTelefono.value = data.cliente.telefono;
+            } else {
+                inputNombre.value = '';
+                inputNombre.placeholder = 'Escribe el nombre';
+            }
+        } catch (err) {
+            inputNombre.value = '';
+        }
+    }
+});
 
 document.getElementById('form-venta-presencial').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -362,7 +428,6 @@ document.getElementById('form-venta-presencial').addEventListener('submit', asyn
         if (res.ok) {
             alert(`✅ Venta registrada. Ticket: ${data.numero_ticket}`);
             cerrarModalVenta();
-            // No recargamos la tabla de "pendientes" porque este ticket se creó como "aprobado".
         } else {
             alert('Error: ' + data.error);
         }
