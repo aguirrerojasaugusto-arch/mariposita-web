@@ -850,6 +850,7 @@
             const btnPrev = document.getElementById('btn-prev-sorteo');
             const btnNext = document.getElementById('btn-next-sorteo');
 
+            // ⭐ SE AGREGA EL CONTADOR Y FECHA MÁS GRANDE EN CADA TARJETA ⭐
             track.innerHTML = sorteosGlobal.map(s => {
                 const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
                 const ahora = new Date().getTime();
@@ -859,20 +860,70 @@
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
 
+                // Creamos IDs únicos para el contador de cada tarjeta
+                const idDias = `cd-dias-${s.id}`;
+                const idHoras = `cd-horas-${s.id}`;
+                const idMinutos = `cd-minutos-${s.id}`;
+                const idSegundos = `cd-segundos-${s.id}`;
+
                 return `
                     <div class="card-sorteo-carrusel">
                         <img src="${s.imagen_base64 || 'https://via.placeholder.com/300x150'}">
                         <div class="info">
-                            <h3>${s.nombre}</h3>
+                            <h3 title="${s.nombre}">${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
-                            <div style="font-size: 0.75rem; color: #8892b0; margin-bottom: 0.5rem;">
+                            
+                            <!-- ⭐ FECHA MÁS GRANDE ⭐ -->
+                            <div style="font-size: 0.85rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">
                                 📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
                             </div>
+
+                            <!-- ⭐ CONTADOR POR TARJETA ⭐ -->
+                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00">
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idSegundos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Seg</small></div>
+                            </div>
+
                             ${boton}
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Iniciar todos los contadores de las tarjetas
+            document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
+                const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
+                const idDias = el.querySelector('[id^="cd-dias-"]').id;
+                const idHoras = el.querySelector('[id^="cd-horas-"]').id;
+                const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
+                const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
+
+                const intervalo = setInterval(() => {
+                    const ahora = new Date().getTime();
+                    const distancia = fechaObjetivo - ahora;
+
+                    if (distancia < 0) {
+                        clearInterval(intervalo);
+                        document.getElementById(idDias).textContent = "00";
+                        document.getElementById(idHoras).textContent = "00";
+                        document.getElementById(idMinutos).textContent = "00";
+                        document.getElementById(idSegundos).textContent = "00";
+                        return;
+                    }
+
+                    const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+                    const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+                    const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+                    document.getElementById(idDias).textContent = String(dias).padStart(2, '0');
+                    document.getElementById(idHoras).textContent = String(horas).padStart(2, '0');
+                    document.getElementById(idMinutos).textContent = String(minutos).padStart(2, '0');
+                    document.getElementById(idSegundos).textContent = String(segundos).padStart(2, '0');
+                }, 1000);
+            });
 
             indiceSorteoModal = 0;
             if (sorteosGlobal.length <= 2) {
@@ -927,31 +978,31 @@
                         <div class="form-row">
                             <div class="form-group"><label class="form-label">WHATSAPP <span>*</span></label><div class="input-wrapper dark"><input type="tel" name="telefono" id="telefono-input" required></div></div>
                             <div class="form-group"><label class="form-label">DEPARTAMENTO <span>*</span></label><div class="input-wrapper dark"><select name="departamento" id="departamento-select" required>
-                                <option value="Amazonas">AMAZONAS</option>
-                                <option value="Áncash">ÁNCASH</option>
-                                <option value="Apurímac">APURÍMAC</option>
-                                <option value="Arequipa">AREQUIPA</option>
-                                <option value="Ayacucho">AYACUCHO</option>
-                                <option value="Cajamarca">CAJAMARCA</option>
-                                <option value="Callao">CALLAO</option>
-                                <option value="Cusco">CUSCO</option>
-                                <option value="Huancavelica">HUANCAVELICA</option>
-                                <option value="Huánuco">HUÁNUCO</option>
-                                <option value="Ica">ICA</option>
-                                <option value="Junín">JUNÍN</option>
-                                <option value="La Libertad">LA LIBERTAD</option>
-                                <option value="Lambayeque">LAMBAYEQUE</option>
-                                <option value="Lima">LIMA</option>
-                                <option value="Loreto">LORETO</option>
-                                <option value="Madre de Dios">MADRE DE DIOS</option>
-                                <option value="Moquegua">MOQUEGUA</option>
-                                <option value="Pasco">PASCO</option>
-                                <option value="Piura">PIURA</option>
-                                <option value="Puno">PUNO</option>
-                                <option value="San Martín">SAN MARTÍN</option>
-                                <option value="Tacna">TACNA</option>
-                                <option value="Tumbes">TUMBES</option>
-                                <option value="Ucayali">UCAYALI</option>
+                                <option value="AMAZONAS">AMAZONAS</option>
+                                <option value="ÁNCASH">ÁNCASH</option>
+                                <option value="APURÍMAC">APURÍMAC</option>
+                                <option value="AREQUIPA">AREQUIPA</option>
+                                <option value="AYACUCHO">AYACUCHO</option>
+                                <option value="CAJAMARCA">CAJAMARCA</option>
+                                <option value="CALLAO">CALLAO</option>
+                                <option value="CUSCO">CUSCO</option>
+                                <option value="HUANCAVELICA">HUANCAVELICA</option>
+                                <option value="HUÁNUCO">HUÁNUCO</option>
+                                <option value="ICA">ICA</option>
+                                <option value="JUNÍN">JUNÍN</option>
+                                <option value="LA LIBERTAD">LA LIBERTAD</option>
+                                <option value="LAMBAYEQUE">LAMBAYEQUE</option>
+                                <option value="LIMA">LIMA</option>
+                                <option value="LORETO">LORETO</option>
+                                <option value="MADRE DE DIOS">MADRE DE DIOS</option>
+                                <option value="MOQUEGUA">MOQUEGUA</option>
+                                <option value="PASCO">PASCO</option>
+                                <option value="PIURA">PIURA</option>
+                                <option value="PUNO">PUNO</option>
+                                <option value="SAN MARTÍN">SAN MARTÍN</option>
+                                <option value="TACNA">TACNA</option>
+                                <option value="TUMBES">TUMBES</option>
+                                <option value="UCAYALI">UCAYALI</option>
                             </select></div></div>
                         </div>
                         <div class="form-row">
