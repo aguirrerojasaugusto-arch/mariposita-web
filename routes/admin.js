@@ -317,4 +317,27 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         try {
-            const sRes = await db.execute({ sql: 'SELECT * FROM sorteos WHERE id = ?', args: [req.params.id
+            const sRes = await db.execute({ sql: 'SELECT * FROM sorteos WHERE id = ?', args: [req.params.id] });
+            const sorteo = sRes.rows[0];
+            if (!sorteo) return res.status(404).json({ error: 'No encontrado' });
+            let imagen_path = sorteo.imagen_base64;
+            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            await db.execute({ sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`, args: [nombre || sorteo.nombre, descripcion ?? sorteo.descripcion, precio_ticket ? parseFloat(precio_ticket) : sorteo.precio_ticket, imagen_path, fecha_sorteo || sorteo.fecha_sorteo, hora_sorteo || sorteo.hora_sorteo, estado || sorteo.estado, sorteo.id] });
+            res.json({ success: true });
+        } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+});
+
+router.delete('/sorteos/:id', requireAdmin, async (req, res) => {
+    try { 
+        // Al eliminar el sorteo, eliminamos primero los tickets asociados para no romper la llave foránea
+        await db.execute({ sql: 'DELETE FROM tickets WHERE sorteo_id = ?', args: [req.params.id] });
+        await db.execute({ sql: 'DELETE FROM sorteos WHERE id = ?', args: [req.params.id] }); 
+        res.json({ success: true }); 
+    } catch (e) { 
+        res.status(500).json({ error: e.message }); 
+    }
+});
+
+// ⭐ EXPORTACIÓN DEL ROUTER (Obligatorio al final del archivo) ⭐
+module.exports = router;
