@@ -788,7 +788,6 @@
                             <h4>💳 Paga a:</h4>
                             <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
                             <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
-                            <!-- ⭐ TITULAR DINÁMICO ⭐ -->
                             <p style="margin-top: 5px; font-size: 0.9rem; color: #ffcc00;">Titular: <span id="info-titular" style="font-weight: bold; font-size: 1rem;">...</span></p>
                         </div>
 
@@ -876,6 +875,7 @@
                     if (!res.ok) throw new Error(data.error);
 
                     const cantTickets = document.getElementById('cantidad-tickets').value;
+                    const primerCodigo = data.codigos[0].replace('TKT-', '');
                     
                     document.getElementById('ticket-content').innerHTML = `
                         <div class="success-ticket-wrapper">
@@ -883,7 +883,7 @@
                                 <div class="success-header-icon">✓</div>
                                 <div class="success-header-text">
                                     <h3>¡PARTICIPACIÓN CONFIRMADA! 🎉</h3>
-                                    <p>Tienes <strong>${cantTickets} ticket(s) activo(s)</strong> para el sorteo.</p>
+                                    <p>Se generaron <strong>${cantTickets} ticket(s)</strong> a tu nombre.</p>
                                 </div>
                             </div>
 
@@ -893,8 +893,9 @@
                                     <div class="status-badge"><div class="status-dot"></div> ACTIVO</div>
                                 </div>
                                 <div class="ticket-number-box">
-                                    <p>TICKET #</p>
-                                    <h1>${data.numero_ticket.replace('TKT-', '')}</h1>
+                                    <p>TICKET PRINCIPAL</p>
+                                    <h1>${primerCodigo}</h1>
+                                    ${cantTickets > 1 ? `<p style="font-size: 0.8rem; margin-top: 5px;">(+${cantTickets - 1} tickets más generados)</p>` : ''}
                                 </div>
                                 <div class="ticket-details-row">
                                     <div class="ticket-detail-item">

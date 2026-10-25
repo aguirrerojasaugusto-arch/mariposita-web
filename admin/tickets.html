@@ -167,7 +167,7 @@
 let todosLosTickets = [];
 let ticketsFiltrados = [];
 let paginaActual = 1;
-let rolUsuario = 'vendedor'; // Por defecto asumimos vendedor hasta consultar
+let rolUsuario = 'vendedor'; 
 const itemsPorPagina = 5;
 
 async function logout() {
@@ -276,7 +276,6 @@ function renderizarTabla() {
     const fin = inicio + itemsPorPagina;
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
-    // ⭐ BOTONES DE ACCIÓN DINÁMICOS SEGÚN EL ROL ⭐
     const botonesAccion = (t) => {
         if (rolUsuario === 'admin') {
             return `
@@ -365,7 +364,6 @@ function abrirModal(index) {
 function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
 
 async function revisar(id, accion) {
-    // Esta función solo debería ser llamada por el admin gracias a los botones dinámicos
     let notas = null;
     if (accion === 'rechazar') {
         notas = prompt('Motivo del rechazo:');
@@ -447,10 +445,8 @@ document.getElementById('form-venta-presencial').addEventListener('submit', asyn
         const data = await res.json();
         
         if (res.ok) {
-            alert(`✅ Venta registrada. Ticket: ${data.numero_ticket}`);
+            alert(`✅ Venta registrada. Se generaron ${data.codigos.length} tickets. Primer código: ${data.codigos[0]}`);
             cerrarModalVenta();
-            
-            // ⭐ RECARGA AUTOMÁTICA PARA ACTUALIZAR LA TABLA ⭐
             location.reload(); 
         } else {
             alert('Error: ' + data.error);

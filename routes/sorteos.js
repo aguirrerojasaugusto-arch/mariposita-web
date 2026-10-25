@@ -7,7 +7,6 @@ const sharp = require('sharp');
 const { createWorker } = require('tesseract.js');
 const router = express.Router();
 
-// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
 function generarCodigoTicket() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let resultado = '';
@@ -42,8 +41,20 @@ router.post('/tickets', (req, res) => {
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T${sorteo.hora_sorteo || '23:59'}:00`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
-            const ocr = await extraerDatosComprobante(req.file.buffer);
-            if (ocr.error_ocr) console.warn("OCR falló:", ocr.error_ocr);
+            let textoImagen = "";
+            try {
+                const processedImage = await sharp(req.file.buffer)
+                    .resize(1500, null, { withoutEnlargement: true })
+                    .grayscale()
+                    .toBuffer();
+
+                const worker = await createWorker('spa');
+                const { data: { text } } = await worker.recognize(processedImage);
+                await worker.terminate();
+                textoImagen = text;
+            } catch (ocrError) {
+                return res.status(400).json({ error: 'No se pudo procesar la imagen.' });
+            }
 
             const matchOperacion = textoImagen.match(/\b\d{6,9}\b/g);
             let operacionDetectada = null;
@@ -61,30 +72,38 @@ router.post('/tickets', (req, res) => {
 
             const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
-            const ordenDup = await db.execute({ sql: 'SELECT id FROM ordenes WHERE hash_comprobante = ?', args: [hash] });
-            if (ticketDup.rows.length > 0 || ordenDup.rows.length > 0) {
+            if (ticketDup.rows.length > 0) {
                 return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
             }
 
-            // ⭐ GENERAMOS EL CÓDIGO ALEATORIO ⭐
-            let numero;
-            let isUnique = false;
-            while (!isUnique) {
-                numero = generarCodigoTicket();
-                const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-                if (check.rows.length === 0) isUnique = true;
-            }
-
+            // ⭐ GENERACIÓN MÚLTIPLE DE TICKETS ⭐
             const cantTickets = parseInt(cantidad) || 1;
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            const codigosGenerados = [];
 
-            await db.execute({
-                sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_monto, ocr_operacion)
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?)`,
-                args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, cantTickets, base64Image, hash, ocr.monto || null, operacionDetectada]
+            for (let i = 0; i < cantTickets; i++) {
+                let numero;
+                let isUnique = false;
+                while (!isUnique) {
+                    numero = generarCodigoTicket();
+                    const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+                    if (check.rows.length === 0) isUnique = true;
+                }
+                codigosGenerados.push(numero);
+
+                await db.execute({
+                    sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion)
+                          VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?)`,
+                    args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, base64Image, hash, operacionDetectada]
+                });
+            }
+
+            res.json({ 
+                success: true, 
+                codigos: codigosGenerados,
+                mensaje: `Se generaron ${cantTickets} tickets correctamente.` 
             });
 
-            res.json({ success: true, numero_ticket: numero, nombre_cliente: nombre, sorteo_nombre: sorteo.nombre, cantidad: cantTickets });
         } catch (e) {
             console.error("Error al crear ticket:", e);
             res.status(500).json({ error: 'Error interno al guardar el ticket.' });

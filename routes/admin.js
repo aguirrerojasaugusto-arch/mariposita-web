@@ -168,7 +168,6 @@ router.get('/tickets/pendientes', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA PARA OBTENER TICKETS APROBADOS (Para imprimir) ⭐
 router.get('/tickets/aprobados', async (req, res) => {
     try {
         const result = await db.execute(`
@@ -182,7 +181,6 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR TICKETS ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -205,7 +203,7 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA DE VENTA PRESENCIAL (ACCESIBLE PARA VENDEDORES Y ADMINS) ⭐
+// ⭐ VENTA PRESENCIAL CON MÚLTIPLES TICKETS ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -219,20 +217,24 @@ router.post('/tickets/vender', async (req, res) => {
         if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
 
         const cantTickets = parseInt(cantidad) || 1;
-        
-        let numero;
-        let isUnique = false;
-        while (!isUnique) {
-            numero = generarCodigoTicket();
-            const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-            if (check.rows.length === 0) isUnique = true;
-        }
+        const codigosGenerados = [];
 
-        await db.execute({
-            sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
-            args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
-        });
+        for (let i = 0; i < cantTickets; i++) {
+            let numero;
+            let isUnique = false;
+            while (!isUnique) {
+                numero = generarCodigoTicket();
+                const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+                if (check.rows.length === 0) isUnique = true;
+            }
+            codigosGenerados.push(numero);
+
+            await db.execute({
+                sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
+                args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null]
+            });
+        }
 
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         await db.execute({
@@ -240,7 +242,7 @@ router.post('/tickets/vender', async (req, res) => {
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip, ahora]
         });
 
-        res.json({ success: true, numero_ticket: numero, mensaje: 'Venta registrada correctamente' });
+        res.json({ success: true, codigos: codigosGenerados, mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
         console.error(e);
         res.status(500).json({ error: e.message }); 
