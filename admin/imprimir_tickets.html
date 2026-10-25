@@ -34,29 +34,29 @@
         }
         .btn:hover { background: #005f8f; }
 
-        /* Configuración de la hoja A4 */
+        /* ⭐ CONFIGURACIÓN DE LA HOJA A4 (10 TICKETS) ⭐ */
         .hoja-a4 {
             width: 210mm;
             height: 297mm;
             background: #fff;
-            padding: 10mm;
+            padding: 8mm; /* Margen reducido */
             box-sizing: border-box;
             display: grid;
             grid-template-columns: 1fr 1fr; /* 2 columnas */
-            grid-template-rows: repeat(4, 1fr); /* 4 filas */
-            gap: 5mm;
+            grid-template-rows: repeat(5, 1fr); /* 5 filas */
+            gap: 4mm; /* Espacio entre tickets reducido */
         }
 
         /* Diseño del Ticket */
         .ticket {
             background-color: #FDF8F0;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px dashed #ccc;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 10px;
+            padding: 6px;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
@@ -67,7 +67,7 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background-image: radial-gradient(#e0d6c8 1px, transparent 1px);
-            background-size: 15px 15px;
+            background-size: 12px 12px;
             opacity: 0.5;
             z-index: 0;
         }
@@ -84,16 +84,16 @@
         /* Número de ticket centrado y grande */
         .ticket-header {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .ticket-numero {
             background-color: #1B1464;
             color: #fff;
-            font-size: 32px;
+            font-size: 26px; /* Ligeramente más pequeño para que quepa */
             font-weight: 900;
-            padding: 8px 15px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 6px;
             letter-spacing: 1px;
             display: inline-block;
         }
@@ -101,7 +101,7 @@
         /* Cuerpo del ticket */
         .ticket-body {
             text-align: center;
-            margin: 5px 0;
+            margin: 2px 0;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
@@ -110,52 +110,62 @@
 
         .ticket-datos {
             background: rgba(255,255,255,0.8);
-            padding: 12px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
             border: 1px solid #E5D9C5;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         .ticket-datos h3 {
             margin: 0;
-            font-size: 20px;
+            font-size: 15px; /* Ajustado para que el nombre no se desborde */
             color: #1B1464;
             font-weight: 900;
             text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .ticket-datos p {
-            margin: 5px 0 0 0;
-            font-size: 16px;
+            margin: 3px 0 0 0;
+            font-size: 13px;
             color: #333;
             font-weight: 700;
         }
 
         /* Nombre del evento debajo del nombre */
         .ticket-evento {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
             font-weight: 700;
             text-transform: uppercase;
-            margin-top: 8px;
+            margin-top: 5px;
             letter-spacing: 0.5px;
         }
 
         /* Pie del ticket */
         .ticket-footer {
-            font-size: 10px;
+            font-size: 8px;
             text-align: center;
             color: #888;
             border-top: 1px dashed #ccc;
-            padding-top: 8px;
-            margin-top: 5px;
+            padding-top: 4px;
+            margin-top: 2px;
         }
 
         /* Al imprimir */
         @media print {
             body { background: #fff; padding: 0; margin: 0; }
             .no-print { display: none; }
-            .hoja-a4 { box-shadow: none; border: none; width: 100%; height: 100vh; page-break-after: always; }
+            .hoja-a4 { 
+                box-shadow: none; 
+                border: none; 
+                width: 100%; 
+                height: 100vh; 
+                page-break-after: always; 
+                padding: 5mm; /* Ajuste fino al imprimir */
+            }
             .ticket { border: 1px solid #ccc; }
         }
     </style>
@@ -184,8 +194,8 @@
 
                 const contenedor = document.getElementById('contenedor-hojas');
                 
-                // Agrupar en bloques de 8 (para llenar la hoja A4)
-                const tamañoPagina = 8;
+                // ⭐ AGRUPAR EN BLOQUES DE 10 (NUEVO TAMAÑO) ⭐
+                const tamañoPagina = 10;
                 for (let i = 0; i < tickets.length; i += tamañoPagina) {
                     const paginaTickets = tickets.slice(i, i + tamañoPagina);
                     
@@ -193,7 +203,7 @@
                     const hoja = document.createElement('div');
                     hoja.className = 'hoja-a4';
 
-                    // Crear los 8 tickets
+                    // Crear los 10 tickets
                     paginaTickets.forEach(t => {
                         const ticketDiv = document.createElement('div');
                         ticketDiv.className = 'ticket';
@@ -221,7 +231,8 @@
                         hoja.appendChild(ticketDiv);
                     });
 
-                    // Si la última hoja no se llena con 8, rellenamos con tickets vacíos
+                    // Si la última hoja no se llena con 10, rellenamos con tickets vacíos
+                    // para que el grid mantenga la estructura y no se estire feo.
                     const faltantes = tamañoPagina - paginaTickets.length;
                     for (let j = 0; j < faltantes; j++) {
                         const ticketVacio = document.createElement('div');
