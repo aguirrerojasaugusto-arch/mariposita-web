@@ -40,7 +40,7 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
             max-width: 480px; 
             width: 100%; 
-            height: 320px; /* ⭐ AUMENTADO DE 260px A 320px ⭐ */
+            height: 320px; 
             padding: 1.2rem; 
             gap: 1rem; 
             overflow: hidden; 
@@ -53,9 +53,9 @@
         
         /* ⭐ TÍTULO CON MÁS ESPACIO ⭐ */
         .hero-titulo-fijo { 
-            font-size: 1.7rem; /* Ligeramente más pequeño */
+            font-size: 1.7rem;
             line-height: 1.25; 
-            height: 4.3rem; /* Aumentado para que entren 2 líneas holgadas */
+            height: 4.3rem;
             overflow: hidden; 
             display: -webkit-box; 
             -webkit-line-clamp: 2; 
@@ -66,32 +66,10 @@
         .hero-desc-fija { font-size: 0.95rem; color: #ccc; height: 2.8rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0; }
 
         /* ⭐ ESTILOS DEL CONTADOR DE TIEMPO ⭐ */
-        .contador-tiempo {
-            display: flex;
-            gap: 5px;
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
-        .contador-bloque {
-            background: rgba(0, 210, 255, 0.1);
-            border: 1px solid var(--accent-cyan);
-            border-radius: 6px;
-            padding: 4px 8px;
-            text-align: center;
-            min-width: 40px;
-        }
-        .contador-bloque span {
-            display: block;
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #fff;
-            line-height: 1;
-        }
-        .contador-bloque small {
-            font-size: 0.55rem;
-            color: #8892b0;
-            text-transform: uppercase;
-        }
+        .contador-tiempo { display: flex; gap: 5px; margin-top: 8px; margin-bottom: 8px; }
+        .contador-bloque { background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent-cyan); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 40px; }
+        .contador-bloque span { display: block; font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1; }
+        .contador-bloque small { font-size: 0.55rem; color: #8892b0; text-transform: uppercase; }
 
         /* --- ESTILOS DEL CATÁLOGO --- */
         .search-container { display: flex; justify-content: center; margin-bottom: 2rem; }
@@ -209,7 +187,14 @@
         .input-wrapper { display: flex; background: #f4f4f4; border-radius: 8px; overflow: hidden; }
         .input-wrapper.dark { background: rgba(20, 5, 40, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); }
         .input-icon { width: 45px; display: flex; justify-content: center; align-items: center; background: #7b2cbf; color: #fff; font-size: 1.1rem; }
-        .input-wrapper input, .input-wrapper select { flex: 1; padding: 0.8rem; border: none; background: transparent; font-size: 0.95rem; color: #333; outline: none; width: 100%; }
+        
+        /* ⭐ INPUTS Y SELECTS EN MAYÚSCULAS ⭐ */
+        .input-wrapper input, .input-wrapper select { 
+            flex: 1; padding: 0.8rem; border: none; background: transparent; 
+            font-size: 0.95rem; color: #333; outline: none; width: 100%; 
+            text-transform: uppercase; /* Fuerza mayúsculas visualmente */
+        }
+        
         .input-wrapper.dark input, .input-wrapper.dark select { color: #fff; }
         .input-wrapper.dark select option { background: #112240; color: #fff; }
         .input-wrapper input:disabled { background-color: #e9ecef !important; color: #6c757d !important; }
@@ -544,7 +529,7 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
-        let intervaloContador; // ⭐ Variable para guardar el intervalo del contador ⭐
+        let intervaloContador;
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -587,13 +572,11 @@
 
                 document.getElementById('year').textContent = new Date().getFullYear();
 
-                // ⭐ LÓGICA PARA MOSTRAR EL FLYER CON TIEMPO LÍMITE ⭐
                 if (config.flyer_inicio) {
                     if (!sessionStorage.getItem('flyer_cerrado')) {
                         document.getElementById('flyer-img').src = config.flyer_inicio;
                         document.getElementById('flyer-modal').style.display = 'flex';
                         
-                        // ⏱️ CERRAR AUTOMÁTICAMENTE DESPUÉS DE 5 SEGUNDOS (5000 ms)
                         setTimeout(() => {
                             cerrarFlyer();
                         }, 5000); 
@@ -603,10 +586,8 @@
             } catch (e) { console.error("Error al cargar config", e); }
         }
 
-        // ⭐ FUNCIÓN PARA CERRAR EL FLYER ⭐
         function cerrarFlyer() {
             document.getElementById('flyer-modal').style.display = 'none';
-            // Guardamos en sesión para que no vuelva a salir si el usuario recarga la página
             sessionStorage.setItem('flyer_cerrado', 'true');
         }
 
@@ -639,7 +620,7 @@
                 sorteosGlobal = await res.json();
                 if (sorteosGlobal.length > 0) {
                     renderHeroContent(0);
-                    intervaloSorteos = setInterval(() => moverHero(1), 10000); // Movimiento del carrusel cada 10s
+                    intervaloSorteos = setInterval(() => moverHero(1), 10000);
                 }
             } catch (e) {}
         }
@@ -647,7 +628,6 @@
         function renderHeroContent(index) {
             const sorteo = sorteosGlobal[index];
             
-            // Detenemos el contador anterior si existe para evitar conflictos
             if(intervaloContador) clearInterval(intervaloContador);
 
             document.getElementById('hero-info').innerHTML = `
@@ -655,7 +635,6 @@
                 <h1 class="hero-titulo-fijo" style="margin-top: 0.5rem;">${sorteo.nombre}</h1>
                 <p class="hero-desc-fija" style="margin-bottom: 0;">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
                 
-                <!-- ⭐ CONTENEDOR DEL CONTADOR (MARCO ROJO) ⭐ -->
                 <div class="contador-tiempo" id="contador-tiempo">
                     <div class="contador-bloque"><span id="cd-dias">00</span><small>Días</small></div>
                     <div class="contador-bloque"><span id="cd-horas">00</span><small>Hrs</small></div>
@@ -672,13 +651,10 @@
                 document.getElementById('hero-imagen-container').innerHTML = `<div style="width:100%; height:100%; background:#0a192f; display:flex; justify-content:center; align-items:center; color:#8892b0; border-radius:12px;">Sin imagen</div>`;
             }
 
-            // Iniciar el contador
             iniciarContador(sorteo.fecha_sorteo, sorteo.hora_sorteo || '23:59');
         }
 
-        // ⭐ LÓGICA DEL CONTADOR DE TIEMPO ⭐
         function iniciarContador(fechaStr, horaStr) {
-            // Crear fecha objetivo (Ej: 2026-12-31T23:59:00)
             const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00`).getTime();
 
             intervaloContador = setInterval(() => {
@@ -687,7 +663,6 @@
 
                 if (distancia < 0) {
                     clearInterval(intervaloContador);
-                    // Si ya pasó la fecha, mostrar ceros
                     const ids = ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'];
                     ids.forEach(id => {
                         const el = document.getElementById(id);
@@ -696,13 +671,11 @@
                     return;
                 }
 
-                // Cálculos matemáticos para días, horas, minutos y segundos
                 const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
                 const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
                 const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
 
-                // Actualizar el HTML
                 const elDias = document.getElementById('cd-dias');
                 const elHoras = document.getElementById('cd-horas');
                 const elMinutos = document.getElementById('cd-minutos');
@@ -755,7 +728,6 @@
                 return; 
             }
 
-            // ⭐ SE ELIMINÓ EL PRECIO Y EL STOCK DE LA TARJETA PÚBLICA ⭐
             track.innerHTML = productosFiltrados.map(p => `
                 <div class="card-producto">
                     <img 
@@ -944,6 +916,7 @@
             let opcionesCantidad = '';
             for (let i = 1; i <= 20; i++) opcionesCantidad += `<option value="${i}">${i} Ticket(s)</option>`;
 
+            // ⭐ EL FORMULARIO YA TIENE LA CLASE PARA MAYÚSCULAS EN EL CSS ⭐
             document.getElementById('ticket-content').innerHTML = `
                 <div class="ticket-header"><h2>Comprar: ${sorteoActivo.nombre}</h2><button class="resultado-close" onclick="cerrarModalTicket()">✕</button></div>
                 <div class="ticket-body">
@@ -954,31 +927,31 @@
                         <div class="form-row">
                             <div class="form-group"><label class="form-label">WHATSAPP <span>*</span></label><div class="input-wrapper dark"><input type="tel" name="telefono" id="telefono-input" required></div></div>
                             <div class="form-group"><label class="form-label">DEPARTAMENTO <span>*</span></label><div class="input-wrapper dark"><select name="departamento" id="departamento-select" required>
-                                <option value="Amazonas">Amazonas</option>
-                                <option value="Áncash">Áncash</option>
-                                <option value="Apurímac">Apurímac</option>
-                                <option value="Arequipa">Arequipa</option>
-                                <option value="Ayacucho">Ayacucho</option>
-                                <option value="Cajamarca">Cajamarca</option>
-                                <option value="Callao">Callao</option>
-                                <option value="Cusco">Cusco</option>
-                                <option value="Huancavelica">Huancavelica</option>
-                                <option value="Huánuco">Huánuco</option>
-                                <option value="Ica">Ica</option>
-                                <option value="Junín">Junín</option>
-                                <option value="La Libertad">La Libertad</option>
-                                <option value="Lambayeque">Lambayeque</option>
-                                <option value="Lima">Lima</option>
-                                <option value="Loreto">Loreto</option>
-                                <option value="Madre de Dios">Madre de Dios</option>
-                                <option value="Moquegua">Moquegua</option>
-                                <option value="Pasco">Pasco</option>
-                                <option value="Piura">Piura</option>
-                                <option value="Puno">Puno</option>
-                                <option value="San Martín">San Martín</option>
-                                <option value="Tacna">Tacna</option>
-                                <option value="Tumbes">Tumbes</option>
-                                <option value="Ucayali">Ucayali</option>
+                                <option value="Amazonas">AMAZONAS</option>
+                                <option value="Áncash">ÁNCASH</option>
+                                <option value="Apurímac">APURÍMAC</option>
+                                <option value="Arequipa">AREQUIPA</option>
+                                <option value="Ayacucho">AYACUCHO</option>
+                                <option value="Cajamarca">CAJAMARCA</option>
+                                <option value="Callao">CALLAO</option>
+                                <option value="Cusco">CUSCO</option>
+                                <option value="Huancavelica">HUANCAVELICA</option>
+                                <option value="Huánuco">HUÁNUCO</option>
+                                <option value="Ica">ICA</option>
+                                <option value="Junín">JUNÍN</option>
+                                <option value="La Libertad">LA LIBERTAD</option>
+                                <option value="Lambayeque">LAMBAYEQUE</option>
+                                <option value="Lima">LIMA</option>
+                                <option value="Loreto">LORETO</option>
+                                <option value="Madre de Dios">MADRE DE DIOS</option>
+                                <option value="Moquegua">MOQUEGUA</option>
+                                <option value="Pasco">PASCO</option>
+                                <option value="Piura">PIURA</option>
+                                <option value="Puno">PUNO</option>
+                                <option value="San Martín">SAN MARTÍN</option>
+                                <option value="Tacna">TACNA</option>
+                                <option value="Tumbes">TUMBES</option>
+                                <option value="Ucayali">UCAYALI</option>
                             </select></div></div>
                         </div>
                         <div class="form-row">
@@ -1031,12 +1004,12 @@
                             const res = await fetch(`/api/buscar-dni/${dni}`);
                             const data = await res.json();
                             if (data.encontrado) {
-                                document.getElementById('nombre-input').value = data.cliente.nombre;
+                                document.getElementById('nombre-input').value = data.cliente.nombre.toUpperCase();
                                 document.getElementById('telefono-input').value = data.cliente.telefono;
                                 document.getElementById('nombre-input').disabled = true;
                             } else {
                                 document.getElementById('nombre-input').value = '';
-                                document.getElementById('nombre-input').placeholder = 'Escribe tu nombre';
+                                document.getElementById('nombre-input').placeholder = 'ESCRIBE TU NOMBRE';
                                 document.getElementById('nombre-input').disabled = false;
                             }
                         } catch (e) {}
@@ -1050,6 +1023,9 @@
                 const loader = document.getElementById('loader-overlay');
                 const loaderText = document.getElementById('loader-text');
                 const loaderTimer = document.getElementById('loader-timer');
+                
+                // ⭐ CONVERTIR VALORES A MAYÚSCULAS ANTES DE ENVIAR ⭐
+                document.getElementById('nombre-input').value = document.getElementById('nombre-input').value.toUpperCase();
                 
                 loader.style.display = 'flex';
                 btn.disabled = true; 
@@ -1157,7 +1133,6 @@
             const resumenNombre = document.getElementById('resumen-nombre-cliente');
             const resumenTotal = document.getElementById('resumen-total-tickets');
 
-            // Ocultar resumen y limpiar buscador visual
             resumenBox.style.display = 'none';
             body.innerHTML = '<p style="color:#00d2ff; text-align:center; padding-top:2rem;">Buscando en la base de datos...</p>';
             
@@ -1185,7 +1160,6 @@
                     return;
                 }
 
-                // ⭐ ACTUALIZAMOS EL RESUMEN FIJO ⭐
                 if (data.tickets.length > 0) {
                     const primerTicket = data.tickets[0];
                     resumenNombre.textContent = primerTicket.cliente_nombre;
@@ -1230,7 +1204,7 @@
                 }
                 
                 body.innerHTML = html;
-                body.scrollTop = 0; // Reiniciar scroll al principio
+                body.scrollTop = 0;
 
             } catch (error) {
                 console.error("Error al buscar:", error);
@@ -1241,8 +1215,8 @@
         function cerrarResultado() {
             document.getElementById('resultado-overlay').classList.remove('active');
             document.getElementById('input-dni').value = '';
-            document.getElementById('resumen-cliente-fijo').style.display = 'none'; // Ocultar resumen al cerrar
-            document.getElementById('resultado-body').innerHTML = ''; // Limpiar el cuerpo
+            document.getElementById('resumen-cliente-fijo').style.display = 'none';
+            document.getElementById('resultado-body').innerHTML = '';
             
             if(!document.getElementById('ticket-modal').classList.contains('active') && !document.getElementById('sorteos-modal').classList.contains('active')) {
                 desbloquearScroll();

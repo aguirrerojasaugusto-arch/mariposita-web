@@ -30,6 +30,11 @@
     #tooltip-comprobante img { width: 300px; height: auto; border-radius: 4px; display: block; }
     .badge-alerta { background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; }
     .alert-box { background: #fff3e0; border-left: 4px solid #ef6c00; color: #e65100; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 0.85rem; }
+    
+    /* ⭐ INPUTS EN MAYÚSCULAS ⭐ */
+    .form-group input, .form-group select {
+        text-transform: uppercase;
+    }
 </style>
 </head>
 <body>
@@ -97,7 +102,6 @@
             <form id="form-venta-presencial">
                 <div class="form-group">
                     <label>Sorteo *</label>
-                    <!-- ⭐ AGREGADO ONCHANGE PARA CALCULAR EL TOTAL ⭐ -->
                     <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
                         <option value="">Cargando sorteos...</option>
                     </select>
@@ -120,31 +124,31 @@
                         <label>Departamento</label>
                         <select id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
                             <option value="">Seleccione...</option>
-                            <option value="Amazonas">Amazonas</option>
-                            <option value="Áncash">Áncash</option>
-                            <option value="Apurímac">Apurímac</option>
-                            <option value="Arequipa">Arequipa</option>
-                            <option value="Ayacucho">Ayacucho</option>
-                            <option value="Cajamarca">Cajamarca</option>
-                            <option value="Callao">Callao</option>
-                            <option value="Cusco">Cusco</option>
-                            <option value="Huancavelica">Huancavelica</option>
-                            <option value="Huánuco">Huánuco</option>
-                            <option value="Ica">Ica</option>
-                            <option value="Junín">Junín</option>
-                            <option value="La Libertad">La Libertad</option>
-                            <option value="Lambayeque">Lambayeque</option>
-                            <option value="Lima">Lima</option>
-                            <option value="Loreto">Loreto</option>
-                            <option value="Madre de Dios">Madre de Dios</option>
-                            <option value="Moquegua">Moquegua</option>
-                            <option value="Pasco">Pasco</option>
-                            <option value="Piura">Piura</option>
-                            <option value="Puno">Puno</option>
-                            <option value="San Martín">San Martín</option>
-                            <option value="Tacna">Tacna</option>
-                            <option value="Tumbes">Tumbes</option>
-                            <option value="Ucayali">Ucayali</option>
+                            <option value="AMAZONAS">AMAZONAS</option>
+                            <option value="ÁNCASH">ÁNCASH</option>
+                            <option value="APURÍMAC">APURÍMAC</option>
+                            <option value="AREQUIPA">AREQUIPA</option>
+                            <option value="AYACUCHO">AYACUCHO</option>
+                            <option value="CAJAMARCA">CAJAMARCA</option>
+                            <option value="CALLAO">CALLAO</option>
+                            <option value="CUSCO">CUSCO</option>
+                            <option value="HUANCAVELICA">HUANCAVELICA</option>
+                            <option value="HUÁNUCO">HUÁNUCO</option>
+                            <option value="ICA">ICA</option>
+                            <option value="JUNÍN">JUNÍN</option>
+                            <option value="LA LIBERTAD">LA LIBERTAD</option>
+                            <option value="LAMBAYEQUE">LAMBAYEQUE</option>
+                            <option value="LIMA">LIMA</option>
+                            <option value="LORETO">LORETO</option>
+                            <option value="MADRE DE DIOS">MADRE DE DIOS</option>
+                            <option value="MOQUEGUA">MOQUEGUA</option>
+                            <option value="PASCO">PASCO</option>
+                            <option value="PIURA">PIURA</option>
+                            <option value="PUNO">PUNO</option>
+                            <option value="SAN MARTÍN">SAN MARTÍN</option>
+                            <option value="TACNA">TACNA</option>
+                            <option value="TUMBES">TUMBES</option>
+                            <option value="UCAYALI">UCAYALI</option>
                         </select>
                     </div>
                 </div>
@@ -152,10 +156,8 @@
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Cantidad de Tickets *</label>
-                        <!-- ⭐ AGREGADO ONINPUT PARA CALCULAR EL TOTAL ⭐ -->
                         <input type="number" id="vp-cantidad" min="1" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" oninput="calcularTotalVenta()">
                     </div>
-                    <!-- ⭐ NUEVO CAMPO DE TOTAL A PAGAR ⭐ -->
                     <div class="form-group">
                         <label>Total a Pagar (S/)</label>
                         <input type="text" id="vp-total-pagar" readonly value="0.00" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background-color: #e9ecef; font-weight: bold; color: #2e7d32; font-size: 1.1rem;">
@@ -400,12 +402,11 @@ async function abrirModalVentaPresencial() {
         const res = await fetch('/api/sorteos');
         const sorteos = await res.json();
         
-        // ⭐ GUARDAMOS EL PRECIO EN UN ATRIBUTO DATA-PRECIO ⭐
         select.innerHTML = '<option value="">Selecciona un sorteo</option>' + 
             sorteos.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket.toFixed(2)})</option>`).join('');
             
         document.getElementById('form-venta-presencial').reset();
-        document.getElementById('vp-total-pagar').value = '0.00'; // Reiniciar total
+        document.getElementById('vp-total-pagar').value = '0.00';
         document.getElementById('modal-venta-presencial').classList.add('active');
     } catch (e) {
         alert('Error al cargar los sorteos');
@@ -414,22 +415,17 @@ async function abrirModalVentaPresencial() {
 
 function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
 
-// ⭐ FUNCIÓN PARA CALCULAR EL TOTAL A PAGAR ⭐
 function calcularTotalVenta() {
     const selectSorteo = document.getElementById('vp-sorteo');
     const cantidad = parseInt(document.getElementById('vp-cantidad').value) || 1;
     
-    // Obtener el precio de la opción seleccionada
     const opcionSeleccionada = selectSorteo.options[selectSorteo.selectedIndex];
     const precio = opcionSeleccionada ? parseFloat(opcionSeleccionada.getAttribute('data-precio')) : 0;
     
     const total = precio * cantidad;
-    
-    // Mostrar el total formateado
     document.getElementById('vp-total-pagar').value = total.toFixed(2);
 }
 
-// ⭐ AUTOCOMPLETAR DATOS POR DNI (AHORA INCLUYE DEPARTAMENTO) ⭐
 document.getElementById('vp-dni').addEventListener('input', async function(e) {
     const dni = e.target.value;
     if (dni.length === 8) {
@@ -442,16 +438,15 @@ document.getElementById('vp-dni').addEventListener('input', async function(e) {
             const res = await fetch(`/api/buscar-dni/${dni}`);
             const data = await res.json();
             if (data.encontrado) {
-                inputNombre.value = data.cliente.nombre;
+                inputNombre.value = data.cliente.nombre.toUpperCase();
                 if (data.cliente.telefono) inputTelefono.value = data.cliente.telefono;
                 
-                // ⭐ RELLENAR DEPARTAMENTO SI EXISTE ⭐
                 if (data.cliente.departamento) {
-                    selectDepartamento.value = data.cliente.departamento;
+                    selectDepartamento.value = data.cliente.departamento.toUpperCase();
                 }
             } else {
                 inputNombre.value = '';
-                inputNombre.placeholder = 'Escribe el nombre';
+                inputNombre.placeholder = 'ESCRIBE EL NOMBRE';
             }
         } catch (err) {
             inputNombre.value = '';
@@ -464,9 +459,10 @@ document.getElementById('form-venta-presencial').addEventListener('submit', asyn
     const btn = document.getElementById('btn-vender');
     btn.disabled = true; btn.textContent = 'Registrando...';
 
+    // ⭐ CONVERTIR A MAYÚSCULAS ANTES DE ENVIAR ⭐
     const body = {
         sorteo_id: document.getElementById('vp-sorteo').value,
-        cliente_nombre: document.getElementById('vp-nombre').value,
+        cliente_nombre: document.getElementById('vp-nombre').value.toUpperCase(),
         cliente_dni: document.getElementById('vp-dni').value,
         cliente_telefono: document.getElementById('vp-telefono').value,
         cliente_departamento: document.getElementById('vp-departamento').value,
