@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const crypto = require('crypto'); // ⭐ IMPORTACIÓN AGREGADA ⭐
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -220,7 +221,7 @@ router.post('/tickets/vender', async (req, res) => {
 
         const cantTickets = parseInt(cantidad) || 1;
         const codigosGenerados = [];
-        const hashBase = crypto.randomBytes(16).toString('hex');
+        const hashBase = crypto.randomBytes(16).toString('hex'); // Ahora crypto sí está importado
 
         for (let i = 0; i < cantTickets; i++) {
             let numero;
