@@ -192,7 +192,7 @@
         .input-wrapper input, .input-wrapper select { 
             flex: 1; padding: 0.8rem; border: none; background: transparent; 
             font-size: 0.95rem; color: #333; outline: none; width: 100%; 
-            text-transform: uppercase; /* Fuerza mayúsculas visualmente */
+            text-transform: uppercase;
         }
         
         .input-wrapper.dark input, .input-wrapper.dark select { color: #fff; }
@@ -654,8 +654,10 @@
             iniciarContador(sorteo.fecha_sorteo, sorteo.hora_sorteo || '23:59');
         }
 
+        // ⭐ CONTADOR CORREGIDO CON ZONA HORARIA DE PERÚ (-05:00) ⭐
         function iniciarContador(fechaStr, horaStr) {
-            const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00`).getTime();
+            // Forzamos la zona horaria de Perú para que no haya desfase
+            const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00-05:00`).getTime();
 
             intervaloContador = setInterval(() => {
                 const ahora = new Date().getTime();
@@ -851,7 +853,8 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
+                // ⭐ FORZAMOS HORA DE PERÚ PARA SABER SI YA FINALIZÓ ⭐
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00-05:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
                 
@@ -875,7 +878,7 @@
                                 📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
                             </div>
 
-                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00">
+                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00-05:00">
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
