@@ -371,7 +371,7 @@ async function buscar() {
         if (data.tickets.length > 0) {
             html += '<h3 style="color:#333; margin: 1.5rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             
-            // ⭐ CORRECCIÓN AQUÍ: Se guarda el ticket completo en un arreglo temporal para pasarlo al modal sin problemas de comillas ⭐
+            // Guardamos los tickets en una variable global para acceder a ellos desde el modal
             window.ticketsTemporales = data.tickets;
 
             data.tickets.forEach((t, index) => {
@@ -409,7 +409,7 @@ async function buscar() {
     }
 }
 
-// ⭐ FUNCIÓN PARA ABRIR EL MODAL USANDO EL ÍNDICE ⭐
+// ⭐ FUNCIÓN PARA ABRIR EL MODAL Y RELLENAR LOS DATOS ⭐
 function abrirModalEditarPorIndex(index) {
     const ticket = window.ticketsTemporales[index];
     
@@ -419,7 +419,7 @@ function abrirModalEditarPorIndex(index) {
     document.getElementById('edit-dni').value = ticket.cliente_dni || '';
     document.getElementById('edit-telefono').value = ticket.cliente_telefono || '';
     
-    // El departamento puede venir en mayúsculas o minúsculas, lo forzamos a mayúsculas para el select
+    // Rellenamos el departamento forzando mayúsculas
     const depto = ticket.cliente_departamento ? ticket.cliente_departamento.toUpperCase() : '';
     document.getElementById('edit-departamento').value = depto;
     

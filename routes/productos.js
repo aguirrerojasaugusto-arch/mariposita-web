@@ -20,18 +20,16 @@ router.get('/productos/:id', async (req, res) => {
 
 router.get('/sorteos', async (req, res) => {
     try {
-        const result = await db.execute("SELECT id, nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo FROM sorteos WHERE estado = 'activo' ORDER BY fecha_sorteo ASC");
+        const result = await db.execute("SELECT id, nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo FROM sorteos WHERE estado = 'activo' ORDER BY fecha_sorteo ASC");
         res.json(result.rows);
     } catch (error) { res.status(500).json({ error: 'Error al obtener sorteos' }); }
 });
 
 router.get('/config-publica', async (req, res) => {
     try {
-        // ⭐ AGREGAMOS 'flyer_inicio' A LA LISTA ⭐
         const keys = [
             'numero_yape', 'numero_plin', 'nombre_titular', 'whatsapp', 
-            'email_contacto', 'telefono_contacto', 'ubicacion', 
-            'logo_admin', 'fondo_login', 'flyer_inicio'
+            'email_contacto', 'telefono_contacto', 'ubicacion', 'logo_admin', 'fondo_login'
         ];
         const placeholders = keys.map(() => '?').join(',');
         const result = await db.execute({
@@ -54,11 +52,9 @@ router.get('/carrusel', async (req, res) => {
 router.get('/buscar-dni/:dni', async (req, res) => {
     const dni = req.params.dni;
     if (!dni) return res.status(400).json({ error: 'DNI requerido' });
-
     try {
         const result = await db.execute({
-            sql: `SELECT cliente_nombre as nombre, cliente_telefono as telefono, cliente_departamento as departamento 
-                  FROM tickets WHERE cliente_dni = ? ORDER BY creado_en DESC LIMIT 1`,
+            sql: `SELECT cliente_nombre as nombre, cliente_telefono as telefono, cliente_departamento as departamento FROM tickets WHERE cliente_dni = ? ORDER BY creado_en DESC LIMIT 1`,
             args: [dni]
         });
         const cliente = result.rows[0];
@@ -67,26 +63,25 @@ router.get('/buscar-dni/:dni', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno al buscar el DNI' }); }
 });
 
+// ⭐ CONSULTA MODIFICADA: Ahora trae el DNI, teléfono y departamento del ticket ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debes ingresar un DNI o Teléfono' });
-
     try {
         const ordenesRes = await db.execute({
-            sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, notas_admin 
-                  FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
+            sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, notas_admin FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
             args: [`%${query}%`, `%${query}%`]
         });
-
+        // ⭐ SE AGREGAN MÁS CAMPOS A LA CONSULTA DE TICKETS ⭐
         const ticketsRes = await db.execute({
-            sql: `SELECT t.id, t.numero_ticket, t.estado_pago, t.creado_en, t.notas_admin, t.cliente_nombre, 
-                         s.nombre as sorteo_nombre, s.fecha_sorteo
-                  FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id
+            sql: `SELECT t.id, t.numero_ticket, t.estado_pago, t.creado_en, t.notas_admin, 
+                         t.cliente_nombre, t.cliente_dni, t.cliente_telefono, t.cliente_departamento, 
+                         s.nombre as sorteo_nombre, s.fecha_sorteo 
+                  FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id 
                   WHERE t.cliente_telefono LIKE ? OR t.cliente_dni LIKE ? OR t.cliente_nombre LIKE ? 
                   ORDER BY t.creado_en DESC`,
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
-
         res.json({ ordenes: ordenesRes.rows, tickets: ticketsRes.rows });
     } catch (error) { res.status(500).json({ error: 'Error al consultar' }); }
 });
