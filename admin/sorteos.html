@@ -145,6 +145,7 @@ function renderizarTabla() {
     const fin = inicio + itemsPorPagina;
     const sorteosPagina = todosLosSorteos.slice(inicio, fin);
 
+    // ⭐ SE CORRIGIÓ LA SINTAXIS DEL BOTÓN IMPRIMIR PARA QUE NO ROMPA LA TABLA ⭐
     cont.innerHTML = `<table>
         <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha y Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -155,14 +156,17 @@ function renderizarTabla() {
             <td>${s.fecha_sorteo} a las ${s.hora_sorteo || '23:59'}</td>
             <td>${s.estado}</td>
             <td>
-                <!-- ⭐ BOTÓN DE IMPRIMIR TICKETS ⭐ -->
-                <button class="btn-accion btn-imprimir" onclick="window.open('/admin/imprimir_tickets.html', '_blank')" title="Imprimir Tickets de este Sorteo">🖨️</button>
-                
+                <button class="btn-accion btn-imprimir" onclick="abrirImpresion()" title="Imprimir Tickets de este Sorteo">🖨️</button>
                 <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
                 <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
             </td>
         </tr>`).join('')}
         </tbody></table>`;
+}
+
+// ⭐ FUNCIÓN CORREGIDA PARA ABRIR IMPRESIÓN ⭐
+function abrirImpresion() {
+    window.open('/admin/imprimir_tickets.html', '_blank');
 }
 
 function cambiarPagina(dir) {
