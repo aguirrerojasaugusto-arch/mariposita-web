@@ -855,20 +855,12 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                // ⭐ CORRECCIÓN CLAVE: Parseamos la fecha manualmente para evitar desfases ⭐
-                let horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
+                // ⭐ TOMAMOS LA HORA EXACTA DEL SORTEO ⭐
+                const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
                 
-                // Dividimos la fecha y hora en partes
-                const [anio, mes, dia] = s.fecha_sorteo.split('-').map(Number);
-                const [hora, minuto] = horaFormateada.split(':').map(Number);
-                
-                // Creamos la fecha explícitamente en la zona horaria de Perú (UTC-5)
-                const fechaObjetivo = new Date(anio, mes - 1, dia, hora, minuto, 0, 0);
-                // Ajuste manual de -5 horas para que coincida con Perú
-                fechaObjetivo.setHours(fechaObjetivo.getHours() + 5); 
-                
-                const ahora = new Date();
-                const yaFinalizo = ahora.getTime() > fechaObjetivo.getTime();
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
+                const ahora = new Date().getTime();
+                const yaFinalizo = ahora > fechaHoraSorteo;
                 
                 const boton = yaFinalizo 
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
@@ -890,7 +882,7 @@
                                 📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}
                             </div>
 
-                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-anio="${anio}" data-mes="${mes}" data-dia="${dia}" data-hora="${hora}" data-minuto="${minuto}">
+                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${horaFormateada}:00-05:00">
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
@@ -904,23 +896,15 @@
             }).join('');
 
             document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
-                const anio = parseInt(el.getAttribute('data-anio'));
-                const mes = parseInt(el.getAttribute('data-mes'));
-                const dia = parseInt(el.getAttribute('data-dia'));
-                const hora = parseInt(el.getAttribute('data-hora'));
-                const minuto = parseInt(el.getAttribute('data-minuto'));
-
-                const fechaObjetivo = new Date(anio, mes - 1, dia, hora, minuto, 0, 0);
-                fechaObjetivo.setHours(fechaObjetivo.getHours() + 5); // Ajuste UTC-5
-
+                const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
                 const idDias = el.querySelector('[id^="cd-dias-"]').id;
                 const idHoras = el.querySelector('[id^="cd-horas-"]').id;
                 const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
                 const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
 
                 const intervalo = setInterval(() => {
-                    const ahora = new Date();
-                    const distancia = fechaObjetivo.getTime() - ahora.getTime();
+                    const ahora = new Date().getTime();
+                    const distancia = fechaObjetivo - ahora;
 
                     if (distancia < 0) {
                         clearInterval(intervalo);
