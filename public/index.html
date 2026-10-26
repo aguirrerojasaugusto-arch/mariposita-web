@@ -855,6 +855,7 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
+                // ⭐ AQUÍ ESTABA EL ERROR: Se usaba '23:59' en lugar de s.hora_sorteo ⭐
                 const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
                 
                 // ⭐ FORZAMOS HORA DE PERÚ PARA SABER SI YA FINALIZÓ ⭐
