@@ -291,8 +291,8 @@ function renderizarTabla() {
     const botonesAccion = (t) => {
         if (rolUsuario === 'admin') {
             return `
-                <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar', '${t.ids_tickets.join(",")}')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
-                <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar', '${t.ids_tickets.join(",")}')" style="width: 100%;">❌ Rechazar</button>
+                <button class="btn btn-aprobar" onclick="revisar(${t.id}, 'aprobar')" style="margin-bottom: 5px; width: 100%;">✅ Aprobar</button>
+                <button class="btn btn-rechazar" onclick="revisar(${t.id}, 'rechazar')" style="width: 100%;">❌ Rechazar</button>
             `;
         } else {
             return `
@@ -375,7 +375,7 @@ function abrirModal(index) {
 
 function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
 
-async function revisar(id, accion, idsString) {
+async function revisar(id, accion) {
     let notas = null;
     if (accion === 'rechazar') {
         notas = prompt('Motivo del rechazo:');
@@ -384,10 +384,8 @@ async function revisar(id, accion, idsString) {
         if (!confirm('¿Ya verificaste en tu app Yape que el pago total de estos tickets llegó a tu cuenta?')) return;
     }
 
-    const ids_tickets = idsString ? idsString.split(',').map(Number) : [id];
-
     const r = await fetch(`/api/admin/tickets/${id}/revisar`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas, ids_tickets })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })
     });
     const d = await r.json();
     if (r.ok) { alert('Tickets ' + d.nuevo_estado); cargar(); } else alert('Error: ' + d.error);

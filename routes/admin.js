@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const crypto = require('crypto'); // ⭐ IMPORTANTE: Agregado para que no falle
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -185,6 +186,7 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ VENTA PRESENCIAL CORREGIDA ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -198,27 +200,33 @@ router.post('/tickets/vender', async (req, res) => {
         if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
 
         const cantTickets = parseInt(cantidad) || 1;
-        
-        let numero;
-        let isUnique = false;
-        while (!isUnique) {
-            numero = generarCodigoTicket();
-            const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-            if (check.rows.length === 0) isUnique = true;
-        }
+        const codigosGenerados = [];
+        const hashBase = crypto.randomBytes(16).toString('hex'); // Ahora crypto sí está importado
 
-        await db.execute({
-            sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
-            args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
-        });
+        for (let i = 0; i < cantTickets; i++) {
+            let numero;
+            let isUnique = false;
+            while (!isUnique) {
+                numero = generarCodigoTicket();
+                const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+                if (check.rows.length === 0) isUnique = true;
+            }
+            codigosGenerados.push(numero);
+
+            await db.execute({
+                sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
+                args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, `${hashBase}-${numero}`]
+            });
+        }
 
         await db.execute({
             sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))',
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
         });
 
-        res.json({ success: true, numero_ticket: numero, mensaje: 'Venta registrada correctamente' });
+        // Devolvemos 'codigos' para que el frontend lo lea correctamente
+        res.json({ success: true, codigos: codigosGenerados, mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
         console.error(e);
         res.status(500).json({ error: e.message }); 
