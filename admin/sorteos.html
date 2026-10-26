@@ -145,28 +145,26 @@ function renderizarTabla() {
     const fin = inicio + itemsPorPagina;
     const sorteosPagina = todosLosSorteos.slice(inicio, fin);
 
-    // ⭐ SE CORRIGIÓ LA SINTAXIS DEL BOTÓN IMPRIMIR PARA QUE NO ROMPA LA TABLA ⭐
+    // ⭐ SE FORMATEA LA HORA CORRECTAMENTE (solo HH:MM) ⭐
     cont.innerHTML = `<table>
         <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha y Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
-        ${sorteosPagina.map(s => `<tr>
-            <td>${s.imagen_base64 ? `<img class="img-tabla" src="${s.imagen_base64}">` : '—'}</td>
-            <td>${s.nombre}</td>
-            <td>S/ ${s.precio_ticket.toFixed(2)}</td>
-            <td>${s.fecha_sorteo} a las ${s.hora_sorteo || '23:59'}</td>
-            <td>${s.estado}</td>
-            <td>
-                <button class="btn-accion btn-imprimir" onclick="abrirImpresion()" title="Imprimir Tickets de este Sorteo">🖨️</button>
-                <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
-                <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
-            </td>
-        </tr>`).join('')}
+        ${sorteosPagina.map(s => {
+            const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
+            return `<tr>
+                <td>${s.imagen_base64 ? `<img class="img-tabla" src="${s.imagen_base64}">` : '—'}</td>
+                <td>${s.nombre}</td>
+                <td>S/ ${s.precio_ticket.toFixed(2)}</td>
+                <td>${s.fecha_sorteo} a las ${horaFormateada}</td>
+                <td>${s.estado}</td>
+                <td>
+                    <button class="btn-accion btn-imprimir" onclick="window.open('/admin/imprimir_tickets.html', '_blank')" title="Imprimir Tickets">🖨️</button>
+                    <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
+                    <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
+                </td>
+            </tr>`
+        }).join('')}
         </tbody></table>`;
-}
-
-// ⭐ FUNCIÓN CORREGIDA PARA ABRIR IMPRESIÓN ⭐
-function abrirImpresion() {
-    window.open('/admin/imprimir_tickets.html', '_blank');
 }
 
 function cambiarPagina(dir) {
@@ -191,7 +189,11 @@ function editar(s) {
     document.getElementById('sorteo-desc').value = s.descripcion || '';
     document.getElementById('sorteo-precio').value = s.precio_ticket;
     document.getElementById('sorteo-fecha').value = s.fecha_sorteo;
-    document.getElementById('sorteo-hora').value = s.hora_sorteo || '23:59';
+    
+    // ⭐ SE FORMATEA LA HORA A HH:MM PARA EL INPUT ⭐
+    const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
+    document.getElementById('sorteo-hora').value = horaFormateada;
+    
     document.getElementById('sorteo-estado').value = s.estado;
     document.getElementById('form-title').textContent = 'Editar Sorteo #' + s.id;
     document.getElementById('btn-guardar').textContent = 'Actualizar';
