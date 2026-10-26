@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const crypto = require('crypto'); // ⭐ IMPORTANTE: Agregado para que no falle
+const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -14,7 +14,6 @@ const uploadConfig = multer({
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
 
-// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
 function generarCodigoTicket() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let resultado = '';
@@ -63,7 +62,7 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
 
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            const clave = tipo === 'logo' ? 'logo_admin' : 'fondo_login';
+            const clave = tipo === 'logo' ? 'logo_admin' : (tipo === 'fondo' ? 'fondo_login' : 'flyer_inicio');
             await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, base64Image] });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) {
@@ -186,7 +185,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ VENTA PRESENCIAL CORREGIDA ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -201,7 +199,7 @@ router.post('/tickets/vender', async (req, res) => {
 
         const cantTickets = parseInt(cantidad) || 1;
         const codigosGenerados = [];
-        const hashBase = crypto.randomBytes(16).toString('hex'); // Ahora crypto sí está importado
+        const hashBase = crypto.randomBytes(16).toString('hex');
 
         for (let i = 0; i < cantTickets; i++) {
             let numero;
@@ -225,7 +223,6 @@ router.post('/tickets/vender', async (req, res) => {
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
         });
 
-        // Devolvemos 'codigos' para que el frontend lo lea correctamente
         res.json({ success: true, codigos: codigosGenerados, mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
         console.error(e);
@@ -300,6 +297,7 @@ router.post('/sorteos', requireAdmin, (req, res) => {
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
+        // ⭐ LIMPIAMOS LA HORA PARA QUE SIEMPRE GUARDE HH:MM ⭐
         const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
 
         try {
@@ -325,6 +323,7 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             let imagen_path = s.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
+            // ⭐ LIMPIAMOS LA HORA PARA QUE SIEMPRE GUARDE HH:MM ⭐
             const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
 
             await db.execute({

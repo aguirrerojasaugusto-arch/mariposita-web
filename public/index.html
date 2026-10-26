@@ -858,6 +858,7 @@
                 // ⭐ TOMAMOS LA HORA EXACTA DEL SORTEO ⭐
                 const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
                 
+                // ⭐ EVALUAMOS SI YA FINALIZÓ CON ZONA HORARIA PERÚ (-05:00) ⭐
                 const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
