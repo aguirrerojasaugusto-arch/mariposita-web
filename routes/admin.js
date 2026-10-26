@@ -11,9 +11,8 @@ router.use(requireVendedor);
 const storageMemory = multer.memoryStorage();
 const uploadConfig = multer({ storage: storageMemory, limits: { fileSize: 10 * 1024 * 1024 } }).single('imagen');
 
-// ⭐ FUNCIÓN MODIFICADA: GENERAR NÚMEROS ALEATORIOS DE 5 DÍGITOS (Desde 10000) ⭐
+// ⭐ FUNCIÓN PARA GENERAR NÚMEROS ALEATORIOS DE 5 DÍGITOS ⭐
 function generarCodigoTicket() {
-    // Genera un número entero entre 10000 y 99999
     return Math.floor(10000 + Math.random() * 90000).toString();
 }
 
@@ -22,23 +21,9 @@ router.get('/dashboard', async (req, res) => {
     try {
         const op = await db.execute("SELECT COUNT(*) as c FROM ordenes WHERE estado='pendiente'");
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
-        
-        // ⭐ Suma solo los tickets aprobados (Precio * Cantidad) ⭐
-        const va = await db.execute(`
-            SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t 
-            FROM tickets t 
-            JOIN sorteos s ON s.id = t.sorteo_id 
-            WHERE t.estado_pago = 'aprobado'
-        `);
-        
+        const va = await db.execute(`SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.estado_pago = 'aprobado'`);
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
-        
-        res.json({ 
-            ordenes_pendientes: op.rows[0].c, 
-            tickets_pendientes: tp.rows[0].c, 
-            ventas_aprobadas: va.rows[0].t, 
-            total_ordenes: to.rows[0].c 
-        });
+        res.json({ ordenes_pendientes: op.rows[0].c, tickets_pendientes: tp.rows[0].c, ventas_aprobadas: va.rows[0].t, total_ordenes: to.rows[0].c });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -69,11 +54,9 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         if (!tipo || !req.file) return res.status(400).json({ error: 'Faltan datos' });
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            
             let clave = 'logo_admin';
             if (tipo === 'fondo') clave = 'fondo_login';
             if (tipo === 'flyer') clave = 'flyer_inicio';
-
             await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, base64Image] });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) { res.status(500).json({ error: 'Error al guardar en la base de datos' }); }
@@ -128,7 +111,6 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
                 queries.push({ sql: 'UPDATE productos SET stock = stock - ? WHERE id = ?', args: [it.cantidad, it.producto_id] });
             }
         }
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip] });
         
         await db.batch(queries, "write");
@@ -215,7 +197,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         for (const id of idsAProcesar) {
             queries.push({ sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || null, id] });
         }
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_TICKETS`, `Aprobó/Rechazó ${idsAProcesar.length} tickets`, req.ip] });
 
         await db.batch(queries, "write");
@@ -249,7 +230,6 @@ router.post('/tickets/vender', async (req, res) => {
             }
             codigosGenerados.push(numero);
 
-            // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
                       VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
@@ -257,7 +237,6 @@ router.post('/tickets/vender', async (req, res) => {
             });
         }
 
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         await db.execute({
             sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))',
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
@@ -270,6 +249,26 @@ router.post('/tickets/vender', async (req, res) => {
     }
 });
 
+// ⭐ NUEVAS RUTAS PARA EDITAR Y ELIMINAR TICKETS ⭐
+router.put('/tickets/:id', requireAdmin, async (req, res) => {
+    const { cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento } = req.body;
+    try {
+        await db.execute({
+            sql: `UPDATE tickets SET cliente_nombre = ?, cliente_dni = ?, cliente_telefono = ?, cliente_departamento = ? WHERE id = ?`,
+            args: [cliente_nombre.toUpperCase(), cliente_dni, cliente_telefono || null, cliente_departamento || null, req.params.id]
+        });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/tickets/:id', requireAdmin, async (req, res) => {
+    try {
+        // Al eliminar el ticket de la BD, el número queda libre para futuras compras
+        await db.execute({ sql: 'DELETE FROM tickets WHERE id = ?', args: [req.params.id] });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ============ PRODUCTOS ============
 router.get('/productos', async (req, res) => {
     try { const result = await db.execute('SELECT * FROM productos ORDER BY creado_en DESC'); res.json(result.rows); } catch (e) { res.status(500).json({ error: e.message }); }
@@ -280,7 +279,6 @@ router.post('/productos', requireAdmin, (req, res) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria } = req.body;
         
-        // ⭐ CONVERTIMOS LA IMAGEN A BASE64 ⭐
         let imagen_base64 = null;
         if (req.file) {
             imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -305,7 +303,6 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
             const p = pRes.rows[0];
             if (!p) return res.status(404).json({ error: 'No encontrado' });
             
-            // ⭐ SI HAY NUEVA IMAGEN, LA CONVERTIMOS A BASE64. SI NO, MANTENEMOS LA ANTERIOR ⭐
             let imagen_base64 = p.imagen_base64;
             if (req.file) {
                 imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -334,7 +331,6 @@ router.post('/sorteos', requireAdmin, (req, res) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         
-        // ⭐ CONVERTIMOS LA IMAGEN A BASE64 ⭐
         let imagen_base64 = null;
         if (req.file) {
             imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
@@ -359,7 +355,6 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             const sorteo = sRes.rows[0];
             if (!sorteo) return res.status(404).json({ error: 'No encontrado' });
             
-            // ⭐ SI HAY NUEVA IMAGEN, LA CONVERTIMOS A BASE64. SI NO, MANTENEMOS LA ANTERIOR ⭐
             let imagen_base64 = sorteo.imagen_base64;
             if (req.file) {
                 imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;

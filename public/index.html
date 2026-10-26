@@ -850,7 +850,6 @@
             const btnPrev = document.getElementById('btn-prev-sorteo');
             const btnNext = document.getElementById('btn-next-sorteo');
 
-            // ⭐ SE AGREGA EL CONTADOR Y FECHA MÁS GRANDE EN CADA TARJETA ⭐
             track.innerHTML = sorteosGlobal.map(s => {
                 const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
                 const ahora = new Date().getTime();
@@ -860,7 +859,6 @@
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
 
-                // Creamos IDs únicos para el contador de cada tarjeta
                 const idDias = `cd-dias-${s.id}`;
                 const idHoras = `cd-horas-${s.id}`;
                 const idMinutos = `cd-minutos-${s.id}`;
@@ -873,12 +871,10 @@
                             <h3 title="${s.nombre}">${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
                             
-                            <!-- ⭐ FECHA MÁS GRANDE ⭐ -->
                             <div style="font-size: 0.85rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">
                                 📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
                             </div>
 
-                            <!-- ⭐ CONTADOR POR TARJETA ⭐ -->
                             <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00">
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
@@ -892,7 +888,6 @@
                 `;
             }).join('');
 
-            // Iniciar todos los contadores de las tarjetas
             document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
                 const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
                 const idDias = el.querySelector('[id^="cd-dias-"]').id;
@@ -967,7 +962,6 @@
             let opcionesCantidad = '';
             for (let i = 1; i <= 20; i++) opcionesCantidad += `<option value="${i}">${i} Ticket(s)</option>`;
 
-            // ⭐ EL FORMULARIO YA TIENE LA CLASE PARA MAYÚSCULAS EN EL CSS ⭐
             document.getElementById('ticket-content').innerHTML = `
                 <div class="ticket-header"><h2>Comprar: ${sorteoActivo.nombre}</h2><button class="resultado-close" onclick="cerrarModalTicket()">✕</button></div>
                 <div class="ticket-body">
@@ -1075,7 +1069,6 @@
                 const loaderText = document.getElementById('loader-text');
                 const loaderTimer = document.getElementById('loader-timer');
                 
-                // ⭐ CONVERTIR VALORES A MAYÚSCULAS ANTES DE ENVIAR ⭐
                 document.getElementById('nombre-input').value = document.getElementById('nombre-input').value.toUpperCase();
                 
                 loader.style.display = 'flex';
@@ -1244,6 +1237,7 @@
                             <div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #ffcc00;">
                                 <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                                <p style="color:#ccc; font-size:0.9rem;"><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
                                 <p style="color:${t.estado_pago === 'aprobado' ? '#25d366' : t.estado_pago === 'rechazado' ? '#ff4d4d' : '#ffcc00'}; font-weight:bold;">
                                     Estado: ${t.estado_pago.toUpperCase()}
@@ -1281,4 +1275,3 @@
     </script>
 </body>
 </html>
-

@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
     .search-container {
-        position: relative; /* Necesario para posicionar el botón de cerrar */
+        position: relative;
         max-width: 800px; 
         margin: 2rem auto; 
         background: rgba(255, 255, 255, 0.95);
@@ -36,7 +36,6 @@
     }
     .search-input-group button:hover { background: #005f8f; }
 
-    /* ⭐ ESTILO DEL BOTÓN CERRAR ⭐ */
     .btn-cerrar-form {
         position: absolute;
         top: 1.5rem;
@@ -50,7 +49,7 @@
         font-size: 1.2rem;
         font-weight: bold;
         cursor: pointer;
-        display: none; /* Se muestra por JS */
+        display: none;
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
@@ -61,13 +60,12 @@
         transform: scale(1.1);
     }
 
-    /* ⭐ ESTILO DEL RESUMEN DEL CLIENTE (FIJO) ⭐ */
     .resumen-cliente {
         background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%);
         border-radius: 10px;
         padding: 1.2rem 1.5rem;
         margin-bottom: 1.5rem;
-        display: none; /* Oculto por defecto */
+        display: none; 
         justify-content: space-between;
         align-items: center;
         color: #fff;
@@ -79,7 +77,6 @@
     .resumen-total { text-align: right; }
     .resumen-total h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 900; }
 
-    /* ⭐ CONTENEDOR CON SCROLL INTERNO ⭐ */
     #resultados {
         flex-grow: 1;
         overflow-y: auto;
@@ -92,11 +89,14 @@
     #resultados::-webkit-scrollbar-thumb { background: #0077b6; border-radius: 4px; }
     #resultados::-webkit-scrollbar-thumb:hover { background: #005f8f; }
 
-    /* Resultados */
     .resultado-card {
         background: #f9f9f9; border-left: 5px solid var(--color-primario);
         padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
+    .resultado-info { flex-grow: 1; }
     .resultado-header {
         display: flex; justify-content: space-between; align-items: center;
         border-bottom: 1px solid #ddd; padding-bottom: 0.5rem; margin-bottom: 1rem;
@@ -108,6 +108,30 @@
     .estado-aprobado { background: #d4edda; color: #155724; }
     .estado-rechazado { background: #f8d7da; color: #721c24; }
     .estado-enviado { background: #d1ecf1; color: #0c5460; }
+
+    /* ⭐ ESTILOS PARA BOTONES DE ACCIÓN ⭐ */
+    .acciones-ticket {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-left: 1rem;
+    }
+    .btn-accion {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        justify-content: center;
+    }
+    .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
+    .btn-editar:hover { background: #1565c0; color: #fff; }
+    .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+    .btn-eliminar:hover { background: #c62828; color: #fff; }
 </style>
 </head>
 <body>
@@ -128,7 +152,6 @@
     
     <main class="main">
         <div class="search-container">
-            <!-- ⭐ BOTÓN CERRAR (Oculto por defecto) ⭐ -->
             <button class="btn-cerrar-form" id="btn-limpiar" onclick="limpiarFormulario()" title="Cerrar y limpiar">&times;</button>
 
             <h2 class="search-title">Consultar mi Pedido</h2>
@@ -139,7 +162,6 @@
                 <button onclick="buscar()">Buscar</button>
             </div>
 
-            <!-- RESUMEN FIJO -->
             <div id="resumen-cliente-box" class="resumen-cliente">
                 <div>
                     <p>Participante</p>
@@ -151,14 +173,12 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR DE RESULTADOS -->
             <div id="resultados"></div>
         </div>
     </main>
 </div>
 
 <script>
-// ⭐ FUNCIÓN PARA VERIFICAR EL ROL Y OCULTAR MENÚS ⭐
 async function checkAuth() {
     try {
         const r = await fetch('/api/auth/me');
@@ -185,7 +205,6 @@ async function logout() {
     location.href = '/admin/login.html';
 }
 
-// ⭐ FUNCIÓN PARA LIMPIAR EL FORMULARIO Y CERRAR RESULTADOS ⭐
 function limpiarFormulario() {
     document.getElementById('input-busqueda').value = '';
     document.getElementById('resultados').innerHTML = '';
@@ -199,7 +218,6 @@ async function buscar() {
     const resumenBox = document.getElementById('resumen-cliente-box');
     const btnLimpiar = document.getElementById('btn-limpiar');
 
-    // Ocultar resumen y botón al iniciar nueva búsqueda
     resumenBox.style.display = 'none';
     btnLimpiar.style.display = 'none';
     document.getElementById('resumen-nombre').textContent = '-';
@@ -218,11 +236,10 @@ async function buscar() {
 
         if (!data.ordenes.length && !data.tickets.length) {
             cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px; text-align:center;">No se encontraron compras ni tickets registrados con ese número.</div>';
-            btnLimpiar.style.display = 'flex'; // Mostramos el botón para que puedan limpiar si se equivocaron
+            btnLimpiar.style.display = 'flex';
             return;
         }
 
-        // ⭐ ACTUALIZAR Y MOSTRAR EL RESUMEN FIJO ⭐
         if (data.tickets.length > 0) {
             const primerTicket = data.tickets[0];
             document.getElementById('resumen-nombre').textContent = primerTicket.cliente_nombre;
@@ -238,14 +255,16 @@ async function buscar() {
                 const estadoClass = `estado-${o.estado}`;
                 html += `
                     <div class="resultado-card">
-                        <div class="resultado-header">
-                            <strong>Orden: ${o.codigo}</strong>
-                            <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
+                        <div class="resultado-info">
+                            <div class="resultado-header">
+                                <strong>Orden: ${o.codigo}</strong>
+                                <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
+                            </div>
+                            <p><strong>Fecha:</strong> ${o.creado_en}</p>
+                            <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
+                            <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
+                            ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
                         </div>
-                        <p><strong>Fecha:</strong> ${o.creado_en}</p>
-                        <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
-                        <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
-                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
@@ -257,21 +276,28 @@ async function buscar() {
                 const estadoClass = `estado-${t.estado_pago}`;
                 html += `
                     <div class="resultado-card" style="border-left-color: #ff9800;">
-                        <div class="resultado-header">
-                            <strong>Ticket: ${t.numero_ticket}</strong>
-                            <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
+                        <div class="resultado-info">
+                            <div class="resultado-header">
+                                <strong>Ticket: ${t.numero_ticket}</strong>
+                                <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
+                            </div>
+                            <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                            <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
+                            ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
                         </div>
-                        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-                        <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
+                        <div class="acciones-ticket">
+                            <!-- ⭐ BOTONES DE EDITAR Y ELIMINAR ⭐ -->
+                            <button class="btn-accion btn-editar" onclick="editarTicket('${t.id}', '${t.numero_ticket}', '${t.cliente_nombre}', '${t.cliente_dni}', '${t.cliente_telefono}', '${t.cliente_departamento}')">✏️ Editar</button>
+                            <button class="btn-accion btn-eliminar" onclick="eliminarTicket('${t.id}', '${t.numero_ticket}')">🗑️ Eliminar</button>
+                        </div>
                     </div>
                 `;
             });
         }
 
         cont.innerHTML = html;
-        cont.scrollTop = 0; // Reiniciar el scroll al principio
-        btnLimpiar.style.display = 'flex'; // Mostrar el botón de cerrar
+        cont.scrollTop = 0;
+        btnLimpiar.style.display = 'flex';
 
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
@@ -279,7 +305,54 @@ async function buscar() {
     }
 }
 
-// Ejecutar la verificación de roles al cargar la página
+// ⭐ FUNCIONES PARA EDITAR Y ELIMINAR ⭐
+function editarTicket(id, numero, nombre, dni, telefono, departamento) {
+    const nuevoNombre = prompt(`Editar nombre para el Ticket ${numero}:`, nombre);
+    if (nuevoNombre === null) return; // Canceló
+
+    const nuevoDni = prompt(`Editar DNI para el Ticket ${numero}:`, dni);
+    if (nuevoDni === null) return;
+
+    const nuevoTelefono = prompt(`Editar Teléfono para el Ticket ${numero}:`, telefono);
+    if (nuevoTelefono === null) return;
+
+    const nuevoDepartamento = prompt(`Editar Departamento para el Ticket ${numero}:`, departamento);
+    if (nuevoDepartamento === null) return;
+
+    fetch(`/api/admin/tickets/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            cliente_nombre: nuevoNombre,
+            cliente_dni: nuevoDni,
+            cliente_telefono: nuevoTelefono,
+            cliente_departamento: nuevoDepartamento
+        })
+    }).then(res => {
+        if (res.ok) {
+            alert('✅ Ticket editado correctamente.');
+            buscar(); // Recargar resultados
+        } else {
+            alert('❌ Error al editar el ticket.');
+        }
+    });
+}
+
+function eliminarTicket(id, numero) {
+    if (!confirm(`⚠️ ¿Estás seguro de eliminar el Ticket ${numero}?\n\nEsta acción liberará el número en la base de datos y el cliente ya no participará.`)) return;
+
+    fetch(`/api/admin/tickets/${id}`, {
+        method: 'DELETE'
+    }).then(res => {
+        if (res.ok) {
+            alert('✅ Ticket eliminado. El número ya está libre.');
+            buscar(); // Recargar resultados
+        } else {
+            alert('❌ Error al eliminar el ticket.');
+        }
+    });
+}
+
 checkAuth();
 </script>
 </body>
