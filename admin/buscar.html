@@ -370,10 +370,12 @@ async function buscar() {
 
         if (data.tickets.length > 0) {
             html += '<h3 style="color:#333; margin: 1.5rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
-            data.tickets.forEach(t => {
+            
+            // ⭐ CORRECCIÓN AQUÍ: Se guarda el ticket completo en un arreglo temporal para pasarlo al modal sin problemas de comillas ⭐
+            window.ticketsTemporales = data.tickets;
+
+            data.tickets.forEach((t, index) => {
                 const estadoClass = `estado-${t.estado_pago}`;
-                // ⭐ Guardamos los datos en el botón mediante un objeto JSON para pasarlos a la función ⭐
-                const ticketData = JSON.stringify(t).replace(/'/g, "&apos;");
                 
                 html += `
                     <div class="resultado-card" style="border-left-color: #ff9800;">
@@ -383,11 +385,13 @@ async function buscar() {
                                 <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
                             </div>
                             <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                            <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
                             <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
                             ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
                         </div>
                         <div class="acciones-ticket">
-                            <button class="btn-accion btn-editar" onclick='abrirModalEditar(${ticketData})'>✏️ Editar</button>
+                            <!-- ⭐ PASAMOS EL ÍNDICE DEL ARREGLO PARA EVITAR ERRORES DE CARACTERES ⭐ -->
+                            <button class="btn-accion btn-editar" onclick="abrirModalEditarPorIndex(${index})">✏️ Editar</button>
                             <button class="btn-accion btn-eliminar" onclick="eliminarTicket('${t.id}', '${t.numero_ticket}')">🗑️ Eliminar</button>
                         </div>
                     </div>
@@ -405,14 +409,19 @@ async function buscar() {
     }
 }
 
-// ⭐ FUNCIÓN PARA ABRIR EL MODAL Y RELLENAR LOS DATOS ⭐
-function abrirModalEditar(ticket) {
+// ⭐ FUNCIÓN PARA ABRIR EL MODAL USANDO EL ÍNDICE ⭐
+function abrirModalEditarPorIndex(index) {
+    const ticket = window.ticketsTemporales[index];
+    
     document.getElementById('edit-id').value = ticket.id;
     document.getElementById('edit-numero').value = ticket.numero_ticket;
-    document.getElementById('edit-nombre').value = ticket.cliente_nombre;
+    document.getElementById('edit-nombre').value = ticket.cliente_nombre || '';
     document.getElementById('edit-dni').value = ticket.cliente_dni || '';
     document.getElementById('edit-telefono').value = ticket.cliente_telefono || '';
-    document.getElementById('edit-departamento').value = ticket.cliente_departamento || '';
+    
+    // El departamento puede venir en mayúsculas o minúsculas, lo forzamos a mayúsculas para el select
+    const depto = ticket.cliente_departamento ? ticket.cliente_departamento.toUpperCase() : '';
+    document.getElementById('edit-departamento').value = depto;
     
     document.getElementById('modal-editar').classList.add('active');
 }
