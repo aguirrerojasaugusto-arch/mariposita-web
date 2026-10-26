@@ -72,7 +72,7 @@
         .ticket {
             background-color: #FDF8F0;
             border-radius: 10px;
-            border: 1px dashed #999; /* Borde un poco más oscuro para B/N */
+            border: 1px dashed #999;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -98,7 +98,6 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            /* Esto empuja el contenido para que llene todo el espacio disponible */
             justify-content: space-between; 
         }
 
@@ -110,10 +109,10 @@
         }
 
         .ticket-numero {
-            background-color: #000; /* Negro puro para que resalte en B/N */
+            background-color: #000;
             color: #fff;
-            font-size: 34px; /* Más grande */
-            font-weight: 900; /* Más negrita */
+            font-size: 34px;
+            font-weight: 900;
             padding: 5px 15px;
             border-radius: 8px;
             letter-spacing: 2px;
@@ -124,15 +123,15 @@
         /* Cuerpo del ticket (Datos) */
         .ticket-body {
             text-align: center;
-            flex-grow: 1; /* Ocupa todo el espacio restante */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Centra los datos verticalmente */
+            justify-content: center;
             margin: 2px 0;
         }
 
         .ticket-datos {
-            background: #fff; /* Fondo blanco para que la letra resalte */
+            background: #fff;
             padding: 8px;
             border-radius: 6px;
             border: 1px solid #ccc;
@@ -149,7 +148,7 @@
             line-height: 1.2;
         }
 
-        /* ⭐ TELÉFONO Y DIRECCIÓN ⭐ */
+        /* ⭐ TELÉFONO Y DEPARTAMENTO ⭐ */
         .ticket-datos p {
             margin: 2px 0;
             font-size: 11px;
@@ -233,7 +232,6 @@
 
                 let tickets = await res.json();
 
-                // Filtrar por sorteo
                 if (sorteoId) {
                     tickets = tickets.filter(t => t.sorteo_id == sorteoId);
                 }
@@ -257,7 +255,8 @@
                         ticketDiv.className = 'ticket';
                         
                         const codigoCorto = t.numero_ticket.replace('TKT-', '');
-                        const direccion = t.cliente_direccion || ''; // Capturamos la dirección
+                        // ⭐ CAMBIO: Traemos el departamento, no la dirección ⭐
+                        const departamento = t.cliente_departamento || 'No registrado';
 
                         ticketDiv.innerHTML = `
                             <div class="ticket-content">
@@ -268,8 +267,8 @@
                                     <div class="ticket-datos">
                                         <h3>${t.cliente_nombre}</h3>
                                         <p>📞 ${t.cliente_telefono || 'Sin teléfono'}</p>
-                                        <!-- ⭐ AQUÍ SE AGREGA LA DIRECCIÓN ⭐ -->
-                                        ${direccion ? `<p style="font-size: 9px; color: #555;">📍 ${direccion}</p>` : ''}
+                                        <!-- ⭐ AQUÍ SE MUESTRA EL DEPARTAMENTO ⭐ -->
+                                        <p style="font-size: 10px; color: #333; text-transform: uppercase; margin-top: 4px;">📍 ${departamento}</p>
                                     </div>
                                     <div class="ticket-evento">${t.sorteo_nombre}</div>
                                 </div>
@@ -278,7 +277,6 @@
                         hoja.appendChild(ticketDiv);
                     });
 
-                    // Rellenar espacios vacíos
                     const faltantes = tamañoPagina - paginaTickets.length;
                     for (let j = 0; j < faltantes; j++) {
                         const ticketVacio = document.createElement('div');
