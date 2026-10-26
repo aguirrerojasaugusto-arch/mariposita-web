@@ -30,12 +30,7 @@ router.get('/dashboard', async (req, res) => {
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
         const va = await db.execute("SELECT COALESCE(SUM(total),0) as t FROM ordenes WHERE estado='aprobado'");
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
-        res.json({ 
-            ordenes_pendientes: op.rows[0].c, 
-            tickets_pendientes: tp.rows[0].c, 
-            ventas_aprobadas: va.rows[0].t, 
-            total_ordenes: to.rows[0].c 
-        });
+        res.json({ ordenes_pendientes: op.rows[0].c, tickets_pendientes: tp.rows[0].c, ventas_aprobadas: va.rows[0].t, total_ordenes: to.rows[0].c });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -53,10 +48,7 @@ router.post('/configuracion', requireAdmin, async (req, res) => {
     const data = req.body || {};
     try {
         for (const [k, v] of Object.entries(data)) {
-            await db.execute({
-                sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
-                args: [k, String(v)]
-            });
+            await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [k, String(v)] });
         }
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -71,10 +63,7 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             const clave = tipo === 'logo' ? 'logo_admin' : 'fondo_login';
-            await db.execute({
-                sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
-                args: [clave, base64Image]
-            });
+            await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, base64Image] });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) {
             res.status(500).json({ error: 'Error al guardar en la base de datos' });
@@ -107,16 +96,11 @@ router.get('/ordenes/:id', async (req, res) => {
         const ordRes = await db.execute({ sql: 'SELECT * FROM ordenes WHERE id = ?', args: [req.params.id] });
         const orden = ordRes.rows[0];
         if (!orden) return res.status(404).json({ error: 'No encontrada' });
-        
-        const itemsRes = await db.execute({
-            sql: `SELECT oi.*, p.nombre, p.imagen_base64 FROM orden_items oi JOIN productos p ON p.id = oi.producto_id WHERE oi.orden_id = ?`,
-            args: [orden.id]
-        });
+        const itemsRes = await db.execute({ sql: `SELECT oi.*, p.nombre, p.imagen_base64 FROM orden_items oi JOIN productos p ON p.id = oi.producto_id WHERE oi.orden_id = ?`, args: [orden.id] });
         res.json({ ...orden, items: itemsRes.rows });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR ÓRDENES ⭐
 router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -140,7 +124,6 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
             }
         }
 
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip] });
 
         await db.batch(queries, "write");
@@ -168,7 +151,6 @@ router.get('/tickets/pendientes', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA PARA OBTENER TICKETS APROBADOS (Para imprimir) ⭐
 router.get('/tickets/aprobados', async (req, res) => {
     try {
         const result = await db.execute(`
@@ -182,7 +164,6 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR TICKETS ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -195,7 +176,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
 
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         await db.batch([
             { sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || t.notas_admin || null, t.id] },
             { sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket ${t.numero_ticket}`, req.ip] }
@@ -205,7 +185,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA DE VENTA PRESENCIAL (ACCESIBLE PARA VENDEDORES Y ADMINS) ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -228,14 +207,12 @@ router.post('/tickets/vender', async (req, res) => {
             if (check.rows.length === 0) isUnique = true;
         }
 
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         await db.execute({
             sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
                   VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
             args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
         });
 
-        // ⭐ CORRECCIÓN DE HORA (Usando localtime de SQLite) ⭐
         await db.execute({
             sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))',
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
@@ -315,7 +292,6 @@ router.post('/sorteos', requireAdmin, (req, res) => {
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
-        // ⭐ GUARDAMOS LA HORA EXACTAMENTE COMO TEXTO 'HH:MM' ⭐
         const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
 
         try {
@@ -341,7 +317,6 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             let imagen_path = s.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
-            // ⭐ GUARDAMOS LA HORA EXACTAMENTE COMO TEXTO 'HH:MM' ⭐
             const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
 
             await db.execute({
