@@ -855,9 +855,10 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                // ⭐ TOMAMOS LA HORA EXACTA DEL SORTEO ⭐
+                // ⭐ CORRECCIÓN PRINCIPAL: Usar la hora exacta de CADA sorteo ⭐
                 const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
                 
+                // ⭐ FORZAMOS HORA DE PERÚ PARA SABER SI YA FINALIZÓ ⭐
                 const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
