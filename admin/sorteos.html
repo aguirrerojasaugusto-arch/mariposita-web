@@ -145,7 +145,6 @@ function renderizarTabla() {
     const fin = inicio + itemsPorPagina;
     const sorteosPagina = todosLosSorteos.slice(inicio, fin);
 
-    // ⭐ SE FORMATEA LA HORA CORRECTAMENTE (solo HH:MM) ⭐
     cont.innerHTML = `<table>
         <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Fecha y Hora</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -190,7 +189,7 @@ function editar(s) {
     document.getElementById('sorteo-precio').value = s.precio_ticket;
     document.getElementById('sorteo-fecha').value = s.fecha_sorteo;
     
-    // ⭐ SE FORMATEA LA HORA A HH:MM PARA EL INPUT ⭐
+    // ⭐ CORRECCIÓN: CARGAMOS LA HORA EXACTA EN EL INPUT ⭐
     const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
     document.getElementById('sorteo-hora').value = horaFormateada;
     

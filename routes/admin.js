@@ -21,9 +21,23 @@ router.get('/dashboard', async (req, res) => {
     try {
         const op = await db.execute("SELECT COUNT(*) as c FROM ordenes WHERE estado='pendiente'");
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
-        const va = await db.execute(`SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.estado_pago = 'aprobado'`);
+        
+        // ⭐ Suma solo los tickets aprobados (Precio * Cantidad) ⭐
+        const va = await db.execute(`
+            SELECT COALESCE(SUM(s.precio_ticket * t.cantidad_tickets), 0) as t 
+            FROM tickets t 
+            JOIN sorteos s ON s.id = t.sorteo_id 
+            WHERE t.estado_pago = 'aprobado'
+        `);
+        
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
-        res.json({ ordenes_pendientes: op.rows[0].c, tickets_pendientes: tp.rows[0].c, ventas_aprobadas: va.rows[0].t, total_ordenes: to.rows[0].c });
+        
+        res.json({ 
+            ordenes_pendientes: op.rows[0].c, 
+            tickets_pendientes: tp.rows[0].c, 
+            ventas_aprobadas: va.rows[0].t, 
+            total_ordenes: to.rows[0].c 
+        });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -249,26 +263,6 @@ router.post('/tickets/vender', async (req, res) => {
     }
 });
 
-// ⭐ NUEVAS RUTAS PARA EDITAR Y ELIMINAR TICKETS ⭐
-router.put('/tickets/:id', requireAdmin, async (req, res) => {
-    const { cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento } = req.body;
-    try {
-        await db.execute({
-            sql: `UPDATE tickets SET cliente_nombre = ?, cliente_dni = ?, cliente_telefono = ?, cliente_departamento = ? WHERE id = ?`,
-            args: [cliente_nombre.toUpperCase(), cliente_dni, cliente_telefono || null, cliente_departamento || null, req.params.id]
-        });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.delete('/tickets/:id', requireAdmin, async (req, res) => {
-    try {
-        // Al eliminar el ticket de la BD, el número queda libre para futuras compras
-        await db.execute({ sql: 'DELETE FROM tickets WHERE id = ?', args: [req.params.id] });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
 // ============ PRODUCTOS ============
 router.get('/productos', async (req, res) => {
     try { const result = await db.execute('SELECT * FROM productos ORDER BY creado_en DESC'); res.json(result.rows); } catch (e) { res.status(500).json({ error: e.message }); }
@@ -336,10 +330,13 @@ router.post('/sorteos', requireAdmin, (req, res) => {
             imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
         }
 
+        // ⭐ GUARDAMOS LA HORA EXACTAMENTE COMO TEXTO 'HH:MM' ⭐
+        const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
+
         try {
             const r = await db.execute({ 
                 sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_base64, fecha_sorteo, hora_sorteo || '23:59', estado || 'activo'] 
+                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_base64, fecha_sorteo, horaFormateada, estado || 'activo'] 
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -360,9 +357,12 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
                 imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             }
 
+            // ⭐ GUARDAMOS LA HORA EXACTAMENTE COMO TEXTO 'HH:MM' ⭐
+            const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : sorteo.hora_sorteo;
+
             await db.execute({ 
                 sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`, 
-                args: [nombre || sorteo.nombre, descripcion ?? sorteo.descripcion, precio_ticket ? parseFloat(precio_ticket) : sorteo.precio_ticket, imagen_base64, fecha_sorteo || sorteo.fecha_sorteo, hora_sorteo || sorteo.hora_sorteo, estado || sorteo.estado, sorteo.id] 
+                args: [nombre || sorteo.nombre, descripcion ?? sorteo.descripcion, precio_ticket ? parseFloat(precio_ticket) : sorteo.precio_ticket, imagen_base64, fecha_sorteo || sorteo.fecha_sorteo, horaFormateada, estado || sorteo.estado, sorteo.id] 
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
