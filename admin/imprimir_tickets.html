@@ -19,7 +19,24 @@
         .no-print {
             margin-bottom: 20px;
             display: flex;
-            gap: 10px;
+            gap: 15px;
+            align-items: center;
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        select {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-family: inherit;
+            min-width: 250px;
         }
 
         .btn {
@@ -31,20 +48,22 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 1rem;
+            transition: background 0.3s;
         }
         .btn:hover { background: #005f8f; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* ⭐ CONFIGURACIÓN DE LA HOJA A4 (15 TICKETS) ⭐ */
+        /* Configuración de la hoja A4 */
         .hoja-a4 {
             width: 210mm;
             height: 297mm;
             background: #fff;
-            padding: 6mm; 
+            padding: 10mm;
             box-sizing: border-box;
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 columnas */
-            grid-template-rows: repeat(5, 1fr); /* 5 filas */
-            gap: 3mm; 
+            grid-template-columns: 1fr 1fr; /* 2 columnas */
+            grid-template-rows: repeat(4, 1fr); /* 4 filas */
+            gap: 5mm;
             margin-bottom: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
@@ -52,23 +71,24 @@
         /* Diseño del Ticket */
         .ticket {
             background-color: #FDF8F0;
-            border-radius: 6px;
+            border-radius: 10px;
             border: 1px dashed #ccc;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 6px;
+            padding: 10px;
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
 
+        /* Patrón de fondo simulado */
         .ticket::before {
             content: '';
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background-image: radial-gradient(#e0d6c8 1px, transparent 1px);
-            background-size: 10px 10px;
+            background-size: 15px 15px;
             opacity: 0.5;
             z-index: 0;
         }
@@ -82,94 +102,74 @@
             justify-content: space-between;
         }
 
-        /* Número de ticket (Arriba) */
+        /* Número de ticket centrado y grande */
         .ticket-header {
             text-align: center;
-            margin-bottom: 2px;
+            margin-bottom: 10px;
         }
 
         .ticket-numero {
             background-color: #1B1464;
             color: #fff;
-            font-size: 18px; 
+            font-size: 32px;
             font-weight: 900;
-            padding: 3px 8px;
-            border-radius: 4px;
-            letter-spacing: 0.5px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            letter-spacing: 1px;
             display: inline-block;
         }
 
-        /* Cuerpo del ticket (Centro) */
+        /* Cuerpo del ticket */
         .ticket-body {
             text-align: center;
+            margin: 5px 0;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            margin: 4px 0;
         }
 
         .ticket-datos {
-            background: rgba(255,255,255,0.9);
-            padding: 10px 8px;
-            border-radius: 6px;
+            background: rgba(255,255,255,0.8);
+            padding: 12px;
+            border-radius: 8px;
             border: 1px solid #E5D9C5;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        /* ⭐ NOMBRE MÁS GRANDE ⭐ */
         .ticket-datos h3 {
-            margin: 0 0 4px 0;
-            font-size: 13px;
+            margin: 0;
+            font-size: 20px;
             color: #1B1464;
             font-weight: 900;
             text-transform: uppercase;
-            line-height: 1.2;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
         }
 
         .ticket-datos p {
-            margin: 2px 0 0 0;
-            font-size: 10px;
+            margin: 5px 0 0 0;
+            font-size: 16px;
             color: #333;
             font-weight: 700;
         }
 
-        /* Departamento */
-        .ticket-datos .dept {
-            font-size: 9px;
-            color: #555;
-            margin-top: 4px;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        /* Nombre del evento (Justo debajo de los datos) */
+        /* Nombre del evento debajo del nombre */
         .ticket-evento {
-            font-size: 8px;
+            font-size: 12px;
             color: #666;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
-            margin-top: 5px;
+            margin-top: 8px;
             letter-spacing: 0.5px;
         }
 
-        /* Pie del ticket (Abajo) */
+        /* Pie del ticket */
         .ticket-footer {
-            font-size: 7px;
+            font-size: 10px;
             text-align: center;
             color: #888;
             border-top: 1px dashed #ccc;
-            padding-top: 4px;
-            margin-top: 2px;
+            padding-top: 8px;
+            margin-top: 5px;
         }
 
         /* Al imprimir */
@@ -182,7 +182,6 @@
                 width: 100%; 
                 height: 100vh; 
                 page-break-after: always; 
-                padding: 4mm; 
                 margin-bottom: 0;
             }
             .ticket { border: 1px solid #ccc; }
@@ -192,27 +191,68 @@
 <body>
 
     <div class="no-print">
+        <div>
+            <label style="font-weight: bold; margin-right: 10px;">Filtrar por Sorteo:</label>
+            <select id="select-sorteo" onchange="cargarTickets()">
+                <option value="">Todos los sorteos</option>
+            </select>
+        </div>
         <button class="btn" onclick="window.print()">🖨️ Imprimir Hoja Actual</button>
         <button class="btn" onclick="window.close()" style="background:#555;">Cerrar Pestaña</button>
     </div>
 
-    <div id="contenedor-hojas"></div>
+    <div id="contenedor-hojas">
+        <p style="text-align: center; color: #666; margin-top: 50px;">Cargando tickets...</p>
+    </div>
 
     <script>
-        async function cargarEImprimir() {
+        // Cargar los sorteos en el select al iniciar
+        async function cargarSorteos() {
+            const select = document.getElementById('select-sorteo');
+            try {
+                const res = await fetch('/api/sorteos');
+                if (!res.ok) throw new Error('Error al cargar sorteos');
+                const sorteos = await res.json();
+                
+                select.innerHTML = '<option value="">Todos los sorteos</option>' + 
+                    sorteos.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                
+                cargarTickets();
+            } catch (e) {
+                select.innerHTML = '<option value="">Error al cargar sorteos</option>';
+                document.getElementById('contenedor-hojas').innerHTML = `<p style="color:red; text-align:center;">Error al cargar los sorteos. Verifica tu sesión.</p>`;
+            }
+        }
+
+        // Cargar los tickets según el filtro
+        async function cargarTickets() {
+            const contenedor = document.getElementById('contenedor-hojas');
+            const sorteoId = document.getElementById('select-sorteo').value;
+            
+            contenedor.innerHTML = '<p style="text-align: center; color: #666; margin-top: 50px;">Buscando tickets...</p>';
+
             try {
                 const res = await fetch('/api/admin/tickets/aprobados');
-                const tickets = await res.json();
+                
+                if (res.status === 401) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+                if (!res.ok) throw new Error('Error en el servidor al buscar tickets.');
+
+                let tickets = await res.json();
+
+                // Filtrar por sorteo si es que se seleccionó uno
+                if (sorteoId) {
+                    tickets = tickets.filter(t => t.sorteo_id == sorteoId);
+                }
 
                 if (tickets.length === 0) {
-                    alert('No hay tickets aprobados para imprimir.');
+                    contenedor.innerHTML = '<p style="text-align: center; color: #666; margin-top: 50px;">No hay tickets aprobados para imprimir en este sorteo.</p>';
                     return;
                 }
 
-                const contenedor = document.getElementById('contenedor-hojas');
+                contenedor.innerHTML = ''; 
                 
-                // ⭐ AGRUPAR EN BLOQUES DE 15 ⭐
-                const tamañoPagina = 15;
+                // Agrupar en bloques de 8
+                const tamañoPagina = 8;
                 for (let i = 0; i < tickets.length; i += tamañoPagina) {
                     const paginaTickets = tickets.slice(i, i + tamañoPagina);
                     
@@ -223,9 +263,7 @@
                         const ticketDiv = document.createElement('div');
                         ticketDiv.className = 'ticket';
                         
-                        // ⭐ AHORA SOLO MOSTRAMOS EL NÚMERO LIMPIO ⭐
-                        const codigoCorto = t.numero_ticket; 
-                        const departamento = t.cliente_departamento || 'No especificado';
+                        const codigoCorto = t.numero_ticket.replace('TKT-', '');
 
                         ticketDiv.innerHTML = `
                             <div class="ticket-content">
@@ -236,7 +274,6 @@
                                     <div class="ticket-datos">
                                         <h3>${t.cliente_nombre}</h3>
                                         <p>📞 ${t.cliente_telefono || 'Sin teléfono'}</p>
-                                        <div class="dept">📍 ${departamento}</div>
                                     </div>
                                     <div class="ticket-evento">${t.sorteo_nombre}</div>
                                 </div>
@@ -248,7 +285,6 @@
                         hoja.appendChild(ticketDiv);
                     });
 
-                    // Rellenar los espacios vacíos si no se completan los 15
                     const faltantes = tamañoPagina - paginaTickets.length;
                     for (let j = 0; j < faltantes; j++) {
                         const ticketVacio = document.createElement('div');
@@ -260,13 +296,13 @@
                     contenedor.appendChild(hoja);
                 }
 
-            } catch (e) {
-                console.error(e);
-                alert('Error al cargar los tickets.');
+            } catch (error) {
+                console.error(error);
+                contenedor.innerHTML = `<p style="color:red; text-align:center; font-weight:bold; margin-top: 50px;">${error.message}</p>`;
             }
         }
 
-        cargarEImprimir();
+        cargarSorteos();
     </script>
 </body>
 </html>

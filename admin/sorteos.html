@@ -24,6 +24,8 @@
     .btn-editar:hover { background: #1565c0; color: #fff; }
     .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
     .btn-eliminar:hover { background: #c62828; color: #fff; }
+    .btn-imprimir { background: #fff3e0; color: #ef6c00; border: 1px solid #ef6c00; }
+    .btn-imprimir:hover { background: #ef6c00; color: #fff; }
 </style>
 </head>
 <body>
@@ -70,7 +72,6 @@
                 
                 <div style="display: flex; gap: 1rem;">
                     <div class="form-group" style="flex: 1;"><label>Fecha del sorteo</label><input type="date" name="fecha_sorteo" id="sorteo-fecha" required></div>
-                    <!-- ⭐ NUEVO CAMPO DE HORA ⭐ -->
                     <div class="form-group" style="flex: 1;"><label>Hora exacta</label><input type="time" name="hora_sorteo" id="sorteo-hora" required></div>
                 </div>
 
@@ -154,6 +155,9 @@ function renderizarTabla() {
             <td>${s.fecha_sorteo} a las ${s.hora_sorteo || '23:59'}</td>
             <td>${s.estado}</td>
             <td>
+                <!-- ⭐ BOTÓN DE IMPRIMIR TICKETS ⭐ -->
+                <button class="btn-accion btn-imprimir" onclick="window.open('/admin/imprimir_tickets.html', '_blank')" title="Imprimir Tickets de este Sorteo">🖨️</button>
+                
                 <button class="btn-accion btn-editar" onclick='editar(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
                 <button class="btn-accion btn-eliminar" onclick="eliminarSorteo(${s.id})">Eliminar</button>
             </td>
