@@ -111,7 +111,7 @@ body.no-scroll { overflow: hidden; }
     word-break: break-word;
 }
 
-/* ⭐ ESTILOS DEL CONTADOR DE TIEMPO (AÑADIDOS) ⭐ */
+/* ⭐ ESTILOS DEL CONTADOR DE TIEMPO ⭐ */
 .contador-tiempo { display: flex; gap: 8px; margin-top: 5px; margin-bottom: 15px; }
 .contador-bloque { background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent-cyan); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 45px; }
 .contador-bloque span { display: block; font-size: 1.2rem; font-weight: 800; color: #fff; line-height: 1; }
