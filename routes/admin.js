@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -9,12 +10,6 @@ router.use(requireVendedor);
 
 const storageMemory = multer.memoryStorage();
 const uploadConfig = multer({ 
-    storage: storageMemory,
-    limits: { fileSize: 10 * 1024 * 1024 }
-}).single('imagen');
-
-// ⭐ NUEVA CONFIGURACIÓN PARA EL CARRUSEL (Memoria para guardar en Base64) ⭐
-const uploadCarruselMemory = multer({ 
     storage: storageMemory,
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
@@ -68,7 +63,6 @@ router.post('/configuracion', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ MODIFICADO PARA ACEPTAR FLYER ⭐
 router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
     uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: 'Error al subir la imagen' });
@@ -77,12 +71,7 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
 
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            
-            // Dependiendo del tipo, asignamos la clave de la BD
-            let clave = 'logo_admin';
-            if (tipo === 'fondo') clave = 'fondo_login';
-            if (tipo === 'flyer') clave = 'flyer_inicio'; // ⭐ NUEVA CLAVE ⭐
-
+            const clave = tipo === 'logo' ? 'logo_admin' : (tipo === 'fondo' ? 'fondo_login' : 'flyer_inicio');
             await db.execute({
                 sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
                 args: [clave, base64Image]
@@ -214,6 +203,7 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA DE VENTA PRESENCIAL CORREGIDA (Genera MÚLTIPLES tickets si se pide más de 1) ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -227,20 +217,26 @@ router.post('/tickets/vender', async (req, res) => {
         if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
 
         const cantTickets = parseInt(cantidad) || 1;
-        
-        let numero;
-        let isUnique = false;
-        while (!isUnique) {
-            numero = generarCodigoTicket();
-            const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-            if (check.rows.length === 0) isUnique = true;
-        }
+        const codigosGenerados = [];
+        const hashBase = crypto.randomBytes(16).toString('hex');
 
-        await db.execute({
-            sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
-            args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
-        });
+        for (let i = 0; i < cantTickets; i++) {
+            let numero;
+            let isUnique = false;
+            while (!isUnique) {
+                numero = generarCodigoTicket();
+                const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+                if (check.rows.length === 0) isUnique = true;
+            }
+            codigosGenerados.push(numero);
+
+            // Insertamos 1 ticket por iteración
+            await db.execute({
+                sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
+                args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, `${hashBase}-${numero}`]
+            });
+        }
 
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         await db.execute({
@@ -248,9 +244,9 @@ router.post('/tickets/vender', async (req, res) => {
             args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip, ahora]
         });
 
-        res.json({ success: true, numero_ticket: numero, mensaje: 'Venta registrada correctamente' });
+        res.json({ success: true, codigos: codigosGenerados, numero_ticket: codigosGenerados[0], mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
-        console.error(e);
+        console.error("Error en venta presencial:", e);
         res.status(500).json({ error: e.message }); 
     }
 });
@@ -379,7 +375,7 @@ router.get('/carrusel', async (req, res) => {
 });
 
 router.post('/carrusel', requireAdmin, (req, res) => {
-    uploadCarruselMemory(req, res, async (err) => {
+    uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         if (!req.file) return res.status(400).json({ error: 'Debes subir una imagen' });
 
@@ -388,11 +384,10 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            
+            const imagen_path = `/uploads/imagenes/${req.file.filename}`;
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [base64Image, count]
+                args: [imagen_path, count]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
