@@ -151,7 +151,7 @@ body.no-scroll { overflow: hidden; }
 .resultado-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
 .resultado-body, .sorteos-body, .ticket-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
 
-/* Sorteos Modal */
+/* ⭐ TARJETA DEL MODAL DE SORTEOS CORREGIDA ⭐ */
 .sorteos-content { width: 100%; max-width: 660px; max-height: 85vh; }
 .sorteos-carrusel-wrapper { display: flex; align-items: center; gap: 0.5rem; }
 .sorteos-viewport { overflow: hidden; width: 100%; }
@@ -160,10 +160,22 @@ body.no-scroll { overflow: hidden; }
 .card-sorteo-carrusel .img-wrapper { width: 100%; height: 150px; overflow: hidden; position: relative; background: #000; }
 .card-sorteo-carrusel .img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 .card-sorteo-carrusel .info { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
-.card-sorteo-carrusel h3 { font-size: 1rem; color: #fff; margin: 0 0 0.3rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Ajuste para que el nombre no se desborde, use puntos suspensivos y ocupe máximo 2 líneas */
+.card-sorteo-carrusel h3 { 
+    font-size: 1rem; 
+    color: #fff; 
+    margin: 0 0 0.5rem 0; 
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 2.4rem; /* Fuerza una altura fija para 2 líneas */
+}
 .card-sorteo-carrusel .precio { color: #ffcc00; font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
-.card-sorteo-carrusel .btn-comprar { width: 100%; padding: 0.6rem; background: var(--accent-cyan); color: #000; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
-.card-sorteo-carrusel .btn-finalizado { width: 100%; padding: 0.6rem; background: #555; color: #ccc; border-radius: 6px; text-align: center; font-weight: bold; }
+.card-sorteo-carrusel .btn-comprar { width: 100%; padding: 0.6rem; background: var(--accent-cyan); color: #000; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: auto; }
+.card-sorteo-carrusel .btn-finalizado { width: 100%; padding: 0.6rem; background: #555; color: #ccc; border-radius: 6px; text-align: center; font-weight: bold; margin-top: auto; }
 .carousel-btn { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 .carousel-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
