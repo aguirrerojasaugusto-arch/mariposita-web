@@ -4,19 +4,7 @@
 <meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    /* ⭐ ESTILOS DEL ENCABEZADO FIJO DEL CLIENTE ⭐ */
-    .resumen-cliente-fijo {
-        display: none;
-        background: #f8f9fa;
-        border: 1px solid #ddd;
-        border-left: 5px solid var(--color-primario);
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        align-items: center;
-        justify-content: space-between;
-        animation: slideDown 0.3s ease-out;
-    }
+    .resumen-cliente-fijo { display: none; background: #f8f9fa; border: 1px solid #ddd; border-left: 5px solid var(--color-primario); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .resumen-info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .resumen-info h2 { margin: 0; font-size: 1.3rem; color: #333; }
@@ -26,8 +14,8 @@
 </style>
 </head>
 <body>
-<div class="admin-layout">
-       <!-- ⭐ BANNER SUPERIOR ⭐ -->
+
+    <!-- ⭐ BANNER SUPERIOR ⭐ -->
     <div class="admin-top-bar">
         <div class="admin-top-bar-info">
             <span>📞 95485966</span>
@@ -38,25 +26,23 @@
 
     <div class="admin-layout">
         <aside class="sidebar">
-            <!-- ⭐ LOGO FIJO ⭐ -->
-            <a href="/admin/dashboard.html" class="admin-logo-block">
-                <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
-                <div class="admin-logo-text">
-                    <strong>MARIPOSITA</strong>
-                    <span>Artesanía Textil</span>
-                </div>
-            </a>
-            
-            <!-- ⭐ PERFIL FIJO ⭐ -->
-            <div class="user-profile">
-                <div class="user-avatar" id="user-avatar">A</div>
-                <div class="user-info">
-                    <strong id="user-nombre">Cargando...</strong>
-                    <span id="user-rol">Admin</span>
+            <div class="sidebar-header">
+                <a href="/admin/dashboard.html" class="admin-logo-block">
+                    <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
+                    <div class="admin-logo-text">
+                        <strong>MARIPOSITA</strong>
+                        <span>Artesanía Textil</span>
+                    </div>
+                </a>
+                <div class="user-profile">
+                    <div class="user-avatar" id="user-avatar">A</div>
+                    <div class="user-info">
+                        <strong id="user-nombre">Cargando...</strong>
+                        <span id="user-rol">Admin</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- ⭐ MENÚ DE NAVEGACIÓN (Aquí debes marcar con 'active' el enlace de la página actual) ⭐ -->
             <nav class="sidebar-nav">
                 <a href="/admin/dashboard.html">📊 Dashboard</a>
                 <a href="/admin/ordenes.html">📦 Órdenes</a>
@@ -65,39 +51,37 @@
                 <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
                 <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
                 <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
-                <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+                <a href="/admin/buscar.html" class="active">🔍 Buscar Cliente</a>
                 <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
                 <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
             </nav>
         </aside>
     
-    <main class="main">
-        <div class="search-container">
-            <h2 class="search-title">Consultar mi Pedido</h2>
-            <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
-            
-            <div class="search-input-group">
-                <input type="text" id="input-busqueda" placeholder="Ej: 74589612 o 987654321" onkeypress="if(event.key === 'Enter') buscar()">
-                <button onclick="buscar()">Buscar</button>
-            </div>
-
-            <!-- ⭐ ENCABEZADO FIJO PARA EL NOMBRE Y UBICACIÓN ⭐ -->
-            <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
-                <div class="resumen-info">
-                    <h4>Cliente</h4>
-                    <h2 id="resumen-nombre">-</h2>
+        <main class="main">
+            <div class="search-container">
+                <h2 class="search-title">Consultar mi Pedido</h2>
+                <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
+                
+                <div class="search-input-group">
+                    <input type="text" id="input-busqueda" placeholder="Ej: 74589612 o 987654321" onkeypress="if(event.key === 'Enter') buscar()">
+                    <button onclick="buscar()">Buscar</button>
                 </div>
-                <div class="resumen-depto">
-                    <h4>Ubicación</h4>
-                    <h3 id="resumen-departamento">-</h3>
-                </div>
-            </div>
 
-            <!-- CONTENEDOR CON SCROLL PARA LOS RESULTADOS -->
-            <div id="resultados"></div>
-        </div>
-    </main>
-</div>
+                <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
+                    <div class="resumen-info">
+                        <h4>Cliente</h4>
+                        <h2 id="resumen-nombre">-</h2>
+                    </div>
+                    <div class="resumen-depto">
+                        <h4>Ubicación</h4>
+                        <h3 id="resumen-departamento">-</h3>
+                    </div>
+                </div>
+
+                <div id="resultados"></div>
+            </div>
+        </main>
+    </div>
 
 <script>
 async function checkAuth() {
@@ -105,9 +89,12 @@ async function checkAuth() {
         const r = await fetch('/api/auth/me');
         const d = await r.json();
         
-        if (!d.logged) {
-            return location.href = '/admin/login.html';
-        }
+        if (!d.logged) return location.href = '/admin/login.html';
+        
+        // ⭐ PINTAR DATOS DEL PERFIL ⭐
+        document.getElementById('user-nombre').textContent = d.nombre;
+        document.getElementById('user-rol').textContent = d.rol;
+        document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
         
         if (d.rol !== 'admin') {
             document.getElementById('nav-productos').style.display = 'none';
@@ -138,7 +125,7 @@ async function buscar() {
     }
 
     cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold;">Buscando en la base de datos...</p>';
-    resumenBox.style.display = 'none'; // Ocultar mientras busca
+    resumenBox.style.display = 'none';
 
     try {
         const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
@@ -149,20 +136,15 @@ async function buscar() {
             return;
         }
 
-        // ⭐ EXTRAER Y MOSTRAR LOS DATOS DEL CLIENTE EN EL ENCABEZADO ⭐
         let nombreCliente = 'Cliente';
         let ubicacionCliente = 'No registrado';
 
         if (data.tickets.length > 0) {
             nombreCliente = data.tickets[0].cliente_nombre;
-            if (data.tickets[0].cliente_departamento) {
-                ubicacionCliente = data.tickets[0].cliente_departamento;
-            }
+            if (data.tickets[0].cliente_departamento) ubicacionCliente = data.tickets[0].cliente_departamento;
         } else if (data.ordenes.length > 0) {
             nombreCliente = data.ordenes[0].cliente_nombre;
-            if (data.ordenes[0].cliente_direccion) {
-                ubicacionCliente = data.ordenes[0].cliente_direccion;
-            }
+            if (data.ordenes[0].cliente_direccion) ubicacionCliente = data.ordenes[0].cliente_direccion;
         }
 
         document.getElementById('resumen-nombre').textContent = nombreCliente;
@@ -171,7 +153,6 @@ async function buscar() {
 
         let html = '';
 
-        // Mostrar Órdenes de Ropa
         if (data.ordenes.length > 0) {
             html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
             data.ordenes.forEach(o => {
@@ -185,13 +166,12 @@ async function buscar() {
                         <p><strong>Fecha:</strong> ${o.creado_en}</p>
                         <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
                         <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
-                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
+                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo:</strong> ${o.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
         }
 
-        // Mostrar Tickets de Sorteo
         if (data.tickets.length > 0) {
             html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             data.tickets.forEach(t => {
@@ -204,20 +184,18 @@ async function buscar() {
                         </div>
                         <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                         <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
+                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo:</strong> ${t.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
         }
 
         cont.innerHTML = html;
-
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
 }
 
-// Ejecutar la verificación de roles al cargar la página
 checkAuth();
 </script>
 </body>

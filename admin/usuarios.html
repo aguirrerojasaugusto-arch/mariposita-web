@@ -4,44 +4,21 @@
 <meta charset="UTF-8"><title>Usuarios · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
     
-    .modal-content {
-        background: #fff; width: 90%; max-width: 600px; border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
-        display: flex; flex-direction: column; max-height: 90vh;
-        animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
+    .modal-content { background: #fff; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
-    .modal-header {
-        padding: 1.5rem 2rem; border-bottom: 1px solid #eee;
-        display: flex; justify-content: space-between; align-items: center;
-        background: var(--color-primario); color: #fff;
-    }
+    .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.3rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-close:hover { color: #ff4d4d; }
     
     .modal-body { padding: 2rem; overflow-y: auto; }
-    .modal-footer {
-        padding: 1.5rem 2rem; border-top: 1px solid #eee;
-        display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9;
-    }
+    .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
 
-    .badge-rol {
-        padding: 0.3rem 0.8rem; border-radius: 20px;
-        font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-    }
+    .badge-rol { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
     .rol-admin { background: #c62828; color: #fff; }
     .rol-vendedor { background: #0077b6; color: #fff; }
     .rol-cliente { background: #2e7d32; color: #fff; }
@@ -49,10 +26,7 @@
     .badge-activo { background: #e8f5e9; color: #2e7d32; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
     .badge-inactivo { background: #ffebee; color: #c62828; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
 
-    .btn-accion {
-        padding: 0.4rem 0.8rem; border: none; border-radius: 6px;
-        cursor: pointer; font-weight: bold; font-size: 0.85rem; margin: 0 2px;
-    }
+    .btn-accion { padding: 0.4rem 0.8rem; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; margin: 0 2px; }
     .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar:hover { background: #1565c0; color: #fff; }
     .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
@@ -60,31 +34,18 @@
     .btn-toggle { background: #fff3e0; color: #ef6c00; border: 1px solid #ef6c00; }
     .btn-toggle:hover { background: #ef6c00; color: #fff; }
 
-    .header-actions {
-        display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
-    }
-    .search-box {
-        padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px;
-        font-size: 0.95rem; width: 300px; outline: none;
-    }
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
 
-    .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1rem; margin-top: 1.5rem;
-    }
-    .pagination button {
-        background: var(--color-primario); color: #fff;
-        border: none; padding: 0.5rem 1rem; border-radius: 6px;
-        cursor: pointer; font-weight: bold;
-    }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
     .pagination span { font-weight: bold; color: #333; }
 </style>
 </head>
 <body>
-<div class="admin-layout">
-        <!-- ⭐ BANNER SUPERIOR ⭐ -->
+
     <div class="admin-top-bar">
         <div class="admin-top-bar-info">
             <span>📞 95485966</span>
@@ -95,25 +56,23 @@
 
     <div class="admin-layout">
         <aside class="sidebar">
-            <!-- ⭐ LOGO FIJO ⭐ -->
-            <a href="/admin/dashboard.html" class="admin-logo-block">
-                <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
-                <div class="admin-logo-text">
-                    <strong>MARIPOSITA</strong>
-                    <span>Artesanía Textil</span>
-                </div>
-            </a>
-            
-            <!-- ⭐ PERFIL FIJO ⭐ -->
-            <div class="user-profile">
-                <div class="user-avatar" id="user-avatar">A</div>
-                <div class="user-info">
-                    <strong id="user-nombre">Cargando...</strong>
-                    <span id="user-rol">Admin</span>
+            <div class="sidebar-header">
+                <a href="/admin/dashboard.html" class="admin-logo-block">
+                    <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
+                    <div class="admin-logo-text">
+                        <strong>MARIPOSITA</strong>
+                        <span>Artesanía Textil</span>
+                    </div>
+                </a>
+                <div class="user-profile">
+                    <div class="user-avatar" id="user-avatar">A</div>
+                    <div class="user-info">
+                        <strong id="user-nombre">Cargando...</strong>
+                        <span id="user-rol">Admin</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- ⭐ MENÚ DE NAVEGACIÓN (Aquí debes marcar con 'active' el enlace de la página actual) ⭐ -->
             <nav class="sidebar-nav">
                 <a href="/admin/dashboard.html">📊 Dashboard</a>
                 <a href="/admin/ordenes.html">📦 Órdenes</a>
@@ -121,66 +80,67 @@
                 <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
                 <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
                 <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
-                <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+                <a href="/admin/usuarios.html" class="active" id="nav-usuarios">👥 Usuarios</a>
                 <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
                 <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
                 <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
             </nav>
         </aside>
-    <main class="main">
-        <div class="header-actions">
-            <h2 style="margin:0;">Gestión de Usuarios</h2>
-            <div style="display:flex; gap:1rem;">
-                <input type="text" id="buscador" class="search-box" placeholder="Buscar por nombre o email..." onkeyup="filtrar()">
-                <button class="btn btn-primario" onclick="abrirModalNuevo()">+ Nuevo Usuario</button>
+
+        <main class="main">
+            <div class="header-actions">
+                <h2 style="margin:0;">Gestión de Usuarios</h2>
+                <div style="display:flex; gap:1rem;">
+                    <input type="text" id="buscador" class="search-box" placeholder="Buscar por nombre o email..." onkeyup="filtrar()">
+                    <button class="btn btn-primario" onclick="abrirModalNuevo()">+ Nuevo Usuario</button>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                💡 <strong>Roles:</strong> Admin (todo), Vendedor (solo órdenes/tickets), Cliente (tienda).
+            </div>
+
+            <div id="lista"></div>
+            <div class="pagination" id="paginacion">
+                <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+                <span id="page-info">Página 1 de 1</span>
+                <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modal-usuario">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="form-title">Nuevo Usuario</h3>
+                <button class="modal-close" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-usuario">
+                    <input type="hidden" id="user-id">
+                    <div class="form-group"><label>Nombre completo *</label><input id="user-nombre" required></div>
+                    <div class="form-group"><label>Email *</label><input type="email" id="user-email" required></div>
+                    <div class="form-group"><label>Teléfono</label><input id="user-telefono"></div>
+                    <div class="form-group">
+                        <label>Rol *</label>
+                        <select id="user-rol" required>
+                            <option value="vendedor">Vendedor (Órdenes y tickets)</option>
+                            <option value="admin">Admin (Acceso total)</option>
+                            <option value="cliente">Cliente (Tienda)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña <span id="pass-hint"></span></label>
+                        <input type="password" id="user-password" autocomplete="new-password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" form="form-usuario" class="btn btn-primario" id="btn-guardar">Guardar</button>
             </div>
         </div>
-
-        <div class="alert alert-info">
-            💡 <strong>Roles:</strong> Admin (todo), Vendedor (solo órdenes/tickets), Cliente (tienda).
-        </div>
-
-        <div id="lista"></div>
-        <div class="pagination" id="paginacion">
-            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
-            <span id="page-info">Página 1 de 1</span>
-            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
-        </div>
-    </main>
-</div>
-
-<div class="modal-overlay" id="modal-usuario">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="form-title">Nuevo Usuario</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div class="modal-body">
-            <form id="form-usuario">
-                <input type="hidden" id="user-id">
-                <div class="form-group"><label>Nombre completo *</label><input id="user-nombre" required></div>
-                <div class="form-group"><label>Email *</label><input type="email" id="user-email" required></div>
-                <div class="form-group"><label>Teléfono</label><input id="user-telefono"></div>
-                <div class="form-group">
-                    <label>Rol *</label>
-                    <select id="user-rol" required>
-                        <option value="vendedor">Vendedor (Órdenes y tickets)</option>
-                        <option value="admin">Admin (Acceso total)</option>
-                        <option value="cliente">Cliente (Tienda)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Contraseña <span id="pass-hint"></span></label>
-                    <input type="password" id="user-password" autocomplete="new-password">
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
-            <button type="submit" form="form-usuario" class="btn btn-primario" id="btn-guardar">Guardar</button>
-        </div>
     </div>
-</div>
 
 <script>
 let todosLosUsuarios = [];
@@ -199,6 +159,10 @@ async function checkAuth() {
         const d = await r.json();
         
         if (!d.logged) return location.href = '/admin/login.html';
+
+        document.getElementById('user-nombre').textContent = d.nombre;
+        document.getElementById('user-rol').textContent = d.rol;
+        document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
 
         if (d.rol !== 'admin') {
             document.getElementById('nav-productos').style.display = 'none';

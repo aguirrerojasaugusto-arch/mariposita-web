@@ -42,8 +42,7 @@
 </style>
 </head>
 <body>
-<div class="admin-layout">
-       <!-- ⭐ BANNER SUPERIOR ⭐ -->
+
     <div class="admin-top-bar">
         <div class="admin-top-bar-info">
             <span>📞 95485966</span>
@@ -54,29 +53,27 @@
 
     <div class="admin-layout">
         <aside class="sidebar">
-            <!-- ⭐ LOGO FIJO ⭐ -->
-            <a href="/admin/dashboard.html" class="admin-logo-block">
-                <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
-                <div class="admin-logo-text">
-                    <strong>MARIPOSITA</strong>
-                    <span>Artesanía Textil</span>
-                </div>
-            </a>
-            
-            <!-- ⭐ PERFIL FIJO ⭐ -->
-            <div class="user-profile">
-                <div class="user-avatar" id="user-avatar">A</div>
-                <div class="user-info">
-                    <strong id="user-nombre">Cargando...</strong>
-                    <span id="user-rol">Admin</span>
+            <div class="sidebar-header">
+                <a href="/admin/dashboard.html" class="admin-logo-block">
+                    <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
+                    <div class="admin-logo-text">
+                        <strong>MARIPOSITA</strong>
+                        <span>Artesanía Textil</span>
+                    </div>
+                </a>
+                <div class="user-profile">
+                    <div class="user-avatar" id="user-avatar">A</div>
+                    <div class="user-info">
+                        <strong id="user-nombre">Cargando...</strong>
+                        <span id="user-rol">Admin</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- ⭐ MENÚ DE NAVEGACIÓN (Aquí debes marcar con 'active' el enlace de la página actual) ⭐ -->
             <nav class="sidebar-nav">
                 <a href="/admin/dashboard.html">📊 Dashboard</a>
                 <a href="/admin/ordenes.html">📦 Órdenes</a>
-                <a href="/admin/tickets.html">🎁 Tickets</a>
+                <a href="/admin/tickets.html" class="active">🎁 Tickets</a>
                 <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
                 <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
                 <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
@@ -86,114 +83,115 @@
                 <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
             </nav>
         </aside>
-    <main class="main">
-        <div class="header-actions">
-            <h2 style="margin:0;">Tickets pendientes</h2>
-            <div style="display: flex; gap: 1rem;">
-                <input type="text" id="buscador" class="search-box" placeholder="Buscar por cliente, DNI..." onkeyup="filtrar()">
-                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">🖨️ Imprimir Tickets</button>
-                <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
+
+        <main class="main">
+            <div class="header-actions">
+                <h2 style="margin:0;">Tickets pendientes</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="text" id="buscador" class="search-box" placeholder="Buscar por cliente, DNI..." onkeyup="filtrar()">
+                    <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">🖨️ Imprimir Tickets</button>
+                    <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
+                </div>
             </div>
-        </div>
-        
-        <div class="alert alert-info">
-            ⚠️ <strong>Recuerda:</strong> Pasa el mouse sobre el nombre del cliente para ver la foto del comprobante. 
-            <span id="mensaje-vendedor" style="display:none; color:#c62828; font-weight:bold;">(Como vendedor, solo puedes ver los datos y vender presencialmente, pero no aprobar/rechazar).</span>
-        </div>
-        
-        <div id="lista"></div>
-        <div class="pagination" id="paginacion">
-            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
-            <span id="page-info">Página 1 de 1</span>
-            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
-        </div>
-    </main>
-</div>
-
-<div class="modal-overlay" id="modal-detalles">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modal-title">Detalles del Ticket</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div class="modal-body" id="modal-body"></div>
+            
+            <div class="alert alert-info">
+                ⚠️ <strong>Recuerda:</strong> Pasa el mouse sobre el nombre del cliente para ver la foto del comprobante. 
+                <span id="mensaje-vendedor" style="display:none; color:#c62828; font-weight:bold;">(Como vendedor, solo puedes ver los datos y vender presencialmente, pero no aprobar/rechazar).</span>
+            </div>
+            
+            <div id="lista"></div>
+            <div class="pagination" id="paginacion">
+                <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+                <span id="page-info">Página 1 de 1</span>
+                <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+            </div>
+        </main>
     </div>
-</div>
 
-<div class="modal-overlay" id="modal-venta-presencial">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header" style="background: #2e7d32;">
-            <h3>Venta Presencial de Ticket</h3>
-            <button class="modal-close" onclick="cerrarModalVenta()">✕</button>
+    <div class="modal-overlay" id="modal-detalles">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Detalles del Ticket</h3>
+                <button class="modal-close" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
         </div>
-        <div class="modal-body">
-            <form id="form-venta-presencial">
-                <div class="form-group">
-                    <label>Sorteo *</label>
-                    <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
-                        <option value="">Cargando sorteos...</option>
-                    </select>
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    </div>
+
+    <div class="modal-overlay" id="modal-venta-presencial">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: #2e7d32;">
+                <h3>Venta Presencial de Ticket</h3>
+                <button class="modal-close" onclick="cerrarModalVenta()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-venta-presencial">
                     <div class="form-group">
-                        <label>DNI *</label>
-                        <input type="text" id="vp-dni" maxlength="8" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label>Nombre del Cliente *</label>
-                        <input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
-                    </div>
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group"><label>Teléfono</label><input type="tel" id="vp-telefono" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
-                    <div class="form-group">
-                        <label>Departamento</label>
-                        <select id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
-                            <option value="Amazonas">Amazonas</option>
-                            <option value="Áncash">Áncash</option>
-                            <option value="Apurímac">Apurímac</option>
-                            <option value="Arequipa">Arequipa</option>
-                            <option value="Ayacucho">Ayacucho</option>
-                            <option value="Cajamarca">Cajamarca</option>
-                            <option value="Callao">Callao</option>
-                            <option value="Cusco">Cusco</option>
-                            <option value="Huancavelica">Huancavelica</option>
-                            <option value="Huánuco">Huánuco</option>
-                            <option value="Ica">Ica</option>
-                            <option value="Junín">Junín</option>
-                            <option value="La Libertad">La Libertad</option>
-                            <option value="Lambayeque">Lambayeque</option>
-                            <option value="Lima">Lima</option>
-                            <option value="Loreto">Loreto</option>
-                            <option value="Madre de Dios">Madre de Dios</option>
-                            <option value="Moquegua">Moquegua</option>
-                            <option value="Pasco">Pasco</option>
-                            <option value="Piura">Piura</option>
-                            <option value="Puno">Puno</option>
-                            <option value="San Martín">San Martín</option>
-                            <option value="Tacna">Tacna</option>
-                            <option value="Tumbes">Tumbes</option>
-                            <option value="Ucayali">Ucayali</option>
+                        <label>Sorteo *</label>
+                        <select id="vp-sorteo" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
+                            <option value="">Cargando sorteos...</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label>Cantidad *</label>
-                        <input type="number" id="vp-cantidad" min="1" max="20" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>DNI *</label>
+                            <input type="text" id="vp-dni" maxlength="8" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre del Cliente *</label>
+                            <input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Total a cobrar</label>
-                        <input type="text" id="vp-total" readonly style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background: #e9ecef; font-weight: bold;">
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group"><label>Teléfono</label><input type="tel" id="vp-telefono" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
+                        <div class="form-group">
+                            <label>Departamento</label>
+                            <select id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
+                                <option value="Amazonas">Amazonas</option>
+                                <option value="Áncash">Áncash</option>
+                                <option value="Apurímac">Apurímac</option>
+                                <option value="Arequipa">Arequipa</option>
+                                <option value="Ayacucho">Ayacucho</option>
+                                <option value="Cajamarca">Cajamarca</option>
+                                <option value="Callao">Callao</option>
+                                <option value="Cusco">Cusco</option>
+                                <option value="Huancavelica">Huancavelica</option>
+                                <option value="Huánuco">Huánuco</option>
+                                <option value="Ica">Ica</option>
+                                <option value="Junín">Junín</option>
+                                <option value="La Libertad">La Libertad</option>
+                                <option value="Lambayeque">Lambayeque</option>
+                                <option value="Lima">Lima</option>
+                                <option value="Loreto">Loreto</option>
+                                <option value="Madre de Dios">Madre de Dios</option>
+                                <option value="Moquegua">Moquegua</option>
+                                <option value="Pasco">Pasco</option>
+                                <option value="Piura">Piura</option>
+                                <option value="Puno">Puno</option>
+                                <option value="San Martín">San Martín</option>
+                                <option value="Tacna">Tacna</option>
+                                <option value="Tumbes">Tumbes</option>
+                                <option value="Ucayali">Ucayali</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <button type="submit" class="btn btn-primario" style="width:100%; padding: 0.8rem; margin-top: 1rem;" id="btn-vp-guardar">Registrar Venta</button>
-            </form>
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Cantidad *</label>
+                            <input type="number" id="vp-cantidad" min="1" max="20" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
+                        </div>
+                        <div class="form-group">
+                            <label>Total a cobrar</label>
+                            <input type="text" id="vp-total" readonly style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background: #e9ecef; font-weight: bold;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primario" style="width:100%; padding: 0.8rem; margin-top: 1rem;" id="btn-vp-guardar">Registrar Venta</button>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="tooltip-comprobante"><img id="tooltip-img" src="" alt="Comprobante"></div>
+    <div id="tooltip-comprobante"><img id="tooltip-img" src="" alt="Comprobante"></div>
 
 <script>
 let todosLosTickets = [];
@@ -215,6 +213,10 @@ async function checkAuth() {
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     userRole = d.rol;
+
+    document.getElementById('user-nombre').textContent = d.nombre;
+    document.getElementById('user-rol').textContent = d.rol;
+    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
 
     if (userRole !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
@@ -391,7 +393,6 @@ async function revisar(grupoId, idReal, accion) {
 function abrirModalVentaPresencial() {
     const select = document.getElementById('vp-sorteo');
     
-    // ⭐ FILTRAR SORTEOS ACTIVOS Y QUE NO HAYAN FINALIZADO ⭐
     const ahora = new Date().getTime();
     const sorteosValidos = sorteosList.filter(s => {
         if (s.estado !== 'activo') return false;

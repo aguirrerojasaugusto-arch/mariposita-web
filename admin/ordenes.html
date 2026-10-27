@@ -4,19 +4,9 @@
 <meta charset="UTF-8"><title>Órdenes · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); z-index: 1000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-content {
-        background: #fff; width: 90%; max-width: 800px; border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;
-        display: flex; flex-direction: column; max-height: 90vh;
-        animation: slideUp 0.3s ease-out;
-    }
+    .modal-content { background: #fff; width: 90%; max-width: 800px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.2rem; }
@@ -38,8 +28,7 @@
 </style>
 </head>
 <body>
-<div class="admin-layout">
-       <!-- ⭐ BANNER SUPERIOR ⭐ -->
+
     <div class="admin-top-bar">
         <div class="admin-top-bar-info">
             <span>📞 95485966</span>
@@ -50,28 +39,26 @@
 
     <div class="admin-layout">
         <aside class="sidebar">
-            <!-- ⭐ LOGO FIJO ⭐ -->
-            <a href="/admin/dashboard.html" class="admin-logo-block">
-                <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
-                <div class="admin-logo-text">
-                    <strong>MARIPOSITA</strong>
-                    <span>Artesanía Textil</span>
-                </div>
-            </a>
-            
-            <!-- ⭐ PERFIL FIJO ⭐ -->
-            <div class="user-profile">
-                <div class="user-avatar" id="user-avatar">A</div>
-                <div class="user-info">
-                    <strong id="user-nombre">Cargando...</strong>
-                    <span id="user-rol">Admin</span>
+            <div class="sidebar-header">
+                <a href="/admin/dashboard.html" class="admin-logo-block">
+                    <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23fff\'/><text x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%23000\'>🦋</text></svg>'">
+                    <div class="admin-logo-text">
+                        <strong>MARIPOSITA</strong>
+                        <span>Artesanía Textil</span>
+                    </div>
+                </a>
+                <div class="user-profile">
+                    <div class="user-avatar" id="user-avatar">A</div>
+                    <div class="user-info">
+                        <strong id="user-nombre">Cargando...</strong>
+                        <span id="user-rol">Admin</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- ⭐ MENÚ DE NAVEGACIÓN (Aquí debes marcar con 'active' el enlace de la página actual) ⭐ -->
             <nav class="sidebar-nav">
                 <a href="/admin/dashboard.html">📊 Dashboard</a>
-                <a href="/admin/ordenes.html">📦 Órdenes</a>
+                <a href="/admin/ordenes.html" class="active">📦 Órdenes</a>
                 <a href="/admin/tickets.html">🎁 Tickets</a>
                 <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
                 <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
@@ -82,34 +69,35 @@
                 <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
             </nav>
         </aside>
-    <main class="main">
-        <div class="header-actions">
-            <h2 style="margin:0;">Órdenes pendientes</h2>
-            <input type="text" id="buscador" class="search-box" placeholder="Buscar por código, cliente, teléfono..." onkeyup="filtrar()">
-        </div>
-        
-        <div class="alert alert-info">
-            ⚠️ <strong>Recuerda:</strong> Abre tu app Yape y confirma que el dinero esté en tu cuenta ANTES de aprobar.
-        </div>
-        
-        <div id="lista"></div>
-        <div class="pagination" id="paginacion">
-            <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
-            <span id="page-info">Página 1 de 1</span>
-            <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
-        </div>
-    </main>
-</div>
 
-<div class="modal-overlay" id="modal-detalles">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modal-title">Detalles de la Orden</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div class="modal-body" id="modal-body"></div>
+        <main class="main">
+            <div class="header-actions">
+                <h2 style="margin:0;">Órdenes pendientes</h2>
+                <input type="text" id="buscador" class="search-box" placeholder="Buscar por código, cliente, teléfono..." onkeyup="filtrar()">
+            </div>
+            
+            <div class="alert alert-info">
+                ⚠️ <strong>Recuerda:</strong> Abre tu app Yape y confirma que el dinero esté en tu cuenta ANTES de aprobar.
+            </div>
+            
+            <div id="lista"></div>
+            <div class="pagination" id="paginacion">
+                <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+                <span id="page-info">Página 1 de 1</span>
+                <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+            </div>
+        </main>
     </div>
-</div>
+
+    <div class="modal-overlay" id="modal-detalles">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Detalles de la Orden</h3>
+                <button class="modal-close" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
 
 <script>
 document.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
@@ -130,6 +118,10 @@ async function checkAuth() {
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     
+    document.getElementById('user-nombre').textContent = d.nombre;
+    document.getElementById('user-rol').textContent = d.rol;
+    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
+
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';
