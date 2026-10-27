@@ -14,7 +14,11 @@ const uploadConfig = multer({
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
 
-// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
+const uploadCarruselMemory = multer({ 
+    storage: storageMemory,
+    limits: { fileSize: 10 * 1024 * 1024 }
+}).single('imagen');
+
 function generarCodigoTicket() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let resultado = '';
@@ -149,19 +153,37 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
 });
 
 // ============ TICKETS ============
+// ⭐ RUTA MODIFICADA: Agrupa los tickets por cliente y sorteo ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
+        // Consulta que agrupa los tickets que tienen el mismo comprobante (hash base)
         const result = await db.execute(`
-            SELECT t.*, s.nombre as sorteo_nombre, s.precio_ticket 
-            FROM tickets t 
-            JOIN sorteos s ON s.id = t.sorteo_id 
-            WHERE t.estado_pago = 'pendiente' 
-            ORDER BY t.creado_en DESC
+            SELECT 
+                SUBSTR(t.hash_comprobante, 1, INSTR(t.hash_comprobante, '-') - 1) as grupo_id,
+                MIN(t.id) as id,
+                MIN(t.numero_ticket) as numero_ticket,
+                t.cliente_nombre,
+                t.cliente_dni,
+                t.cliente_telefono,
+                s.nombre as sorteo_nombre,
+                COUNT(t.id) as cantidad_tickets,
+                SUM(s.precio_ticket) as total_pagado,
+                MIN(t.creado_en) as creado_en,
+                t.comprobante_base64,
+                t.notas_admin,
+                MAX(t.ocr_monto) as ocr_monto,
+                MAX(t.ocr_operacion) as ocr_operacion,
+                MAX(t.ocr_error) as ocr_error
+            FROM tickets t
+            JOIN sorteos s ON s.id = t.sorteo_id
+            WHERE t.estado_pago = 'pendiente'
+            GROUP BY grupo_id, t.sorteo_id
+            ORDER BY creado_en DESC
         `);
         
         res.json(result.rows.map(t => ({ 
             ...t, 
-            alerta_monto: t.ocr_monto !== null && Math.abs(t.precio_ticket - t.ocr_monto) > 0.01, 
+            alerta_monto: t.ocr_monto !== null && Math.abs(t.total_pagado - t.ocr_monto) > 0.01, 
             alerta_ocr: !!t.ocr_error,
             notas_admin: t.notas_admin
         })));
@@ -181,29 +203,38 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA MODIFICADA: Aprueba/Rechaza todos los tickets del grupo ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
 
     try {
+        // Primero obtenemos el ticket seleccionado para saber su hash base
         const tRes = await db.execute({ sql: 'SELECT * FROM tickets WHERE id = ?', args: [req.params.id] });
         const t = tRes.rows[0];
         if (!t) return res.status(404).json({ error: 'No encontrado' });
-        if (t.estado_pago !== 'pendiente') return res.status(400).json({ error: 'Ya fue revisado' });
 
+        // Extraemos el hash base
+        const hashBase = t.hash_comprobante.split('-')[0];
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
+        // Actualizamos todos los tickets que compartan ese hash base
         await db.batch([
-            { sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || t.notas_admin || null, t.id] },
-            { sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket ${t.numero_ticket}`, req.ip, ahora] }
+            { 
+                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ?`, 
+                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`] 
+            },
+            { 
+                sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
+                args: [req.user.userId, `${accion.toUpperCase()}_TICKET_GRUPAL`, `Grupo de tickets de ${t.cliente_nombre}`, req.ip, ahora] 
+            }
         ], "write");
 
         res.json({ success: true, nuevo_estado: nuevo });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA DE VENTA PRESENCIAL CORREGIDA (Genera MÚLTIPLES tickets si se pide más de 1) ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -230,7 +261,6 @@ router.post('/tickets/vender', async (req, res) => {
             }
             codigosGenerados.push(numero);
 
-            // Insertamos 1 ticket por iteración
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
                       VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
@@ -246,7 +276,7 @@ router.post('/tickets/vender', async (req, res) => {
 
         res.json({ success: true, codigos: codigosGenerados, numero_ticket: codigosGenerados[0], mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
-        console.error("Error en venta presencial:", e);
+        console.error(e);
         res.status(500).json({ error: e.message }); 
     }
 });
@@ -375,7 +405,7 @@ router.get('/carrusel', async (req, res) => {
 });
 
 router.post('/carrusel', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadCarruselMemory(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         if (!req.file) return res.status(400).json({ error: 'Debes subir una imagen' });
 
@@ -384,10 +414,11 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            const imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [imagen_path, count]
+                args: [base64Image, count]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
