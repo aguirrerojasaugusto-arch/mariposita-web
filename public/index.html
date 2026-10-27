@@ -6,6 +6,25 @@
     <title>Artesanía Mariposita | Tienda Oficial</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Estilos exclusivos para el Flyer Modal */
+        .flyer-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 19, 29, 0.85); backdrop-filter: blur(8px);
+            z-index: 999999; display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.4s ease;
+        }
+        .flyer-modal-overlay.active { display: flex; opacity: 1; }
+        .flyer-content { position: relative; max-width: 90%; max-height: 90vh; animation: slideUpFlyer 0.4s ease-out; }
+        @keyframes slideUpFlyer { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .flyer-close-btn {
+            position: absolute; top: -15px; right: -15px; background: #ff4d4d; color: white; border: none;
+            width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s;
+        }
+        .flyer-close-btn:hover { transform: scale(1.1); }
+        .flyer-img { max-width: 100%; max-height: 90vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: block; object-fit: contain; }
+    </style>
 </head>
 <body>
 
@@ -114,6 +133,14 @@
         <div class="viewer-title" id="viewer-title"></div>
     </div>
 
+    <!-- ⭐ MODAL DEL FLYER (EMERGENTE) ⭐ -->
+    <div id="flyer-modal" class="flyer-modal-overlay" onclick="cerrarFlyer()">
+        <div class="flyer-content" onclick="event.stopPropagation()">
+            <button class="flyer-close-btn" onclick="cerrarFlyer()">&times;</button>
+            <img id="flyer-img" src="" alt="Promoción" class="flyer-img">
+        </div>
+    </div>
+
     <!-- ⭐ FOOTER (PIE DE PÁGINA) ⭐ -->
     <footer class="footer-principal">
         <div class="footer-contenido">
@@ -161,7 +188,7 @@
         let indiceHero = 0;
         let intervaloSorteos;
         let intervaloContadorHero;
-        let intervalosContadoresModales = []; // Para limpiar los contadores del modal
+        let intervalosContadoresModales = []; 
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -204,7 +231,28 @@
 
                 document.getElementById('year').textContent = new Date().getFullYear();
 
+                // ⭐ LÓGICA DEL FLYER: Mostrar si existe ⭐
+                if (config.flyer_inicio) {
+                    // Opcional: Usar sessionStorage para no molestar al usuario si recarga la página a cada rato
+                    if (!sessionStorage.getItem('flyer_cerrado')) {
+                        document.getElementById('flyer-img').src = config.flyer_inicio;
+                        document.getElementById('flyer-modal').classList.add('active');
+                        
+                        // Desaparecer automáticamente después de 5 segundos
+                        setTimeout(() => {
+                            cerrarFlyer();
+                        }, 5000); 
+                    }
+                }
+
             } catch (e) { console.error("Error al cargar config", e); }
+        }
+
+        // ⭐ FUNCIÓN PARA CERRAR EL FLYER ⭐
+        function cerrarFlyer() {
+            document.getElementById('flyer-modal').classList.remove('active');
+            // Guardamos en sesión que ya lo vio para no mostrarlo si recarga en esta misma sesión
+            sessionStorage.setItem('flyer_cerrado', 'true');
         }
 
         async function initHeroSorteos() {
@@ -470,7 +518,6 @@
             const btnPrev = document.getElementById('btn-prev-sorteo');
             const btnNext = document.getElementById('btn-next-sorteo');
 
-            // Limpiamos los intervalos anteriores si existían
             intervalosContadoresModales.forEach(clearInterval);
             intervalosContadoresModales = [];
 
@@ -481,8 +528,8 @@
                 const yaFinalizo = ahora > fechaHoraSorteo;
                 
                 const boton = yaFinalizo 
-                    ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
-                    : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
+                    ? `<div class="btn-finalizado" id="btn-estado-${s.id}">Sorteo Finalizado</div>`
+                    : `<button class="btn-comprar" id="btn-estado-${s.id}" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
 
                 const idDias = `cd-dias-${s.id}`;
                 const idHoras = `cd-horas-${s.id}`;
@@ -502,7 +549,6 @@
                                 📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}
                             </div>
 
-                            <!-- ⭐ AQUÍ AGREGAMOS LOS CONTADORES EN EL MODAL ⭐ -->
                             <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${horaFormateada}:00-05:00">
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
                                 <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
@@ -516,13 +562,14 @@
                 `;
             }).join('');
 
-            // Iniciar los contadores para cada tarjeta del modal
             document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
                 const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
                 const idDias = el.querySelector('[id^="cd-dias-"]').id;
                 const idHoras = el.querySelector('[id^="cd-horas-"]').id;
                 const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
                 const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
+                
+                const sorteoId = idDias.replace('cd-dias-', '');
 
                 const intervalo = setInterval(() => {
                     const ahora = new Date().getTime();
@@ -534,6 +581,11 @@
                         document.getElementById(idHoras).textContent = "00";
                         document.getElementById(idMinutos).textContent = "00";
                         document.getElementById(idSegundos).textContent = "00";
+                        
+                        const btnContenedor = document.getElementById(`btn-estado-${sorteoId}`);
+                        if (btnContenedor && !btnContenedor.classList.contains('btn-finalizado')) {
+                            btnContenedor.outerHTML = `<div class="btn-finalizado" id="btn-estado-${sorteoId}">Sorteo Finalizado</div>`;
+                        }
                         return;
                     }
 
@@ -590,7 +642,6 @@
             if(!document.getElementById('ticket-modal').classList.contains('active')) {
                 desbloquearScroll();
             }
-            // Limpiamos los contadores del modal al cerrarlo para no consumir memoria
             intervalosContadoresModales.forEach(clearInterval);
             intervalosContadoresModales = [];
         }

@@ -7,15 +7,14 @@ const { uploadProducto } = require('../middleware/upload');
 const router = express.Router();
 router.use(requireVendedor); 
 
-// ⭐ CONFIGURACIÓN PARA GUARDAR EN MEMORIA (SOLO PARA CARRUSEL) ⭐
 const storageMemory = multer.memoryStorage();
-const uploadCarruselMemory = multer({ 
+const uploadConfig = multer({ 
     storage: storageMemory,
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
 
-// Configuración para el resto (logo, fondo)
-const uploadConfig = multer({ 
+// ⭐ NUEVA CONFIGURACIÓN PARA EL CARRUSEL (Memoria para guardar en Base64) ⭐
+const uploadCarruselMemory = multer({ 
     storage: storageMemory,
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
@@ -69,6 +68,7 @@ router.post('/configuracion', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ MODIFICADO PARA ACEPTAR FLYER ⭐
 router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
     uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: 'Error al subir la imagen' });
@@ -77,7 +77,12 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
 
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            const clave = tipo === 'logo' ? 'logo_admin' : 'fondo_login';
+            
+            // Dependiendo del tipo, asignamos la clave de la BD
+            let clave = 'logo_admin';
+            if (tipo === 'fondo') clave = 'fondo_login';
+            if (tipo === 'flyer') clave = 'flyer_inicio'; // ⭐ NUEVA CLAVE ⭐
+
             await db.execute({
                 sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
                 args: [clave, base64Image]
@@ -373,7 +378,6 @@ router.get('/carrusel', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ AQUÍ ESTÁ LA MAGIA: GUARDAMOS LA IMAGEN COMO BASE64 DIRECTO EN LA BD ⭐
 router.post('/carrusel', requireAdmin, (req, res) => {
     uploadCarruselMemory(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
@@ -384,12 +388,11 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            // Convertimos el buffer a string Base64
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [base64Image, count] // Guardamos el texto Base64 en lugar de una ruta
+                args: [base64Image, count]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
