@@ -23,6 +23,20 @@ function generarCodigoTicket() {
     return `TKT-${resultado}`;
 }
 
+// ⭐ FUNCIÓN PARA LIMPIAR Y FORMATEAR LA HORA CORRECTAMENTE ⭐
+function formatearHora(horaIngresada, horaPorDefecto = '23:59') {
+    if (!horaIngresada || horaIngresada.trim() === '') {
+        return horaPorDefecto;
+    }
+    // Asegurarnos de que solo tome los primeros 5 caracteres (HH:MM)
+    const horaLimpia = horaIngresada.trim().substring(0, 5);
+    // Verificar con expresión regular que sea un formato válido de hora
+    if (/^([01]\d|2[0-3]):[0-5]\d$/.test(horaLimpia)) {
+        return horaLimpia;
+    }
+    return horaPorDefecto;
+}
+
 // ============ DASHBOARD ============
 router.get('/dashboard', async (req, res) => {
     try {
@@ -297,8 +311,8 @@ router.post('/sorteos', requireAdmin, (req, res) => {
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
-        // ⭐ LIMPIAMOS LA HORA PARA QUE SIEMPRE GUARDE HH:MM ⭐
-        const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
+        // ⭐ USAMOS LA FUNCIÓN ROBUSTA PARA FORMATEAR LA HORA ⭐
+        const horaFormateada = formatearHora(hora_sorteo, '23:59');
 
         try {
             const r = await db.execute({
@@ -323,8 +337,8 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             let imagen_path = s.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
-            // ⭐ LIMPIAMOS LA HORA PARA QUE SIEMPRE GUARDE HH:MM ⭐
-            const horaFormateada = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
+            // ⭐ USAMOS LA FUNCIÓN ROBUSTA PARA FORMATEAR LA HORA (usando la hora anterior como respaldo) ⭐
+            const horaFormateada = formatearHora(hora_sorteo, s.hora_sorteo || '23:59');
 
             await db.execute({
                 sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`,
