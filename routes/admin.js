@@ -283,7 +283,7 @@ router.get('/productos', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ POST CORREGIDO PARA EVITAR NaN ⭐
+// ⭐ POST CORREGIDO PARA EVITAR NaN Y ERROR NOT NULL ⭐
 router.post('/productos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
@@ -291,8 +291,8 @@ router.post('/productos', requireAdmin, (req, res) => {
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
         try {
-            // VALIDACIÓN ESTRICTA: Si el precio viene vacío o no es un número, se guarda como null.
-            let precioFinal = null;
+            // VALIDACIÓN ESTRICTA: Si el precio viene vacío, se guarda como 0 para cumplir con NOT NULL.
+            let precioFinal = 0;
             if (precio !== undefined && precio !== null && precio !== '') {
                 const parsed = parseFloat(precio);
                 if (Number.isFinite(parsed)) precioFinal = parsed;
