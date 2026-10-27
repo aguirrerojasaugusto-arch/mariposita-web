@@ -10,7 +10,6 @@
     <aside class="sidebar">
         <h1><img src="/admin/img/logo.png" alt="Logo" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none';"> Mariposita</h1>
         
-        <!-- ⭐ PERFIL DEL USUARIO LOGUEADO ⭐ -->
         <div class="user-profile">
             <div class="user-avatar" id="user-avatar">A</div>
             <div class="user-info">
@@ -28,14 +27,12 @@
         <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
         <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
         <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
-        
         <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
     </aside>
+    
     <main class="main">
         <h2 style="margin-bottom: 2rem;">Bienvenido, <span id="saludo-nombre"></span></h2>
-        
         <div class="stats-grid" id="stats" style="margin-bottom: 2rem;"></div>
-
         <div class="card">
             <h3 style="color:var(--color-primario); margin-bottom:1rem;">Acciones rápidas</h3>
             <p style="display:flex; gap:1rem; flex-wrap:wrap;">
@@ -46,21 +43,18 @@
         </div>
     </main>
 </div>
+
 <script>
 async function checkAuth() {
     const r = await fetch('/api/auth/me');
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
     
-    // ⭐ ACTUALIZAMOS LOS DATOS DEL PERFIL EN EL SIDEBAR ⭐
     document.getElementById('user-nombre').textContent = d.nombre;
     document.getElementById('user-rol').textContent = d.rol;
-    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase(); // Primera letra del nombre
-    
-    // Saludo principal
+    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
     document.getElementById('saludo-nombre').textContent = d.nombre;
 
-    // Ocultar menús según el rol
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';

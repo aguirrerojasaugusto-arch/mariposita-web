@@ -18,7 +18,6 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ⭐ FONDO GLOBAL PARA TODO EL PANEL ADMIN ⭐ */
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(rgba(11, 27, 43, 0.75), rgba(11, 27, 43, 0.75)), 
@@ -59,14 +58,13 @@ body {
 /* --- LAYOUT GENERAL --- */
 .admin-layout { display: flex; min-height: 100vh; background: transparent !important; }
 
-/* ⭐ SIDEBAR ESTILO GLASSMORPHISM OSCURO (SCROLL INTERNO) ⭐ */
+/* ⭐ SIDEBAR CORREGIDO (FLEX-COLUMN PARA FIJAR LA CABECERA) ⭐ */
 .sidebar {
     width: 260px;
     background: rgba(16, 33, 50, 0.85) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 2rem 1rem;
     display: flex;
     flex-direction: column;
     z-index: 10;
@@ -74,21 +72,14 @@ body {
     height: 100vh;
     position: sticky;
     top: 0;
-    overflow-y: auto; /* Permite scroll interno si hay muchos enlaces */
+    overflow: hidden; /* Evita que todo el sidebar haga scroll */
 }
 
-/* Personalización de la barra de scroll del sidebar para que sea discreta */
-.sidebar::-webkit-scrollbar { width: 6px; }
-.sidebar::-webkit-scrollbar-track { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-.sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
-
-/* ⭐ FIJA EL LOGO Y EL PERFIL ARRIBA ⭐ */
-.sidebar h1, .user-profile {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: rgba(16, 33, 50, 0.95) !important; /* Fondo sólido para que el texto no se mezcle al hacer scroll */
+/* La cabecera (logo y perfil) se queda fija arriba */
+.sidebar-header {
+    padding: 2rem 1rem 1rem 1rem;
+    flex-shrink: 0; /* No se encoge */
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .sidebar h1 { 
@@ -107,16 +98,30 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1); 
     border-radius: 10px; 
     padding: 1rem; 
-    margin-bottom: 1.5rem; 
     display: flex; 
     align-items: center; 
     gap: 12px; 
 }
 
-.user-avatar { width: 45px; height: 45px; background: var(--color-secundario); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
+.user-avatar { width: 45px; height: 45px; background: var(--color-secundario); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
 .user-info { display: flex; flex-direction: column; overflow: hidden; }
 .user-info strong { color: #fff; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-info span { color: #8892b0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+
+/* El menú de enlaces es lo único que hace scroll */
+.sidebar-nav {
+    flex: 1; /* Toma el resto del espacio */
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Personalización de la barra de scroll del menú */
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
 
 .sidebar a { 
     display: flex; 
@@ -130,6 +135,7 @@ body {
     font-size: 0.95rem; 
     font-weight: 500; 
     transition: all 0.3s; 
+    flex-shrink: 0;
 }
 .sidebar a:hover, .sidebar a.active { background: rgba(0, 210, 255, 0.15) !important; color: #00d2ff !important; border-left: 4px solid #00d2ff; font-weight: 700; }
 .sidebar .logout { margin-top: auto; color: #ff6b6b !important; border-left: 4px solid transparent; }
