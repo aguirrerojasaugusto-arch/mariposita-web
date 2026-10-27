@@ -3,6 +3,27 @@
 <head>
 <meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    /* ⭐ ESTILOS DEL ENCABEZADO FIJO DEL CLIENTE ⭐ */
+    .resumen-cliente-fijo {
+        display: none;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-left: 5px solid var(--color-primario);
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .resumen-info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .resumen-info h2 { margin: 0; font-size: 1.3rem; color: #333; }
+    .resumen-depto { text-align: right; background: #e3f2fd; padding: 0.5rem 1rem; border-radius: 6px; max-width: 50%; }
+    .resumen-depto h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #1565c0; text-transform: uppercase; }
+    .resumen-depto h3 { margin: 0; font-size: 1rem; color: #1565c0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -30,13 +51,25 @@
                 <button onclick="buscar()">Buscar</button>
             </div>
 
+            <!-- ⭐ ENCABEZADO FIJO PARA EL NOMBRE Y UBICACIÓN ⭐ -->
+            <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
+                <div class="resumen-info">
+                    <h4>Cliente</h4>
+                    <h2 id="resumen-nombre">-</h2>
+                </div>
+                <div class="resumen-depto">
+                    <h4>Ubicación</h4>
+                    <h3 id="resumen-departamento">-</h3>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR CON SCROLL PARA LOS RESULTADOS -->
             <div id="resultados"></div>
         </div>
     </main>
 </div>
 
 <script>
-// ⭐ FUNCIÓN PARA VERIFICAR EL ROL Y OCULTAR MENÚS ⭐
 async function checkAuth() {
     try {
         const r = await fetch('/api/auth/me');
@@ -46,7 +79,6 @@ async function checkAuth() {
             return location.href = '/admin/login.html';
         }
         
-        // Si es vendedor, ocultar las opciones de administrador
         if (d.rol !== 'admin') {
             document.getElementById('nav-productos').style.display = 'none';
             document.getElementById('nav-sorteos').style.display = 'none';
@@ -67,13 +99,16 @@ async function logout() {
 async function buscar() {
     const query = document.getElementById('input-busqueda').value.trim();
     const cont = document.getElementById('resultados');
+    const resumenBox = document.getElementById('resumen-cliente-fijo');
 
     if (!query) {
         cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        resumenBox.style.display = 'none';
         return;
     }
 
     cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold;">Buscando en la base de datos...</p>';
+    resumenBox.style.display = 'none'; // Ocultar mientras busca
 
     try {
         const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
@@ -83,6 +118,26 @@ async function buscar() {
             cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px;">No se encontraron compras ni tickets registrados con ese número.</div>';
             return;
         }
+
+        // ⭐ EXTRAER Y MOSTRAR LOS DATOS DEL CLIENTE EN EL ENCABEZADO ⭐
+        let nombreCliente = 'Cliente';
+        let ubicacionCliente = 'No registrado';
+
+        if (data.tickets.length > 0) {
+            nombreCliente = data.tickets[0].cliente_nombre;
+            if (data.tickets[0].cliente_departamento) {
+                ubicacionCliente = data.tickets[0].cliente_departamento;
+            }
+        } else if (data.ordenes.length > 0) {
+            nombreCliente = data.ordenes[0].cliente_nombre;
+            if (data.ordenes[0].cliente_direccion) {
+                ubicacionCliente = data.ordenes[0].cliente_direccion;
+            }
+        }
+
+        document.getElementById('resumen-nombre').textContent = nombreCliente;
+        document.getElementById('resumen-departamento').textContent = ubicacionCliente;
+        resumenBox.style.display = 'flex'; 
 
         let html = '';
 
