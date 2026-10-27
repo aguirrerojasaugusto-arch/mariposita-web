@@ -6,23 +6,16 @@
     <title>Artesanía Mariposita | Tienda Oficial</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
-    
     <style>
-        /* --- BLOQUEO DE SCROLL --- */
         body.no-scroll { overflow: hidden; }
-
-        /* --- CORRECCIÓN DEL LOGO EN EL HEADER --- */
         .logo-img-dinamico { width: 45px !important; height: 45px !important; object-fit: cover !important; border-radius: 50%; background: #fff; margin-right: 10px; display: block; }
         .logo-block { display: flex; align-items: center; height: 70px; overflow: hidden; }
-
-        /* --- HEADER Y BUSCADOR --- */
         .header-search { display: flex; align-items: center; background: #0d253f; border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 20px; padding: 0.2rem 0.5rem; margin-left: 1rem; flex-grow: 1; max-width: 350px; }
         .header-search input { background: transparent; border: none; color: #fff; padding: 0.4rem 0.8rem; font-size: 0.85rem; outline: none; width: 100%; }
         .header-search input::placeholder { color: #8892b0; }
         .header-search button { background: var(--accent-cyan); color: #03131d; border: none; padding: 0.4rem 0.8rem; border-radius: 15px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: opacity 0.3s; white-space: nowrap; }
         .header-search button:hover { opacity: 0.8; }
 
-        /* --- HERO CON FONDO DINÁMICO --- */
         .hero-nuevo { background: #03131d; padding: 4rem 5%; position: relative; display: flex; justify-content: flex-start; align-items: center; min-height: 500px; overflow: hidden; }
         .hero-bg-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         .hero-bg-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.5s ease-in-out; }
@@ -35,7 +28,6 @@
         .hero-titulo-fijo { font-size: 2.2rem; line-height: 1.2; height: 5.2rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0.5rem; }
         .hero-desc-fija { font-size: 1rem; color: #ccc; height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0; }
 
-        /* --- ESTILOS DEL CATÁLOGO --- */
         .search-container { display: flex; justify-content: center; margin-bottom: 2rem; }
         .search-container input { width: 100%; max-width: 500px; padding: 1rem 1.5rem; border-radius: 30px; border: 2px solid rgba(0, 210, 255, 0.3); background: #112240; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.3s; }
         .search-container input:focus { border-color: var(--accent-cyan); }
@@ -52,14 +44,11 @@
         .card-producto p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; flex-grow: 1; height: 2.5rem; overflow: hidden; }
         .card-producto .precio { color: var(--accent-cyan); font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
         .card-producto .stock { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem; }
-        
         .card-producto .btn-deshabilitado { width: 100%; padding: 0.6rem; background: #1a365d; border: 1px dashed #4a5568; color: #a0aec0; font-weight: 600; border-radius: 4px; text-align: center; font-size: 0.85rem; }
-
         .prod-nav-btn { background: #0d253f; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; z-index: 10; display: flex; justify-content: center; align-items: center; transition: all 0.3s; flex-shrink: 0; }
         .prod-nav-btn:hover { background: var(--accent-cyan); color: #03131d; }
         .prod-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #555; color: #555; background: transparent; }
 
-        /* --- VISOR DE IMÁGENES 3D (LIGHTBOX) --- */
         .viewer-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
         .viewer-modal.active { display: flex; opacity: 1; }
         .viewer-controls { position: absolute; top: 20px; right: 30px; display: flex; gap: 15px; z-index: 2; }
@@ -70,13 +59,11 @@
         .viewer-image-container img:active { cursor: grabbing; }
         .viewer-title { color: #fff; font-size: 1.2rem; margin-top: 1rem; font-weight: bold; }
 
-        /* --- BOTÓN FLOTANTE DE WHATSAPP --- */
         .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px; background-color: #25d366; color: #FFF; border-radius: 50px; text-align: center; font-size: 35px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); z-index: 10000; display: flex; align-items: center; justify-content: center; text-decoration: none; animation: rotateWhatsApp 4s linear infinite; transition: transform 0.3s; }
         .whatsapp-float:hover { background-color: #128C7E; transform: scale(1.1); }
         @keyframes rotateWhatsApp { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
         @media (max-width: 768px) { .whatsapp-float { width: 50px; height: 50px; bottom: 20px; right: 20px; font-size: 28px; } }
 
-        /* --- MODALES (SORTEOS Y TICKETS) --- */
         .resultado-overlay, .sorteos-modal, .ticket-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 19, 29, 0.9); backdrop-filter: blur(8px); z-index: 4000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
         .resultado-overlay.active, .sorteos-modal.active, .ticket-modal.active { display: flex; opacity: 1; }
         .resultado-content, .sorteos-content, .ticket-content { background: #112240; border-radius: 12px; border: 1px solid var(--accent-cyan); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; position: relative; animation: slideUp 0.4s ease-out; overflow: hidden; }
@@ -87,32 +74,20 @@
         .resultado-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
         .resultado-body, .sorteos-body, .ticket-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
 
-        /* Resumen Fijo (Encabezado de resultados) */
-        .resumen-cliente-fijo {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #0d253f;
-            padding: 1rem 1.5rem;
-            border-bottom: 2px solid var(--accent-cyan);
-            flex-shrink: 0; /* Evita que se encoja al hacer scroll */
-        }
+        .resumen-cliente-fijo { display: flex; justify-content: space-between; align-items: center; background: #0d253f; padding: 1rem 1.5rem; border-bottom: 2px solid var(--accent-cyan); flex-shrink: 0; }
         .resumen-cliente-fijo .info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #8892b0; text-transform: uppercase; }
         .resumen-cliente-fijo .info h3 { margin: 0; font-size: 1.1rem; color: #fff; }
         .total-box-resumen { text-align: right; }
         .total-box-resumen h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #8892b0; text-transform: uppercase; }
         .total-box-resumen h2 { margin: 0; font-size: 1.5rem; color: #ffcc00; }
 
-        /* Sorteos */
         .sorteos-content { width: 100%; max-width: 660px; max-height: 85vh; }
         .sorteos-carrusel-wrapper { display: flex; align-items: center; gap: 0.5rem; }
         .sorteos-viewport { overflow: hidden; width: 100%; }
         .sorteos-track { display: flex; gap: 1.2rem; transition: transform 0.4s; }
         .card-sorteo-carrusel { background: #0d253f; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; flex-direction: column; width: 280px; min-width: 280px; flex-shrink: 0; }
-        
         .card-sorteo-carrusel .img-wrapper { width: 100%; height: 150px; overflow: hidden; position: relative; background: #000; }
         .card-sorteo-carrusel .img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-        
         .card-sorteo-carrusel .info { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
         .card-sorteo-carrusel h3 { font-size: 1rem; color: #fff; margin: 0 0 0.3rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-sorteo-carrusel .precio { color: #ffcc00; font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
@@ -121,13 +96,11 @@
         .carousel-btn { background: rgba(0, 210, 255, 0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .carousel-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* Ticket Form */
         .ticket-content { width: 95%; max-width: 450px; max-height: 90vh; }
         .form-group { margin-bottom: 1rem; }
         .form-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.3rem; color: #ccc; }
         .input-wrapper { display: flex; background: #f4f4f4; border-radius: 8px; overflow: hidden; }
         .input-wrapper.dark { background: rgba(20, 5, 40, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); }
-        .input-icon { width: 45px; display: flex; justify-content: center; align-items: center; background: #7b2cbf; color: #fff; font-size: 1.1rem; }
         .input-wrapper input, .input-wrapper select { flex: 1; padding: 0.8rem; border: none; background: transparent; font-size: 0.95rem; color: #333; outline: none; width: 100%; }
         .input-wrapper.dark input, .input-wrapper.dark select { color: #fff; }
         .input-wrapper.dark select option { background: #112240; color: #fff; }
@@ -142,10 +115,8 @@
         .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
         .upload-title { color: #ffcc00; font-weight: 800; font-size: 0.9rem; }
         .btn-submit { width: 100%; padding: 0.9rem; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 1rem; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        
         .btn-submit:disabled { background: #e0e0e0; color: #888; cursor: not-allowed; }
 
-        /* ⭐ ESTILOS DEL TICKET DE ÉXITO */
         .success-ticket-wrapper { text-align: center; padding: 1rem; color: #fff; }
         .success-header { display: flex; align-items: center; gap: 10px; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
         .success-header-icon { background: #25d366; color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
@@ -169,113 +140,28 @@
         .btn-ver-tickets svg { width: 20px; height: 20px; }
         .security-text { display: flex; align-items: center; justify-content: center; gap: 8px; color: #25d366; font-size: 0.8rem; font-weight: 600; }
 
-        /* ⭐ NUEVO OVERLAY DE CARGA CENTRAL ⭐ */
-        .loader-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(3, 19, 29, 0.85); backdrop-filter: blur(5px);
-            z-index: 99999; display: none; flex-direction: column;
-            justify-content: center; align-items: center; color: #fff;
-        }
-        .loader-spinner {
-            width: 80px; height: 80px;
-            border: 6px solid rgba(255, 204, 0, 0.2);
-            border-top-color: #ffcc00;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
-        }
+        .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 19, 29, 0.85); backdrop-filter: blur(5px); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #fff; }
+        .loader-spinner { width: 80px; height: 80px; border: 6px solid rgba(255, 204, 0, 0.2); border-top-color: #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
         .loader-text { font-size: 1.2rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
         .loader-subtext { font-size: 0.9rem; color: #8892b0; text-align: center; }
 
-        /* Toast */
         .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--accent-cyan); color: #03131d; padding: 1rem 1.5rem; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); opacity: 0; transform: translateY(20px); transition: all 0.3s; z-index: 9999; font-weight: 600; }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #ff4d4d; color: #fff; }
 
-        /* ⭐ ESTILOS DEL FOOTER (PIE DE PÁGINA) ⭐ */
-        .footer-principal {
-            background-color: #03131d;
-            color: #8892b0;
-            padding: 4rem 5% 2rem 5%;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            font-family: 'Inter', sans-serif;
-        }
-        .footer-contenido {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            margin-bottom: 3rem;
-        }
-        .footer-col h3 {
-            color: #ffffff;
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .footer-col p {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .footer-col p strong {
-            color: #00d2ff;
-        }
-        .footer-col ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .footer-col ul li {
-            margin-bottom: 0.8rem;
-        }
-        .footer-col ul li a {
-            color: #8892b0;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .footer-col ul li a:hover {
-            color: #00d2ff;
-            padding-left: 5px;
-        }
-        .footer-pagos {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-        .footer-pagos span {
-            background: #0d253f;
-            padding: 5px 12px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .footer-bottom {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.85rem;
-            color: #637381;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .footer-bottom span {
-            color: #ff4d4d;
-        }
+        .footer-principal { background-color: #03131d; color: #8892b0; padding: 4rem 5% 2rem 5%; border-top: 1px solid rgba(255, 255, 255, 0.05); font-family: 'Inter', sans-serif; }
+        .footer-contenido { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 3rem; margin-bottom: 3rem; }
+        .footer-col h3 { color: #ffffff; font-size: 1.1rem; margin-bottom: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-col p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+        .footer-col p strong { color: #00d2ff; }
+        .footer-col ul { list-style: none; padding: 0; margin: 0; }
+        .footer-col ul li { margin-bottom: 0.8rem; }
+        .footer-col ul li a { color: #8892b0; text-decoration: none; font-size: 0.9rem; transition: color 0.3s; display: flex; align-items: center; gap: 5px; }
+        .footer-col ul li a:hover { color: #00d2ff; padding-left: 5px; }
+        .footer-pagos { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
+        .footer-pagos span { background: #0d253f; padding: 5px 12px; border-radius: 5px; font-size: 0.8rem; color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+        .footer-bottom { text-align: center; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.85rem; color: #637381; display: flex; flex-direction: column; gap: 10px; }
+        .footer-bottom span { color: #ff4d4d; }
         @media (max-width: 768px) {
             .footer-contenido { grid-template-columns: 1fr; text-align: center; }
             .footer-col p { justify-content: center; }
@@ -286,7 +172,6 @@
 </head>
 <body>
 
-    <!-- OVERLAY DE CARGA GLOBAL -->
     <div class="loader-overlay" id="loader-overlay">
         <div class="loader-spinner"></div>
         <div class="loader-text" id="loader-text">Validando tu pago...</div>
@@ -332,11 +217,9 @@
 
     <section class="section" id="productos">
         <h2 class="section-title">Nuestro Catálogo</h2>
-        
         <div class="search-container">
             <input type="text" id="buscador-productos" placeholder="🔍 Buscar producto por nombre o categoría..." onkeyup="filtrarYRenderizar()">
         </div>
-
         <div class="productos-carousel-container">
             <button class="prod-nav-btn" id="btn-prev-prod" onclick="moverProductos(-1)">&#10094;</button>
             <div class="productos-viewport">
@@ -346,22 +229,18 @@
         </div>
     </section>
 
-    <!-- BOTÓN FLOTANTE DE WHATSAPP -->
     <a href="#" id="btn-whatsapp" class="whatsapp-float" target="_blank">
         <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" viewBox="0 0 16 16">
             <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
         </svg>
     </a>
 
-    <!-- ⭐ MODAL DE RESULTADOS CON ENCABEZADO FIJO ⭐ -->
     <div class="resultado-overlay" id="resultado-overlay">
         <div class="resultado-content">
             <div class="resultado-header">
                 <h2>Resultados</h2>
                 <button class="resultado-close" onclick="cerrarResultado()">✕</button>
             </div>
-            
-            <!-- ⭐ RESUMEN FIJO (NOMBRE Y TOTAL) ⭐ -->
             <div class="resumen-cliente-fijo" id="resumen-cliente-fijo" style="display: none;">
                 <div class="info">
                     <h4>Participante</h4>
@@ -372,8 +251,6 @@
                     <h2 id="resumen-total-tickets">0</h2>
                 </div>
             </div>
-
-            <!-- CONTENEDOR CON SCROLL PARA LOS TICKETS -->
             <div class="resultado-body" id="resultado-body"></div>
         </div>
     </div>
@@ -397,7 +274,6 @@
         <div class="ticket-content" id="ticket-content"></div>
     </div>
 
-    <!-- VISOR DE IMÁGENES 3D (LIGHTBOX) -->
     <div class="viewer-modal" id="viewer-modal">
         <div class="viewer-controls">
             <button onclick="toggleZoom()" id="zoom-btn" title="Hacer Zoom">🔍</button>
@@ -409,7 +285,6 @@
         <div class="viewer-title" id="viewer-title"></div>
     </div>
 
-    <!-- ⭐ MODAL DEL FLYER (EMERGENTE) ⭐ -->
     <div id="flyer-modal" class="flyer-modal-overlay" onclick="cerrarFlyer()">
         <div class="flyer-content" onclick="event.stopPropagation()">
             <button class="flyer-close-btn" onclick="cerrarFlyer()">&times;</button>
@@ -417,7 +292,6 @@
         </div>
     </div>
 
-    <!-- ⭐ FOOTER (PIE DE PÁGINA) ⭐ -->
     <footer class="footer-principal">
         <div class="footer-contenido">
             <div class="footer-col">
@@ -509,18 +383,12 @@
                 if (config.flyer_inicio) {
                     document.getElementById('flyer-img').src = config.flyer_inicio;
                     document.getElementById('flyer-modal').classList.add('active');
-                    
-                    setTimeout(() => {
-                        cerrarFlyer();
-                    }, 5000); 
+                    setTimeout(() => { cerrarFlyer(); }, 5000); 
                 }
-
             } catch (e) { console.error("Error al cargar config", e); }
         }
 
-        function cerrarFlyer() {
-            document.getElementById('flyer-modal').classList.remove('active');
-        }
+        function cerrarFlyer() { document.getElementById('flyer-modal').classList.remove('active'); }
 
         async function initHeroSorteos() {
             try {
@@ -558,23 +426,19 @@
 
         function renderHeroContent(index) {
             const sorteo = sorteosGlobal[index];
-            
             if(intervaloContadorHero) clearInterval(intervaloContadorHero);
-
             const horaMostrar = sorteo.hora_sorteo ? sorteo.hora_sorteo.substring(0, 5) : '23:59';
 
             document.getElementById('hero-info').innerHTML = `
                 <span style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">🎁 Sorteo Activo</span>
                 <h1 class="hero-titulo-fijo" style="margin-top: 0.5rem;">${sorteo.nombre}</h1>
                 <p class="hero-desc-fija">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
-                
                 <div class="contador-tiempo" id="contador-tiempo">
                     <div class="contador-bloque"><span id="cd-dias">00</span><small>Días</small></div>
                     <div class="contador-bloque"><span id="cd-horas">00</span><small>Hrs</small></div>
                     <div class="contador-bloque"><span id="cd-minutos">00</span><small>Min</small></div>
                     <div class="contador-bloque"><span id="cd-segundos">00</span><small>Seg</small></div>
                 </div>
-
                 <button class="btn-solid" onclick="abrirModalSorteos()">Ver todos los Sorteos</button>
             `;
 
@@ -583,41 +447,30 @@
             } else {
                 document.getElementById('hero-imagen-container').innerHTML = `<div style="width:100%; height:100%; background:#0a192f; display:flex; justify-content:center; align-items:center; color:#8892b0; border-radius:12px;">Sin imagen</div>`;
             }
-
             iniciarContadorHero(sorteo.fecha_sorteo, horaMostrar);
         }
 
         function iniciarContadorHero(fechaStr, horaStr) {
             const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00-05:00`).getTime();
-
             intervaloContadorHero = setInterval(() => {
                 const ahora = new Date().getTime();
                 const distancia = fechaObjetivo - ahora;
-
                 if (distancia < 0) {
                     clearInterval(intervaloContadorHero);
-                    const ids = ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'];
-                    ids.forEach(id => {
+                    ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'].forEach(id => {
                         const el = document.getElementById(id);
                         if (el) el.textContent = "00";
                     });
                     return;
                 }
-
                 const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
                 const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
                 const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-
-                const elDias = document.getElementById('cd-dias');
-                const elHoras = document.getElementById('cd-horas');
-                const elMinutos = document.getElementById('cd-minutos');
-                const elSegundos = document.getElementById('cd-segundos');
-
-                if (elDias) elDias.textContent = String(dias).padStart(2, '0');
-                if (elHoras) elHoras.textContent = String(horas).padStart(2, '0');
-                if (elMinutos) elMinutos.textContent = String(minutos).padStart(2, '0');
-                if (elSegundos) elSegundos.textContent = String(segundos).padStart(2, '0');
+                const elD = document.getElementById('cd-dias'); if (elD) elD.textContent = String(dias).padStart(2, '0');
+                const elH = document.getElementById('cd-horas'); if (elH) elH.textContent = String(horas).padStart(2, '0');
+                const elM = document.getElementById('cd-minutos'); if (elM) elM.textContent = String(minutos).padStart(2, '0');
+                const elS = document.getElementById('cd-segundos'); if (elS) elS.textContent = String(segundos).padStart(2, '0');
             }, 1000);
         }
 
@@ -634,9 +487,7 @@
                 const res = await fetch('/api/productos');
                 todosLosProductos = await res.json();
                 filtrarYRenderizar();
-            } catch (error) {
-                console.error("Error cargando productos", error);
-            }
+            } catch (error) { console.error("Error cargando productos", error); }
         }
 
         function filtrarYRenderizar() {
@@ -663,12 +514,7 @@
 
             track.innerHTML = productosFiltrados.map(p => `
                 <div class="card-producto">
-                    <img 
-                        src="${p.imagen_base64 ? p.imagen_base64 : 'https://via.placeholder.com/300x200/132d46/00d2ff?text=' + encodeURIComponent(p.nombre)}" 
-                        alt="${p.nombre}" 
-                        onclick="abrirVisor('${p.imagen_base64}', '${p.nombre.replace(/'/g, "&apos;")}')"
-                        title="Clic para ver en 3D"
-                    >
+                    <img src="${p.imagen_base64 ? p.imagen_base64 : 'https://via.placeholder.com/300x200/132d46/00d2ff?text=' + encodeURIComponent(p.nombre)}" alt="${p.nombre}" onclick="abrirVisor('${p.imagen_base64}', '${p.nombre.replace(/'/g, "&apos;")}')" title="Clic para ver en 3D">
                     <div class="info">
                         <h3 title="${p.nombre}">${p.nombre}</h3>
                         <p>${p.descripcion || ''}</p>
@@ -680,12 +526,10 @@
             `).join('');
 
             if (productosFiltrados.length <= itemsPorVista) {
-                btnPrev.style.display = 'none';
-                btnNext.style.display = 'none';
+                btnPrev.style.display = 'none'; btnNext.style.display = 'none';
                 track.style.transform = `translateX(0px)`;
             } else {
-                btnPrev.style.display = 'flex';
-                btnNext.style.display = 'flex';
+                btnPrev.style.display = 'flex'; btnNext.style.display = 'flex';
                 actualizarCarruselProductos();
             }
         }
@@ -703,16 +547,13 @@
             const track = document.getElementById('grid-productos');
             const desplazamiento = indiceProducto * anchoTarjetaProducto;
             track.style.transform = `translateX(-${desplazamiento}px)`;
-
             const btnPrev = document.getElementById('btn-prev-prod');
             const btnNext = document.getElementById('btn-next-prod');
             const maxIndex = productosFiltrados.length - itemsPorVista;
-            
             btnPrev.disabled = indiceProducto === 0;
             btnNext.disabled = indiceProducto === maxIndex;
         }
 
-        // LÓGICA DEL VISOR 3D
         let isDragging = false;
         let startX, startY, currentX = 0, currentY = 0;
         let zoomActivo = false;
@@ -720,17 +561,10 @@
         function abrirVisor(imagenSrc, nombre) {
             const modal = document.getElementById('viewer-modal');
             const img = document.getElementById('viewer-img');
-            
-            if (imagenSrc && imagenSrc !== 'null' && imagenSrc !== 'undefined') {
-                img.src = imagenSrc;
-            } else {
-                img.src = 'https://via.placeholder.com/800x600/132d46/00d2ff?text=Sin+Imagen';
-            }
-            
+            img.src = (imagenSrc && imagenSrc !== 'null' && imagenSrc !== 'undefined') ? imagenSrc : 'https://via.placeholder.com/800x600/132d46/00d2ff?text=Sin+Imagen';
             document.getElementById('viewer-title').textContent = nombre;
             modal.classList.add('active');
             bloquearScroll();
-            
             currentX = 0; currentY = 0;
             img.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
             zoomActivo = false;
@@ -744,13 +578,8 @@
         function toggleZoom() {
             const img = document.getElementById('viewer-img');
             zoomActivo = !zoomActivo;
-            if (zoomActivo) {
-                img.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg) scale(2)`;
-                document.getElementById('zoom-btn').style.background = '#ff4d4d';
-            } else {
-                img.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg) scale(1)`;
-                document.getElementById('zoom-btn').style.background = '';
-            }
+            img.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg) scale(${zoomActivo ? 2 : 1})`;
+            document.getElementById('zoom-btn').style.background = zoomActivo ? '#ff4d4d' : '';
         }
 
         function iniciarArrastre(e) {
@@ -767,26 +596,22 @@
             const deltaY = e.clientY - startY;
             currentX = Math.max(-30, Math.min(30, deltaX / 5));
             currentY = Math.max(-30, Math.min(30, -deltaY / 5));
-            const img = document.getElementById('viewer-img');
-            img.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg) scale(1.2)`;
+            document.getElementById('viewer-img').style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg) scale(1.2)`;
         }
 
         function soltarArrastre() {
             if (!isDragging) return;
             isDragging = false;
-            const img = document.getElementById('viewer-img');
-            img.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+            document.getElementById('viewer-img').style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
             currentX = 0; currentY = 0;
         }
 
-        // --- SORTEOS Y TICKETS ---
         let intervalosContadoresModales = [];
 
         function abrirModalSorteos() {
             const track = document.getElementById('sorteos-track');
             const btnPrev = document.getElementById('btn-prev-sorteo');
             const btnNext = document.getElementById('btn-next-sorteo');
-
             intervalosContadoresModales.forEach(clearInterval);
             intervalosContadoresModales = [];
 
@@ -800,17 +625,10 @@
             track.innerHTML = sorteosGlobal.map(s => {
                 const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
                 const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
-                const ahora = new Date().getTime();
-                const yaFinalizo = ahora > fechaHoraSorteo;
-                
+                const yaFinalizo = new Date().getTime() > fechaHoraSorteo;
                 const boton = yaFinalizo 
                     ? `<div class="btn-finalizado" id="btn-estado-${s.id}">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" id="btn-estado-${s.id}" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
-
-                const idDias = `cd-dias-${s.id}`;
-                const idHoras = `cd-horas-${s.id}`;
-                const idMinutos = `cd-minutos-${s.id}`;
-                const idSegundos = `cd-segundos-${s.id}`;
 
                 return `
                     <div class="card-sorteo-carrusel">
@@ -820,18 +638,13 @@
                         <div class="info">
                             <h3 title="${s.nombre}">${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
-                            
-                            <div style="font-size: 0.75rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">
-                                📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}
-                            </div>
-
+                            <div style="font-size: 0.75rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}</div>
                             <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${horaFormateada}:00-05:00">
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idSegundos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Seg</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="cd-dias-${s.id}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="cd-horas-${s.id}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="cd-minutos-${s.id}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="cd-segundos-${s.id}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Seg</small></div>
                             </div>
-
                             ${boton}
                         </div>
                     </div>
@@ -840,51 +653,27 @@
 
             document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
                 const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
-                const idDias = el.querySelector('[id^="cd-dias-"]').id;
-                const idHoras = el.querySelector('[id^="cd-horas-"]').id;
-                const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
-                const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
-                
-                const sorteoId = idDias.replace('cd-dias-', '');
-
+                const sorteoId = el.querySelector('[id^="cd-dias-"]').id.replace('cd-dias-', '');
                 const intervalo = setInterval(() => {
-                    const ahora = new Date().getTime();
-                    const distancia = fechaObjetivo - ahora;
-
+                    const distancia = fechaObjetivo - new Date().getTime();
                     if (distancia < 0) {
                         clearInterval(intervalo);
-                        document.getElementById(idDias).textContent = "00";
-                        document.getElementById(idHoras).textContent = "00";
-                        document.getElementById(idMinutos).textContent = "00";
-                        document.getElementById(idSegundos).textContent = "00";
-                        
-                        const btnContenedor = document.getElementById(`btn-estado-${sorteoId}`);
-                        if (btnContenedor && !btnContenedor.classList.contains('btn-finalizado')) {
-                            btnContenedor.outerHTML = `<div class="btn-finalizado" id="btn-estado-${sorteoId}">Sorteo Finalizado</div>`;
-                        }
+                        ['dias', 'horas', 'minutos', 'segundos'].forEach(u => document.getElementById(`cd-${u}-${sorteoId}`).textContent = "00");
+                        const btn = document.getElementById(`btn-estado-${sorteoId}`);
+                        if (btn && !btn.classList.contains('btn-finalizado')) btn.outerHTML = `<div class="btn-finalizado" id="btn-estado-${sorteoId}">Sorteo Finalizado</div>`;
                         return;
                     }
-
-                    const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
-                    const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-                    const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-
-                    document.getElementById(idDias).textContent = String(dias).padStart(2, '0');
-                    document.getElementById(idHoras).textContent = String(horas).padStart(2, '0');
-                    document.getElementById(idMinutos).textContent = String(minutos).padStart(2, '0');
-                    document.getElementById(idSegundos).textContent = String(segundos).padStart(2, '0');
+                    document.getElementById(`cd-dias-${sorteoId}`).textContent = String(Math.floor(distancia / (1000 * 60 * 60 * 24))).padStart(2, '0');
+                    document.getElementById(`cd-horas-${sorteoId}`).textContent = String(Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+                    document.getElementById(`cd-minutos-${sorteoId}`).textContent = String(Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                    document.getElementById(`cd-segundos-${sorteoId}`).textContent = String(Math.floor((distancia % (1000 * 60)) / 1000)).padStart(2, '0');
                 }, 1000);
-                
                 intervalosContadoresModales.push(intervalo);
             });
 
             indiceSorteoModal = 0;
-            if (sorteosGlobal.length <= 2) {
-                btnPrev.style.display = 'none'; btnNext.style.display = 'none';
-            } else {
-                btnPrev.style.display = 'flex'; btnNext.style.display = 'flex';
-            }
+            if (sorteosGlobal.length <= 2) { btnPrev.style.display = 'none'; btnNext.style.display = 'none'; } 
+            else { btnPrev.style.display = 'flex'; btnNext.style.display = 'flex'; }
 
             actualizarCarruselSorteos();
             document.getElementById('sorteos-modal').classList.add('active'); 
@@ -902,9 +691,7 @@
 
         function actualizarCarruselSorteos() {
             const track = document.getElementById('sorteos-track');
-            const anchoTarjeta = 299.2;
-            track.style.transform = `translateX(-${indiceSorteoModal * anchoTarjeta}px)`;
-
+            track.style.transform = `translateX(-${indiceSorteoModal * 299.2}px)`;
             if (sorteosGlobal.length > 2) {
                 const btnPrev = document.getElementById('btn-prev-sorteo');
                 const btnNext = document.getElementById('btn-next-sorteo');
@@ -915,9 +702,7 @@
 
         function cerrarModalSorteos() { 
             document.getElementById('sorteos-modal').classList.remove('active'); 
-            if(!document.getElementById('ticket-modal').classList.contains('active')) {
-                desbloquearScroll();
-            }
+            if(!document.getElementById('ticket-modal').classList.contains('active')) desbloquearScroll();
             intervalosContadoresModales.forEach(clearInterval);
             intervalosContadoresModales = [];
         }
@@ -969,15 +754,12 @@
                             <div class="form-group"><label class="form-label">CANTIDAD</label><div class="input-wrapper dark"><select id="cantidad-tickets" name="cantidad" onchange="actualizarTotalModal()">${opcionesCantidad}</select></div></div>
                             <div class="form-group"><label class="form-label">TOTAL</label><div class="total-box"><div class="total-amount" id="total-display">S/ ${sorteoActivo.precio_ticket.toFixed(2)}</div></div></div>
                         </div>
-                        
                         <div class="pago-box">
                             <h4>💳 Paga a:</h4>
                             <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
                             <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
-                            <!-- ⭐ TITULAR DINÁMICO ⭐ -->
                             <p style="margin-top: 5px; font-size: 0.9rem; color: #ffcc00;">Titular: <span id="info-titular" style="font-weight: bold; font-size: 1rem;">...</span></p>
                         </div>
-
                         <div class="form-group">
                             <label class="form-label">COMPROBANTE <span>*</span></label>
                             <div class="upload-zone">
@@ -993,7 +775,6 @@
                                 </ul>
                             </div>
                         </div>
-
                         <button type="submit" class="btn-submit" id="btn-comprar">Confirmar Compra</button>
                     </form>
                 </div>
@@ -1038,7 +819,6 @@
                 
                 loader.style.display = 'flex';
                 btn.disabled = true; 
-
                 let segundos = 0;
                 loaderTimer.textContent = `Tiempo de espera: 0s`;
                 loaderText.textContent = "Validando tu pago...";
@@ -1046,19 +826,17 @@
                 const intervaloTiempo = setInterval(() => {
                     segundos++;
                     loaderTimer.textContent = `Tiempo de espera: ${segundos}s`;
-                    
                     if (segundos === 3) loaderText.textContent = "Analizando imagen...";
                     if (segundos === 7) loaderText.textContent = "Extrayendo datos del comprobante...";
                     if (segundos === 12) loaderText.textContent = "Verificando operación...";
                 }, 1000);
 
                 document.getElementById('nombre-input').disabled = false;
-                
                 const fd = new FormData(e.target);
+                
                 try {
                     const res = await fetch('/api/tickets', { method: 'POST', body: fd });
                     const data = await res.json();
-                    
                     if (!res.ok) throw new Error(data.error);
 
                     const cantTickets = document.getElementById('cantidad-tickets').value;
@@ -1072,7 +850,6 @@
                                     <p>Tienes <strong>${cantTickets} ticket(s) activo(s)</strong> para el sorteo.</p>
                                 </div>
                             </div>
-
                             <div class="purple-ticket-card">
                                 <div class="ticket-top">
                                     <div class="premios-logo">🏆 PREMIOS EN VIVO</div>
@@ -1093,22 +870,17 @@
                                     </div>
                                 </div>
                             </div>
-
                             <button onclick="location.reload()" class="btn-ver-tickets">
-                                <span style="width: 20px;"></span>
-                                VER TODOS MIS TICKETS
+                                <span style="width: 20px;"></span> VER TODOS MIS TICKETS
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
                             </button>
-
                             <div class="security-text">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
-                                </svg>
-                                Tu participación está 100% segura.
+                                </svg> Tu participación está 100% segura.
                             </div>
                         </div>
                     `;
-
                 } catch (error) {
                     alert("⚠️ Error: " + error.message); 
                 } finally {
@@ -1126,19 +898,12 @@
 
         async function buscarPedidoPublico() {
             const query = document.getElementById('input-dni').value.trim();
-            if (!query) {
-                mostrarToast("Por favor, ingresa un DNI o Teléfono", "error");
-                return;
-            }
+            if (!query) return mostrarToast("Por favor, ingresa un DNI o Teléfono", "error");
 
             const body = document.getElementById('resultado-body');
             const resumenBox = document.getElementById('resumen-cliente-fijo');
-            const resumenNombre = document.getElementById('resumen-nombre-cliente');
-            const resumenTotal = document.getElementById('resumen-total-tickets');
-
             resumenBox.style.display = 'none';
             body.innerHTML = '<p style="color:#00d2ff; text-align:center; padding-top:2rem;">Buscando en la base de datos...</p>';
-            
             document.getElementById('resultado-overlay').classList.add('active');
             bloquearScroll();
 
@@ -1147,75 +912,33 @@
                 const data = await res.json();
 
                 if (!data.ordenes || !data.tickets || (data.ordenes.length === 0 && data.tickets.length === 0)) {
-                    body.innerHTML = `
-                        <div style="text-align: center; padding: 3rem 1rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
-                            <h3 style="color: #fff; margin-bottom: 1rem;">No encontramos resultados</h3>
-                            <p style="color: #8892b0; margin-bottom: 2rem;">
-                                Revisa bien tus datos (DNI o número de teléfono) e inténtalo de nuevo. <br>
-                                O si aún no has participado, ¡no te quedes fuera!
-                            </p>
-                            <button onclick="cerrarResultado(); abrirModalSorteos();" class="btn-primario" style="background: var(--accent-cyan); color: #000; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                                🎁 Ir a Participar en los Sorteos
-                            </button>
-                        </div>
-                    `;
+                    body.innerHTML = `<div style="text-align: center; padding: 3rem 1rem;"><div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div><h3 style="color: #fff; margin-bottom: 1rem;">No encontramos resultados</h3><p style="color: #8892b0; margin-bottom: 2rem;">Revisa bien tus datos (DNI o número de teléfono) e inténtalo de nuevo. <br>O si aún no has participado, ¡no te quedes fuera!</p><button onclick="cerrarResultado(); abrirModalSorteos();" class="btn-primario" style="background: var(--accent-cyan); color: #000; padding: 0.8rem 2rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🎁 Ir a Participar en los Sorteos</button></div>`;
                     return;
                 }
 
-                // ⭐ ACTIVAMOS EL ENCABEZADO FIJO CON LOS DATOS ⭐
-                if (data.tickets.length > 0) {
-                    const primerTicket = data.tickets[0];
-                    resumenNombre.textContent = primerTicket.cliente_nombre;
-                    resumenTotal.textContent = data.tickets.length;
-                    resumenBox.style.display = 'flex'; 
-                } else if (data.ordenes.length > 0) {
-                    resumenNombre.textContent = data.ordenes[0].cliente_nombre;
-                    resumenTotal.textContent = '0'; // No hay tickets
-                    resumenBox.style.display = 'flex'; 
-                }
+                let nombreCliente = 'Cliente';
+                let totalTickets = 0;
+                if (data.tickets.length > 0) { nombreCliente = data.tickets[0].cliente_nombre; totalTickets = data.tickets.length; } 
+                else if (data.ordenes.length > 0) { nombreCliente = data.ordenes[0].cliente_nombre; }
+
+                document.getElementById('resumen-nombre-cliente').textContent = nombreCliente;
+                document.getElementById('resumen-total-tickets').textContent = totalTickets;
+                resumenBox.style.display = 'flex'; 
 
                 let html = '';
-                
                 if (data.ordenes.length > 0) {
                     html += '<h3 style="color: #00d2ff; margin-bottom: 1rem;">🛍️ Tus Compras de Ropa</h3>';
                     data.ordenes.forEach(o => {
-                        html += `
-                            <div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #00d2ff;">
-                                <p style="color:#fff; margin-bottom:0.3rem;"><strong>Orden:</strong> ${o.codigo}</p>
-                                <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${o.creado_en}</p>
-                                <p style="color:#ccc; font-size:0.9rem;"><strong>Total:</strong> S/ ${o.total.toFixed(2)}</p>
-                                <p style="color:${o.estado === 'aprobado' ? '#25d366' : o.estado === 'rechazado' ? '#ff4d4d' : '#ffcc00'}; font-weight:bold;">
-                                    Estado: ${o.estado.toUpperCase()}
-                                </p>
-                                ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${o.notas_admin}</p>` : ''}
-                            </div>
-                        `;
+                        html += `<div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #00d2ff;"><p style="color:#fff; margin-bottom:0.3rem;"><strong>Orden:</strong> ${o.codigo}</p><p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${o.creado_en}</p><p style="color:#ccc; font-size:0.9rem;"><strong>Total:</strong> S/ ${o.total.toFixed(2)}</p><p style="color:${o.estado === 'aprobado' ? '#25d366' : o.estado === 'rechazado' ? '#ff4d4d' : '#ffcc00'}; font-weight:bold;">Estado: ${o.estado.toUpperCase()}</p>${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${o.notas_admin}</p>` : ''}</div>`;
                     });
                 }
 
                 if (data.tickets.length > 0) {
                     html += '<h3 style="color: #00d2ff; margin-bottom: 1rem; margin-top:1.5rem;">🎟️ Tus Tickets de Sorteo</h3>';
                     data.tickets.forEach(t => {
-                        // Color según estado del ticket
-                        let colorEstado = '#ffcc00'; // Pendiente
-                        if (t.estado_pago === 'aprobado') colorEstado = '#25d366';
-                        if (t.estado_pago === 'rechazado') colorEstado = '#ff4d4d';
-
-                        html += `
-                            <div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid ${colorEstado};">
-                                <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
-                                <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-                                <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
-                                <p style="color:${colorEstado}; font-size:0.9rem; font-weight:bold; margin-top:0.5rem;">
-                                    Estado: ${t.estado_pago.toUpperCase()}
-                                </p>
-                                ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${t.notas_admin}</p>` : ''}
-                            </div>
-                        `;
+                        html += `<div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #00d2ff;"><p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p><p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p><p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p></div>`;
                     });
                 }
-                
                 body.innerHTML = html;
                 body.scrollTop = 0;
 
@@ -1230,13 +953,16 @@
             document.getElementById('input-dni').value = '';
             document.getElementById('resumen-cliente-fijo').style.display = 'none';
             document.getElementById('resultado-body').innerHTML = '';
-            
-            if(!document.getElementById('ticket-modal').classList.contains('active') && !document.getElementById('sorteos-modal').classList.contains('active')) {
-                desbloquearScroll();
-            }
+            if(!document.getElementById('ticket-modal').classList.contains('active') && !document.getElementById('sorteos-modal').classList.contains('active')) desbloquearScroll();
+        }
+
+        function mostrarToast(msg, tipo) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + (tipo || '');
+            setTimeout(() => { t.className = 'toast'; }, 3500);
         }
         
-        // INICIALIZADORES
         cargarConfiguracionYLogo();
         initHeroSorteos(); 
         cargarProductos(); 

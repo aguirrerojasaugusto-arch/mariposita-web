@@ -63,19 +63,19 @@ router.get('/buscar-dni/:dni', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno al buscar el DNI' }); }
 });
 
-// ⭐ RUTA CORREGIDA PARA MOSTRAR LOS TICKETS ⭐
+// ⭐ RUTA CORREGIDA PARA MOSTRAR LOS TICKETS Y SU FECHA ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debes ingresar un DNI o Teléfono' });
     
     try {
-        // Buscamos en órdenes
+        // Buscamos en órdenes incluyendo el nombre
         const ordenesRes = await db.execute({
-            sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, notas_admin FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_dni LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
+            sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, cliente_nombre, notas_admin FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_dni LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
         
-        // Buscamos en tickets (Traemos todos los tickets del cliente, sin importar el estado para que el cliente sepa que existen)
+        // Buscamos en tickets
         const ticketsRes = await db.execute({
             sql: `SELECT t.id, t.numero_ticket, t.creado_en, t.cliente_nombre, t.estado_pago, t.notas_admin,
                          s.nombre as sorteo_nombre, s.fecha_sorteo 
