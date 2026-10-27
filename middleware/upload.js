@@ -1,8 +1,23 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-// ⭐ CAMBIO IMPORTANTE: Guardamos en memoria RAM para extraer Base64 ⭐
-const storageMemory = multer.memoryStorage();
+// --- 1. CONFIGURACIÓN PARA PRODUCTOS Y SORTEOS (Disco Duro) ---
+const dirImagenes = path.join(__dirname, '..', 'uploads', 'imagenes');
+if (!fs.existsSync(dirImagenes)) {
+    fs.mkdirSync(dirImagenes, { recursive: true });
+}
+
+const diskStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, dirImagenes);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, uniqueSuffix + ext);
+    }
+});
 
 const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
 const fileFilter = (req, file, cb) => {
@@ -11,15 +26,17 @@ const fileFilter = (req, file, cb) => {
     cb(new Error('Solo se permiten imágenes JPG, PNG o WebP'));
 };
 
-// Lo usamos para productos, sorteos, carrusel y configuración
 const uploadProducto = multer({
-    storage: storageMemory,
+    storage: diskStorage,
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter
 }).single('imagen');
 
+// --- 2. CONFIGURACIÓN PARA COMPROBANTES (Memoria RAM) ---
+const memoryStorage = multer.memoryStorage();
+
 const uploadComprobante = multer({
-    storage: storageMemory,
+    storage: memoryStorage,
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter
 }).single('comprobante');
