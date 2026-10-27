@@ -26,10 +26,39 @@ body {
     background-size: cover !important;
     color: var(--color-texto);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ⭐ BANNER SUPERIOR (IDÉNTICO AL FRONTEND) ⭐ */
+.admin-top-bar {
+    background-color: #0d2a35;
+    padding: 0.5rem 2rem;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #b0c4de;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+.admin-top-bar-info {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+.admin-top-bar-info span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 /* --- LOGIN --- */
 .login-container { display: flex; height: 100vh; width: 100vw; background: linear-gradient(135deg, #004a7c 0%, #00b4d8 100%); position: relative; overflow: hidden; }
+/* ... (resto de estilos de login intactos) ... */
 .login-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80') center/cover; opacity: 0.15; z-index: 1; }
 .login-content { position: relative; z-index: 2; display: flex; width: 100%; max-width: 1400px; margin: 0 auto; padding: 2rem; }
 .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5%; color: #fff; }
@@ -56,7 +85,7 @@ body {
 .login-secure { margin-top: 2rem; font-size: 0.8rem; opacity: 0.7; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 
 /* --- LAYOUT GENERAL --- */
-.admin-layout { display: flex; min-height: 100vh; background: transparent !important; }
+.admin-layout { display: flex; flex: 1; height: calc(100vh - 33px); background: transparent !important; overflow: hidden; }
 
 /* ⭐ SIDEBAR CORREGIDO (FLEX-COLUMN PARA FIJAR LA CABECERA) ⭐ */
 .sidebar {
@@ -69,26 +98,23 @@ body {
     flex-direction: column;
     z-index: 10;
     box-shadow: 4px 0 20px rgba(0,0,0,0.3);
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    overflow: hidden; /* Evita que todo el sidebar haga scroll */
+    height: 100%;
+    overflow: hidden;
 }
 
-/* La cabecera (logo y perfil) se queda fija arriba */
 .sidebar-header {
     padding: 2rem 1rem 1rem 1rem;
-    flex-shrink: 0; /* No se encoge */
+    flex-shrink: 0;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-/* ⭐ NUEVO ESTILO DEL LOGO IDÉNTICO AL FRONTEND ⭐ */
+/* ⭐ LOGO IDÉNTICO AL FRONTEND ⭐ */
 .admin-logo-block {
-    background-color: #1a6b7a; /* Color turquesa del frontend */
+    background-color: #1a6b7a;
     display: flex;
     align-items: center;
     padding: 0.5rem 1.5rem 0.5rem 1rem;
-    clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%); /* Forma inclinada */
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%);
     text-decoration: none;
     color: #fff;
     gap: 0.75rem;
@@ -136,7 +162,7 @@ body {
 
 /* El menú de enlaces es lo único que hace scroll */
 .sidebar-nav {
-    flex: 1; /* Toma el resto del espacio */
+    flex: 1;
     overflow-y: auto;
     padding: 1rem;
     display: flex;
@@ -168,7 +194,7 @@ body {
 .sidebar .logout:hover { background: rgba(255, 107, 107, 0.15) !important; color: #ff4d4d !important; border-left-color: #ff4d4d; }
 
 /* ⭐ ÁREA PRINCIPAL ⭐ */
-.main { flex: 1; padding: 3rem; overflow-y: auto; background: transparent !important; height: 100vh; }
+.main { flex: 1; padding: 3rem; overflow-y: auto; background: transparent !important; height: 100%; }
 .main h2 { color: #ffffff !important; font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
 /* --- TARJETAS Y TABLAS --- */
@@ -284,7 +310,7 @@ tr:hover { background: #f8fbff; }
     .login-content { flex-direction: column; }
     .login-left { display: none; }
     .login-right { width: 100%; }
-    .admin-layout { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; }
-    .main { height: auto; padding: 1.5rem; }
+    .admin-layout { flex-direction: column; height: auto; overflow: visible; }
+    .sidebar { width: 100%; height: auto; position: relative; overflow: visible; }
+    .main { height: auto; padding: 1.5rem; overflow-y: visible; }
 }
