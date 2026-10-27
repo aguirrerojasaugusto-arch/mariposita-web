@@ -372,6 +372,14 @@
         <div class="viewer-title" id="viewer-title"></div>
     </div>
 
+    <!-- ⭐ MODAL DEL FLYER (EMERGENTE) ⭐ -->
+    <div id="flyer-modal" class="flyer-modal-overlay" onclick="cerrarFlyer()">
+        <div class="flyer-content" onclick="event.stopPropagation()">
+            <button class="flyer-close-btn" onclick="cerrarFlyer()">&times;</button>
+            <img id="flyer-img" src="" alt="Promoción" class="flyer-img">
+        </div>
+    </div>
+
     <!-- ⭐ FOOTER (PIE DE PÁGINA) ⭐ -->
     <footer class="footer-principal">
         <div class="footer-contenido">
@@ -418,8 +426,6 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
-        let intervaloContadorHero;
-        let intervalosContadoresModales = []; 
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -1009,16 +1015,8 @@
                     
                     if (!res.ok) throw new Error(data.error);
 
-                    // ⭐ CORRECCIÓN DE SEGURIDAD: Verificamos si data.codigos o data.numero_ticket existen antes de usar .replace() ⭐
                     const cantTickets = document.getElementById('cantidad-tickets').value;
-                    let ticketMostrar = 'XXXXXX';
                     
-                    if (data && data.codigos && data.codigos.length > 0) {
-                        ticketMostrar = data.codigos[0].replace('TKT-', '');
-                    } else if (data && data.numero_ticket) {
-                        ticketMostrar = data.numero_ticket.replace('TKT-', '');
-                    }
-
                     document.getElementById('ticket-content').innerHTML = `
                         <div class="success-ticket-wrapper">
                             <div class="success-header">
@@ -1036,7 +1034,7 @@
                                 </div>
                                 <div class="ticket-number-box">
                                     <p>TICKET #</p>
-                                    <h1>${ticketMostrar}</h1>
+                                    <h1>${data.numero_ticket.replace('TKT-', '')}</h1>
                                 </div>
                                 <div class="ticket-details-row">
                                     <div class="ticket-detail-item">
@@ -1065,6 +1063,7 @@
                         </div>
                     `;
 
+                    // ⭐ RECARGA AUTOMÁTICA DESPUÉS DE 3 SEGUNDOS ⭐
                     setTimeout(() => {
                         location.reload();
                     }, 3000); 
@@ -1144,7 +1143,10 @@
                                 <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
-                                <!-- ⭐ SE ELIMINÓ EL TEXTO DEL ESTADO AQUÍ ⭐ -->
+                                <p style="color:${t.estado_pago === 'aprobado' ? '#25d366' : t.estado_pago === 'rechazado' ? '#ff4d4d' : '#ffcc00'}; font-weight:bold;">
+                                    Estado: ${t.estado_pago.toUpperCase()}
+                                </p>
+                                ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${t.notas_admin}</p>` : ''}
                             </div>
                         `;
                     });
