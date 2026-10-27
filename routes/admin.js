@@ -3,11 +3,11 @@ const multer = require('multer');
 const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
-const { uploadProducto } = require('../middleware/upload');
 
 const router = express.Router();
 router.use(requireVendedor); 
 
+// Usamos memoria para procesar todo como Base64
 const storageMemory = multer.memoryStorage();
 const uploadConfig = multer({ 
     storage: storageMemory,
@@ -23,18 +23,14 @@ function generarCodigoTicket() {
     return `TKT-${resultado}`;
 }
 
-// ⭐ FUNCIÓN PARA LIMPIAR Y FORMATEAR LA HORA CORRECTAMENTE ⭐
-function formatearHora(horaIngresada, horaPorDefecto = '23:59') {
-    if (!horaIngresada || horaIngresada.trim() === '') {
-        return horaPorDefecto;
-    }
-    // Asegurarnos de que solo tome los primeros 5 caracteres (HH:MM)
-    const horaLimpia = horaIngresada.trim().substring(0, 5);
-    // Verificar con expresión regular que sea un formato válido de hora
-    if (/^([01]\d|2[0-3]):[0-5]\d$/.test(horaLimpia)) {
-        return horaLimpia;
-    }
-    return horaPorDefecto;
+// ⭐ VALIDACIÓN ESTRICTA DE HORA ⭐
+function validarHora(horaStr) {
+    if (!horaStr || typeof horaStr !== 'string') return '23:59';
+    // Limpiamos cualquier espacio y cortamos a 5 caracteres (HH:MM)
+    let limpia = horaStr.trim().substring(0, 5);
+    // Si cumple el formato HH:MM, la devolvemos
+    if (/^([01]\d|2[0-3]):[0-5]\d$/.test(limpia)) return limpia;
+    return '23:59';
 }
 
 // ============ DASHBOARD ============
@@ -253,15 +249,20 @@ router.get('/productos', async (req, res) => {
 });
 
 router.post('/productos', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        // Convertir imagen a Base64
+        let imagen_base64 = null;
+        if (req.file) {
+            imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
 
         try {
             const r = await db.execute({
                 sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`,
-                args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_path, categoria || 'ropa_tipica']
+                args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_base64, categoria || 'ropa_tipica']
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -269,7 +270,7 @@ router.post('/productos', requireAdmin, (req, res) => {
 });
 
 router.put('/productos/:id', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria, activo } = req.body;
 
@@ -278,12 +279,14 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
             const p = pRes.rows[0];
             if (!p) return res.status(404).json({ error: 'No encontrado' });
 
-            let imagen_path = p.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            let imagen_base64 = p.imagen_base64;
+            if (req.file) {
+                imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            }
 
             await db.execute({
                 sql: `UPDATE productos SET nombre=?, descripcion=?, precio=?, stock=?, imagen_base64=?, categoria=?, activo=? WHERE id=?`,
-                args: [nombre || p.nombre, descripcion ?? p.descripcion, precio ? parseFloat(precio) : p.precio, stock !== undefined ? parseInt(stock) : p.stock, imagen_path, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id]
+                args: [nombre || p.nombre, descripcion ?? p.descripcion, precio ? parseFloat(precio) : p.precio, stock !== undefined ? parseInt(stock) : p.stock, imagen_base64, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -306,18 +309,22 @@ router.get('/sorteos', async (req, res) => {
 });
 
 router.post('/sorteos', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        let imagen_base64 = null;
+        if (req.file) {
+            imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
 
-        // ⭐ USAMOS LA FUNCIÓN ROBUSTA PARA FORMATEAR LA HORA ⭐
-        const horaFormateada = formatearHora(hora_sorteo, '23:59');
+        // ⭐ VALIDACIÓN ESTRICTA DE HORA ⭐
+        const horaFormateada = validarHora(hora_sorteo);
 
         try {
             const r = await db.execute({
                 sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, horaFormateada, estado || 'activo']
+                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_base64, fecha_sorteo, horaFormateada, estado || 'activo']
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -325,7 +332,7 @@ router.post('/sorteos', requireAdmin, (req, res) => {
 });
 
 router.put('/sorteos/:id', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
 
@@ -334,15 +341,17 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             const s = sRes.rows[0];
             if (!s) return res.status(404).json({ error: 'No encontrado' });
 
-            let imagen_path = s.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            let imagen_base64 = s.imagen_base64;
+            if (req.file) {
+                imagen_base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            }
 
-            // ⭐ USAMOS LA FUNCIÓN ROBUSTA PARA FORMATEAR LA HORA (usando la hora anterior como respaldo) ⭐
-            const horaFormateada = formatearHora(hora_sorteo, s.hora_sorteo || '23:59');
+            // ⭐ VALIDACIÓN ESTRICTA DE HORA (respaldo con la hora anterior) ⭐
+            const horaFormateada = validarHora(hora_sorteo || s.hora_sorteo);
 
             await db.execute({
                 sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`,
-                args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_path, fecha_sorteo || s.fecha_sorteo, horaFormateada, estado || s.estado, s.id]
+                args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_base64, fecha_sorteo || s.fecha_sorteo, horaFormateada, estado || s.estado, s.id]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -370,7 +379,7 @@ router.get('/carrusel', async (req, res) => {
 });
 
 router.post('/carrusel', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadConfig(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         if (!req.file) return res.status(400).json({ error: 'Debes subir una imagen' });
 
@@ -379,10 +388,10 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            const imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [imagen_path, count]
+                args: [base64Image, count]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
