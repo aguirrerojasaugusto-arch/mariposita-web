@@ -87,6 +87,22 @@
         .resultado-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
         .resultado-body, .sorteos-body, .ticket-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
 
+        /* Resumen Fijo (Encabezado de resultados) */
+        .resumen-cliente-fijo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0d253f;
+            padding: 1rem 1.5rem;
+            border-bottom: 2px solid var(--accent-cyan);
+            flex-shrink: 0; /* Evita que se encoja al hacer scroll */
+        }
+        .resumen-cliente-fijo .info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #8892b0; text-transform: uppercase; }
+        .resumen-cliente-fijo .info h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+        .total-box-resumen { text-align: right; }
+        .total-box-resumen h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #8892b0; text-transform: uppercase; }
+        .total-box-resumen h2 { margin: 0; font-size: 1.5rem; color: #ffcc00; }
+
         /* Sorteos */
         .sorteos-content { width: 100%; max-width: 660px; max-height: 85vh; }
         .sorteos-carrusel-wrapper { display: flex; align-items: center; gap: 0.5rem; }
@@ -1064,7 +1080,6 @@
                                 </div>
                                 <div class="ticket-number-box">
                                     <p>TICKET #</p>
-                                    <!-- ⭐ AQUÍ SE MUESTRA EL NÚMERO SIN TKT- ⭐ -->
                                     <h1>${data.numero_ticket}</h1>
                                 </div>
                                 <div class="ticket-details-row">
@@ -1148,10 +1163,15 @@
                     return;
                 }
 
+                // ⭐ ACTIVAMOS EL ENCABEZADO FIJO CON LOS DATOS ⭐
                 if (data.tickets.length > 0) {
                     const primerTicket = data.tickets[0];
                     resumenNombre.textContent = primerTicket.cliente_nombre;
                     resumenTotal.textContent = data.tickets.length;
+                    resumenBox.style.display = 'flex'; 
+                } else if (data.ordenes.length > 0) {
+                    resumenNombre.textContent = data.ordenes[0].cliente_nombre;
+                    resumenTotal.textContent = '0'; // No hay tickets
                     resumenBox.style.display = 'flex'; 
                 }
 
@@ -1177,11 +1197,20 @@
                 if (data.tickets.length > 0) {
                     html += '<h3 style="color: #00d2ff; margin-bottom: 1rem; margin-top:1.5rem;">🎟️ Tus Tickets de Sorteo</h3>';
                     data.tickets.forEach(t => {
+                        // Color según estado del ticket
+                        let colorEstado = '#ffcc00'; // Pendiente
+                        if (t.estado_pago === 'aprobado') colorEstado = '#25d366';
+                        if (t.estado_pago === 'rechazado') colorEstado = '#ff4d4d';
+
                         html += `
-                            <div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid #ffcc00;">
+                            <div style="background:#0d253f; padding:1rem; border-radius:8px; margin-bottom:1rem; border-left:4px solid ${colorEstado};">
                                 <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
+                                <p style="color:${colorEstado}; font-size:0.9rem; font-weight:bold; margin-top:0.5rem;">
+                                    Estado: ${t.estado_pago.toUpperCase()}
+                                </p>
+                                ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${t.notas_admin}</p>` : ''}
                             </div>
                         `;
                     });
