@@ -123,4 +123,317 @@
                     <div class="form-group">
                         <label>Departamento</label>
                         <select id="vp-departamento" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
-                            <option value="">Sele
+                            <option value="Amazonas">Amazonas</option>
+                            <option value="Áncash">Áncash</option>
+                            <option value="Apurímac">Apurímac</option>
+                            <option value="Arequipa">Arequipa</option>
+                            <option value="Ayacucho">Ayacucho</option>
+                            <option value="Cajamarca">Cajamarca</option>
+                            <option value="Callao">Callao</option>
+                            <option value="Cusco">Cusco</option>
+                            <option value="Huancavelica">Huancavelica</option>
+                            <option value="Huánuco">Huánuco</option>
+                            <option value="Ica">Ica</option>
+                            <option value="Junín">Junín</option>
+                            <option value="La Libertad">La Libertad</option>
+                            <option value="Lambayeque">Lambayeque</option>
+                            <option value="Lima">Lima</option>
+                            <option value="Loreto">Loreto</option>
+                            <option value="Madre de Dios">Madre de Dios</option>
+                            <option value="Moquegua">Moquegua</option>
+                            <option value="Pasco">Pasco</option>
+                            <option value="Piura">Piura</option>
+                            <option value="Puno">Puno</option>
+                            <option value="San Martín">San Martín</option>
+                            <option value="Tacna">Tacna</option>
+                            <option value="Tumbes">Tumbes</option>
+                            <option value="Ucayali">Ucayali</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Cantidad *</label>
+                        <input type="number" id="vp-cantidad" min="1" max="20" value="1" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;" onchange="calcularTotalVenta()">
+                    </div>
+                    <div class="form-group">
+                        <label>Total a cobrar</label>
+                        <input type="text" id="vp-total" readonly style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background: #e9ecef; font-weight: bold;">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primario" style="width:100%; padding: 0.8rem; margin-top: 1rem;" id="btn-vp-guardar">Registrar Venta</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- TOOLTIP DE COMPROBANTE -->
+<div id="tooltip-comprobante"><img id="tooltip-img" src="" alt="Comprobante"></div>
+
+<script>
+let todosLosTickets = [];
+let ticketsFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 8;
+let userRole = 'vendedor';
+let sorteosList = [];
+
+const tooltip = document.getElementById('tooltip-comprobante');
+const tooltipImg = document.getElementById('tooltip-img');
+
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    
+    userRole = d.rol;
+
+    if (userRole !== 'admin') {
+        document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-sorteos').style.display = 'none';
+        document.getElementById('nav-carrusel').style.display = 'none';
+        document.getElementById('nav-usuarios').style.display = 'none';
+        document.getElementById('nav-config').style.display = 'none';
+        document.getElementById('mensaje-vendedor').style.display = 'inline';
+    }
+    cargar();
+    cargarSorteos();
+}
+
+async function cargarSorteos() {
+    try {
+        const r = await fetch('/api/admin/sorteos');
+        if (r.ok) sorteosList = await r.json();
+    } catch(e) {}
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/tickets/pendientes');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    
+    const data = await r.json();
+    if (!Array.isArray(data)) {
+        document.getElementById('lista').innerHTML = `<p style="color:red;">Error: ${data.error || 'No se pudieron cargar los datos'}</p>`;
+        return;
+    }
+
+    todosLosTickets = data;
+    filtrar();
+}
+
+function filtrar() {
+    const texto = document.getElementById('buscador').value.toLowerCase();
+    ticketsFiltrados = todosLosTickets.filter(t => 
+        (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
+        (t.cliente_dni && t.cliente_dni.includes(texto)) ||
+        (t.numero_ticket && t.numero_ticket.includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTabla();
+}
+
+function renderizarTabla() {
+    const cont = document.getElementById('lista');
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!ticketsFiltrados.length) {
+        cont.innerHTML = '<div class="alert alert-success">No hay tickets pendientes por revisar.</div>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
+
+    cont.innerHTML = `<table>
+        <thead><tr><th>Cliente</th><th>Sorteo</th><th>Cant.</th><th>Total</th><th>OCR</th><th>Acciones</th></tr></thead>
+        <tbody>
+        ${ticketsPagina.map((t) => {
+            // ⭐ AQUÍ SE CORRIGIÓ LA VARIABLE PARA USAR grupo_id ⭐
+            const indexReal = todosLosTickets.findIndex(orig => orig.grupo_id === t.grupo_id);
+            
+            const btnAprobar = userRole === 'admin' 
+                ? `<button class="btn btn-aprobar" onclick="revisar('${t.grupo_id}', ${t.id}, 'aprobar')">✅ Aprobar</button>
+                   <button class="btn btn-rechazar" onclick="revisar('${t.grupo_id}', ${t.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>`
+                : `<span style="color:#999; font-size:0.8rem;">Solo lectura</span>`;
+
+            return `<tr>
+                <td>
+                    <span class="cliente-hover" onmouseenter="mostrarComprobante('${t.comprobante_base64}')" onmouseleave="ocultarComprobante()" onclick="abrirModal(${indexReal})">
+                        ${t.cliente_nombre}
+                    </span>
+                    <br><small>DNI: ${t.cliente_dni || '—'}</small>
+                </td>
+                <td>${t.sorteo_nombre}</td>
+                <td>${t.cantidad_tickets}</td>
+                <td><strong>S/ ${t.total_pagado.toFixed(2)}</strong></td>
+                <td>${ocrBox(t)}</td>
+                <td>
+                    <button class="btn-detalle" onclick="abrirModal(${indexReal})" style="margin-bottom:0.35rem;">Ver Detalles</button><br>
+                    ${btnAprobar}
+                </td>
+            </tr>`;
+        }).join('')}
+        </tbody></table>`;
+}
+
+function ocrBox(t) {
+    const clase = t.alerta_ocr ? 'ocr-error' : (t.alerta_monto ? 'ocr-alerta' : '');
+    return `<div class="ocr-box ${clase}">
+        <strong>OCR:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : '❌ No leído'}<br>
+        <small>Op: ${t.ocr_operacion || '—'}</small>
+        ${t.alerta_monto ? '<div class="badge-alerta">⚠️ Monto no coincide</div>' : ''}
+        ${t.alerta_ocr ? '<div class="badge-alerta">⚠️ OCR falló</div>' : ''}
+    </div>`;
+}
+
+function mostrarComprobante(src) {
+    if (!src) return;
+    tooltipImg.src = src;
+    tooltip.style.display = 'block';
+}
+
+function ocultarComprobante() {
+    tooltip.style.display = 'none';
+}
+
+document.addEventListener('mousemove', (e) => {
+    if (tooltip.style.display === 'block') {
+        tooltip.style.left = (e.clientX + 15) + 'px';
+        tooltip.style.top = (e.clientY + 15) + 'px';
+    }
+});
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTabla();
+}
+
+async function abrirModal(index) {
+    const t = todosLosTickets[index];
+    
+    document.getElementById('modal-title').textContent = `Ticket de ${t.cliente_nombre}`;
+    document.getElementById('modal-body').innerHTML = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <h4>Datos del Cliente</h4>
+                <p><strong>Nombre:</strong> ${t.cliente_nombre}</p>
+                <p><strong>DNI:</strong> ${t.cliente_dni || '—'}</p>
+                <p><strong>Teléfono:</strong> ${t.cliente_telefono || '—'}</p>
+                <p><strong>Departamento:</strong> ${t.cliente_departamento || '—'}</p>
+                
+                <h4 style="margin-top:1.5rem;">Datos del Sorteo</h4>
+                <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                <p><strong>Cantidad de Tickets:</strong> ${t.cantidad_tickets}</p>
+                <p><strong>Total Pagado:</strong> S/ ${t.total_pagado.toFixed(2)}</p>
+            </div>
+            <div>
+                <h4>Comprobante de Pago</h4>
+                ${t.comprobante_base64 ? `<img src="${t.comprobante_base64}" class="modal-img">` : '<p style="color:red;">No se subió comprobante</p>'}
+                <div style="margin-top:1rem; background:#f8f9fa; padding:1rem; border-radius:8px;">
+                    <h4 style="border:none; margin-bottom:0.5rem; padding:0;">Datos OCR</h4>
+                    <p style="font-size:0.85rem;"><strong>Monto leído:</strong> ${t.ocr_monto !== null ? 'S/ ' + t.ocr_monto.toFixed(2) : 'No detectado'}</p>
+                    <p style="font-size:0.85rem;"><strong>Operación:</strong> ${t.ocr_operacion || 'No detectada'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('modal-detalles').classList.add('active');
+}
+
+function cerrarModal() { document.getElementById('modal-detalles').classList.remove('active'); }
+
+async function revisar(grupoId, idReal, accion) {
+    let notas = null;
+    if (accion === 'rechazar') {
+        notas = prompt('Motivo del rechazo (visible al cliente):');
+        if (notas === null) return;
+    } else {
+        if (!confirm('¿Ya verificaste en tu app Yape que el pago llegó a tu cuenta?')) return;
+    }
+    
+    const r = await fetch(`/api/admin/tickets/${idReal}/revisar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, notas })
+    });
+    const d = await r.json();
+    if (r.ok) { alert('Tickets ' + d.nuevo_estado + 's correctamente.'); cargar(); } 
+    else alert('Error: ' + d.error);
+}
+
+// --- LÓGICA DE VENTA PRESENCIAL ---
+function abrirModalVentaPresencial() {
+    const select = document.getElementById('vp-sorteo');
+    select.innerHTML = '<option value="">Selecciona un sorteo</option>' + 
+        sorteosList.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket})</option>`).join('');
+    
+    document.getElementById('form-venta-presencial').reset();
+    document.getElementById('vp-total').value = 'S/ 0.00';
+    document.getElementById('modal-venta-presencial').classList.add('active');
+}
+
+function cerrarModalVenta() { document.getElementById('modal-venta-presencial').classList.remove('active'); }
+
+function calcularTotalVenta() {
+    const select = document.getElementById('vp-sorteo');
+    const cant = parseInt(document.getElementById('vp-cantidad').value) || 1;
+    const precio = select.options[select.selectedIndex]?.getAttribute('data-precio');
+    if (precio) {
+        document.getElementById('vp-total').value = `S/ ${(parseFloat(precio) * cant).toFixed(2)}`;
+    } else {
+        document.getElementById('vp-total').value = 'S/ 0.00';
+    }
+}
+
+document.getElementById('form-venta-presencial').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-vp-guardar');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+
+    const data = {
+        sorteo_id: document.getElementById('vp-sorteo').value,
+        cliente_nombre: document.getElementById('vp-nombre').value,
+        cliente_dni: document.getElementById('vp-dni').value,
+        cliente_telefono: document.getElementById('vp-telefono').value,
+        cliente_departamento: document.getElementById('vp-departamento').value,
+        cantidad: document.getElementById('vp-cantidad').value
+    };
+
+    try {
+        const res = await fetch('/api/admin/tickets/vender', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const d = await res.json();
+        if (res.ok) {
+            alert(`✅ Venta registrada.\nSe generaron los siguientes códigos:\n\n${d.codigos.join(', ')}`);
+            cerrarModalVenta();
+            cargar();
+        } else {
+            alert('❌ Error: ' + d.error);
+        }
+    } catch (err) {
+        alert('Error de red al registrar la venta.');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Registrar Venta';
+    }
+});
+
+checkAuth();
+</script>
+</body>
+</html>

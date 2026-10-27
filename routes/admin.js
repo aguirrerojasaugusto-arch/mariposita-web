@@ -21,7 +21,6 @@ const uploadCarruselMemory = multer({
 
 // ⭐ GENERADOR DE TICKET NUMÉRICO ALEATORIO (Desde 10000 en adelante) ⭐
 function generarCodigoTicket() {
-    // Genera un número aleatorio entre 10000 y 99999
     const numero = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
     return String(numero);
 }
@@ -151,10 +150,9 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
 });
 
 // ============ TICKETS ============
-// ⭐ RUTA CORREGIDA PARA QUE APAREZCAN LOS TICKETS ⭐
+// ⭐ RUTA CORREGIDA: Ahora agrupa correctamente y envía la ID para que la tabla no se rompa ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
-        // Consulta agrupada corregida
         const result = await db.execute(`
             SELECT 
                 SUBSTR(t.hash_comprobante, 1, INSTR(t.hash_comprobante, '-') - 1) as grupo_id,
@@ -175,10 +173,11 @@ router.get('/tickets/pendientes', async (req, res) => {
             FROM tickets t
             JOIN sorteos s ON s.id = t.sorteo_id
             WHERE t.estado_pago = 'pendiente'
-            GROUP BY t.hash_comprobante, t.sorteo_id
+            GROUP BY grupo_id, t.sorteo_id
             ORDER BY creado_en DESC
         `);
         
+        // Enviamos el objeto mapeado asegurando que tenga las propiedades que el frontend espera
         res.json(result.rows.map(t => ({ 
             ...t, 
             alerta_monto: t.ocr_monto !== null && Math.abs(t.total_pagado - t.ocr_monto) > 0.01, 
@@ -204,11 +203,13 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA CORREGIDA: Revisa correctamente por hash y sorteo ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
 
     try {
+        // Obtenemos el ticket seleccionado
         const tRes = await db.execute({ sql: 'SELECT * FROM tickets WHERE id = ?', args: [req.params.id] });
         const t = tRes.rows[0];
         if (!t) return res.status(404).json({ error: 'No encontrado' });
@@ -217,10 +218,11 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
+        // Actualizamos TODOS los tickets que compartan ese hash base Y PERTENEZCAN AL MISMO SORTEO
         await db.batch([
             { 
-                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ?`, 
-                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`] 
+                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`, 
+                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id] 
             },
             { 
                 sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
