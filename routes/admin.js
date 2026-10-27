@@ -7,7 +7,14 @@ const { uploadProducto } = require('../middleware/upload');
 const router = express.Router();
 router.use(requireVendedor); 
 
+// ⭐ CONFIGURACIÓN PARA GUARDAR EN MEMORIA (SOLO PARA CARRUSEL) ⭐
 const storageMemory = multer.memoryStorage();
+const uploadCarruselMemory = multer({ 
+    storage: storageMemory,
+    limits: { fileSize: 10 * 1024 * 1024 }
+}).single('imagen');
+
+// Configuración para el resto (logo, fondo)
 const uploadConfig = multer({ 
     storage: storageMemory,
     limits: { fileSize: 10 * 1024 * 1024 }
@@ -116,7 +123,6 @@ router.get('/ordenes/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR ÓRDENES ⭐
 router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -168,7 +174,6 @@ router.get('/tickets/pendientes', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA PARA OBTENER TICKETS APROBADOS (Para imprimir) ⭐
 router.get('/tickets/aprobados', async (req, res) => {
     try {
         const result = await db.execute(`
@@ -182,7 +187,6 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR TICKETS ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -205,7 +209,6 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA DE VENTA PRESENCIAL (ACCESIBLE PARA VENDEDORES Y ADMINS) ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -314,7 +317,6 @@ router.post('/sorteos', requireAdmin, (req, res) => {
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
-        // Aseguramos que la hora se guarde correctamente (HH:MM)
         const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
 
         try {
@@ -340,7 +342,6 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             let imagen_path = s.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
-            // Aseguramos que la hora se guarde correctamente (HH:MM)
             const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
 
             await db.execute({
@@ -372,8 +373,9 @@ router.get('/carrusel', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ AQUÍ ESTÁ LA MAGIA: GUARDAMOS LA IMAGEN COMO BASE64 DIRECTO EN LA BD ⭐
 router.post('/carrusel', requireAdmin, (req, res) => {
-    uploadProducto(req, res, async (err) => {
+    uploadCarruselMemory(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         if (!req.file) return res.status(400).json({ error: 'Debes subir una imagen' });
 
@@ -382,12 +384,12 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            // ⭐ AQUÍ ESTABA EL ERROR: AHORA GUARDAMOS LA RUTA EXACTA ⭐
-            const imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            // Convertimos el buffer a string Base64
+            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [imagen_path, count]
+                args: [base64Image, count] // Guardamos el texto Base64 en lugar de una ruta
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
