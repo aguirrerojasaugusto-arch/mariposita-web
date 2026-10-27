@@ -1093,11 +1093,8 @@
                             </div>
                         </div>
                     `;
-
-                    // ⭐ RECARGA AUTOMÁTICA DESPUÉS DE 3 SEGUNDOS ⭐
-                    setTimeout(() => {
-                        location.reload();
-                    }, 3000); 
+                    
+                    // ⭐ SE HA ELIMINADO EL SETTIMEOUT DE RECARGA AUTOMÁTICA AQUÍ ⭐
 
                 } catch (error) {
                     alert("⚠️ Error: " + error.message); 
@@ -1111,7 +1108,13 @@
             document.getElementById('ticket-modal').classList.add('active'); bloquearScroll();
         }
 
-        function cerrarModalTicket() { document.getElementById('ticket-modal').classList.remove('active'); if(!document.getElementById('sorteos-modal').classList.contains('active')) desbloquearScroll(); }
+        function cerrarModalTicket() { 
+            document.getElementById('ticket-modal').classList.remove('active'); 
+            if(!document.getElementById('sorteos-modal').classList.contains('active')) {
+                desbloquearScroll();
+            } 
+        }
+        
         function actualizarTotalModal() { const cant = parseInt(document.getElementById('cantidad-tickets').value); document.getElementById('total-display').textContent = `S/ ${(sorteoActivo.precio_ticket * cant).toFixed(2)}`; }
 
         async function buscarPedidoPublico() {
