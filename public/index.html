@@ -29,36 +29,15 @@
         .hero-bg-slide.active { opacity: 1; }
         .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(3, 19, 29, 0.85) 0%, rgba(3, 19, 29, 0.1) 100%); z-index: 2; }
         
-        .hero-nuevo-container { 
-            position: relative; z-index: 3; 
-            display: flex; align-items: stretch; 
-            background: rgba(17, 34, 64, 0.85); 
-            backdrop-filter: blur(12px); 
-            border: 2px solid var(--accent-cyan); 
-            border-radius: 16px; 
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
-            max-width: 480px; 
-            width: 100%; 
-            height: 320px; 
-            padding: 1.2rem; 
-            gap: 1rem; 
-            overflow: hidden; 
-        }
+        .hero-nuevo-container { position: relative; z-index: 3; display: flex; align-items: stretch; background: rgba(17, 34, 64, 0.85); backdrop-filter: blur(12px); border: 2px solid var(--accent-cyan); border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); max-width: 480px; width: 100%; height: 220px; padding: 1.2rem; gap: 1rem; overflow: hidden; }
         
-        /* ⭐ IMAGEN DEL HERO AJUSTADA ⭐ */
-        .hero-imagen-container { flex: 0 0 160px; height: 100%; border-radius: 8px; overflow: hidden; background: #fff; border: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; }
-        .hero-imagen-container img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+        /* ⭐ CORRECCIÓN DE LA IMAGEN DEL HERO ⭐ */
+        .hero-imagen-container { flex: 0 0 150px; height: 100%; border-radius: 8px; overflow: hidden; background: #fff; border: 1px solid rgba(255,255,255,0.2); position: relative; }
+        .hero-imagen-container img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
         
         .hero-info { flex: 1; color: #fff; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-        
-        .hero-titulo-fijo { font-size: 1.7rem; line-height: 1.25; height: 4.3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0.2rem; }
-        .hero-desc-fija { font-size: 0.95rem; color: #ccc; height: 2.8rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0; }
-
-        /* ⭐ ESTILOS DEL CONTADOR DE TIEMPO ⭐ */
-        .contador-tiempo { display: flex; gap: 5px; margin-top: 8px; margin-bottom: 8px; }
-        .contador-bloque { background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent-cyan); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 40px; }
-        .contador-bloque span { display: block; font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1; }
-        .contador-bloque small { font-size: 0.55rem; color: #8892b0; text-transform: uppercase; }
+        .hero-titulo-fijo { font-size: 2.2rem; line-height: 1.2; height: 5.2rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0.5rem; }
+        .hero-desc-fija { font-size: 1rem; color: #ccc; height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 0; }
 
         /* --- ESTILOS DEL CATÁLOGO --- */
         .search-container { display: flex; justify-content: center; margin-bottom: 2rem; }
@@ -70,7 +49,7 @@
         
         .card-producto { width: 280px; min-width: 280px; flex-shrink: 0; background-color: #0d253f; border-radius: 8px; overflow: hidden; transition: transform 0.3s; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
         .card-producto:hover { border-color: var(--accent-cyan); transform: translateY(-3px); }
-        .card-producto img { width: 100%; height: 200px; object-fit: cover; object-position: center; cursor: pointer; transition: filter 0.3s; }
+        .card-producto img { width: 100%; height: 200px; object-fit: cover; object-position: center; cursor: pointer; transition: filter 0.3s; display: block; }
         .card-producto img:hover { filter: brightness(0.8); }
         .card-producto .info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
         .card-producto h3 { color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -118,9 +97,10 @@
         .sorteos-viewport { overflow: hidden; width: 100%; }
         .sorteos-track { display: flex; gap: 1.2rem; transition: transform 0.4s; }
         
-        /* ⭐ TARJETA DE SORTEO Y SU IMAGEN AJUSTADA ⭐ */
+        /* ⭐ CORRECCIÓN DE LA TARJETA DE SORTEO Y SU IMAGEN ⭐ */
         .card-sorteo-carrusel { background: #0d253f; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; flex-direction: column; width: 280px; min-width: 280px; flex-shrink: 0; }
-        .card-sorteo-carrusel img { width: 100%; height: 150px; object-fit: cover; object-position: center; }
+        .card-sorteo-carrusel .img-wrapper { width: 100%; height: 150px; overflow: hidden; position: relative; background: #000; }
+        .card-sorteo-carrusel .img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
         
         .card-sorteo-carrusel .info { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
         .card-sorteo-carrusel h3 { font-size: 1rem; color: #fff; margin: 0 0 0.3rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -446,7 +426,6 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
-        let intervaloContador;
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -521,77 +500,24 @@
                 sorteosGlobal = await res.json();
                 if (sorteosGlobal.length > 0) {
                     renderHeroContent(0);
-                    intervaloSorteos = setInterval(() => moverHero(1), 10000);
+                    intervaloSorteos = setInterval(() => moverHero(1), 5000);
                 }
-            } catch (e) { console.error("Error cargando sorteos", e); }
+            } catch (e) {}
         }
 
         function renderHeroContent(index) {
             const sorteo = sorteosGlobal[index];
-            
-            // Limpiamos el intervalo anterior si existía
-            if(intervaloContador) clearInterval(intervaloContador);
-
-            // ⭐ FORMATEAMOS LA HORA PARA QUE SE VEA BIEN ⭐
-            const horaMostrar = sorteo.hora_sorteo ? sorteo.hora_sorteo.substring(0, 5) : '23:59';
-
             document.getElementById('hero-info').innerHTML = `
                 <span style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">🎁 Sorteo Activo</span>
                 <h1 class="hero-titulo-fijo" style="margin-top: 0.5rem;">${sorteo.nombre}</h1>
-                <p class="hero-desc-fija" style="margin-bottom: 0;">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
-                
-                <div class="contador-tiempo" id="contador-tiempo">
-                    <div class="contador-bloque"><span id="cd-dias">00</span><small>Días</small></div>
-                    <div class="contador-bloque"><span id="cd-horas">00</span><small>Hrs</small></div>
-                    <div class="contador-bloque"><span id="cd-minutos">00</span><small>Min</small></div>
-                    <div class="contador-bloque"><span id="cd-segundos">00</span><small>Seg</small></div>
-                </div>
-
-                <button class="btn-solid" onclick="abrirModalSorteos()" style="margin-top: auto;">Ver todos los Sorteos</button>
+                <p class="hero-desc-fija">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
+                <button class="btn-solid" onclick="abrirModalSorteos()" style="margin-top: 1rem;">Ver todos los Sorteos</button>
             `;
-
             if (sorteo.imagen_base64) {
-                document.getElementById('hero-imagen-container').innerHTML = `<img src="${sorteo.imagen_base64}" style="width:100%; height:100%; object-fit:cover; object-position: center; border-radius:12px;">`;
+                document.getElementById('hero-imagen-container').innerHTML = `<img src="${sorteo.imagen_base64}" style="width:100%; height:100%; object-fit:cover; object-position:center; border-radius:12px; display:block;">`;
             } else {
                 document.getElementById('hero-imagen-container').innerHTML = `<div style="width:100%; height:100%; background:#0a192f; display:flex; justify-content:center; align-items:center; color:#8892b0; border-radius:12px;">Sin imagen</div>`;
             }
-
-            iniciarContador(sorteo.fecha_sorteo, horaMostrar);
-        }
-
-        // ⭐ CONTADOR CORREGIDO CON ZONA HORARIA DE PERÚ (-05:00) ⭐
-        function iniciarContador(fechaStr, horaStr) {
-            const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00-05:00`).getTime();
-
-            intervaloContador = setInterval(() => {
-                const ahora = new Date().getTime();
-                const distancia = fechaObjetivo - ahora;
-
-                if (distancia < 0) {
-                    clearInterval(intervaloContador);
-                    const ids = ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'];
-                    ids.forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.textContent = "00";
-                    });
-                    return;
-                }
-
-                const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
-                const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-                const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-
-                const elDias = document.getElementById('cd-dias');
-                const elHoras = document.getElementById('cd-horas');
-                const elMinutos = document.getElementById('cd-minutos');
-                const elSegundos = document.getElementById('cd-segundos');
-
-                if (elDias) elDias.textContent = String(dias).padStart(2, '0');
-                if (elHoras) elHoras.textContent = String(horas).padStart(2, '0');
-                if (elMinutos) elMinutos.textContent = String(minutos).padStart(2, '0');
-                if (elSegundos) elSegundos.textContent = String(segundos).padStart(2, '0');
-            }, 1000);
         }
 
         function moverHero(dir) {
@@ -599,7 +525,7 @@
             clearInterval(intervaloSorteos);
             indiceHero = (indiceHero + dir + sorteosGlobal.length) % sorteosGlobal.length;
             renderHeroContent(indiceHero);
-            intervaloSorteos = setInterval(() => moverHero(1), 10000);
+            intervaloSorteos = setInterval(() => moverHero(1), 5000);
         }
 
         async function cargarProductos() {
@@ -759,11 +685,7 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                // ⭐ TOMAMOS LA HORA EXACTA DEL SORTEO ⭐
-                const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
-                
-                // ⭐ EVALUAMOS SI YA FINALIZÓ CON ZONA HORARIA PERÚ (-05:00) ⭐
-                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
                 
@@ -771,66 +693,23 @@
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
 
-                const idDias = `cd-dias-${s.id}`;
-                const idHoras = `cd-horas-${s.id}`;
-                const idMinutos = `cd-minutos-${s.id}`;
-                const idSegundos = `cd-segundos-${s.id}`;
-
                 return `
                     <div class="card-sorteo-carrusel">
-                        <img src="${s.imagen_base64 || 'https://via.placeholder.com/300x150'}">
+                        <!-- ⭐ ENVOLVEMOS LA IMAGEN EN UN WRAPPER PARA QUE NO SE SALGA ⭐ -->
+                        <div class="img-wrapper">
+                            <img src="${s.imagen_base64 || 'https://via.placeholder.com/300x150'}">
+                        </div>
                         <div class="info">
-                            <h3 title="${s.nombre}">${s.nombre}</h3>
+                            <h3>${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
-                            
-                            <div style="font-size: 0.85rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">
-                                📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}
+                            <div style="font-size: 0.75rem; color: #8892b0; margin-bottom: 0.5rem;">
+                                📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
                             </div>
-
-                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${horaFormateada}:00-05:00">
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
-                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idSegundos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Seg</small></div>
-                            </div>
-
                             ${boton}
                         </div>
                     </div>
                 `;
             }).join('');
-
-            document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
-                const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
-                const idDias = el.querySelector('[id^="cd-dias-"]').id;
-                const idHoras = el.querySelector('[id^="cd-horas-"]').id;
-                const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
-                const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
-
-                const intervalo = setInterval(() => {
-                    const ahora = new Date().getTime();
-                    const distancia = fechaObjetivo - ahora;
-
-                    if (distancia < 0) {
-                        clearInterval(intervalo);
-                        document.getElementById(idDias).textContent = "00";
-                        document.getElementById(idHoras).textContent = "00";
-                        document.getElementById(idMinutos).textContent = "00";
-                        document.getElementById(idSegundos).textContent = "00";
-                        return;
-                    }
-
-                    const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
-                    const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-                    const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-
-                    document.getElementById(idDias).textContent = String(dias).padStart(2, '0');
-                    document.getElementById(idHoras).textContent = String(horas).padStart(2, '0');
-                    document.getElementById(idMinutos).textContent = String(minutos).padStart(2, '0');
-                    document.getElementById(idSegundos).textContent = String(segundos).padStart(2, '0');
-                }, 1000);
-            });
 
             indiceSorteoModal = 0;
             if (sorteosGlobal.length <= 2) {
