@@ -82,15 +82,41 @@ body {
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.sidebar h1 { 
-    font-size: 1.3rem; 
-    color: #ffffff !important; 
-    margin-bottom: 1rem; 
-    display: flex; 
-    align-items: center; 
-    gap: 0.5rem; 
-    padding-bottom: 1rem; 
-    border-bottom: 1px solid rgba(255,255,255,0.1); 
+/* ⭐ NUEVO ESTILO DEL LOGO IDÉNTICO AL FRONTEND ⭐ */
+.admin-logo-block {
+    background-color: #1a6b7a; /* Color turquesa del frontend */
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.5rem 0.5rem 1rem;
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0% 100%); /* Forma inclinada */
+    text-decoration: none;
+    color: #fff;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+}
+.admin-logo-icon {
+    width: 45px; 
+    height: 45px; 
+    object-fit: cover; 
+    border-radius: 50%; 
+    background: #fff;
+}
+.admin-logo-text {
+    display: flex;
+    flex-direction: column;
+}
+.admin-logo-text strong {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    line-height: 1;
+}
+.admin-logo-text span {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: #b0c4de;
+    margin-top: 2px;
 }
 
 .user-profile { 
