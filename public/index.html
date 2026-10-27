@@ -448,6 +448,7 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
+        let intervaloContadorHero;
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -490,7 +491,6 @@
 
                 document.getElementById('year').textContent = new Date().getFullYear();
 
-                // ⭐ LÓGICA DEL FLYER: Mostrar si existe ⭐
                 if (config.flyer_inicio) {
                     document.getElementById('flyer-img').src = config.flyer_inicio;
                     document.getElementById('flyer-modal').classList.add('active');
@@ -538,7 +538,7 @@
                     renderHeroContent(0);
                     intervaloSorteos = setInterval(() => moverHero(1), 10000);
                 }
-            } catch (e) {}
+            } catch (e) { console.error(e); }
         }
 
         function renderHeroContent(index) {
@@ -657,7 +657,7 @@
                     <div class="info">
                         <h3 title="${p.nombre}">${p.nombre}</h3>
                         <p>${p.descripcion || ''}</p>
-                        <div class="precio">S/ ${p.precio.toFixed(2)}</div>
+                        <div class="precio">S/ ${p.precio ? p.precio.toFixed(2) : '0.00'}</div>
                         <div class="stock">Stock: ${p.stock} unidades</div>
                         <div class="btn-deshabilitado">Solo para visualización</div>
                     </div>
@@ -706,7 +706,7 @@
             const modal = document.getElementById('viewer-modal');
             const img = document.getElementById('viewer-img');
             
-            if (imagenSrc && imagenSrc !== 'null') {
+            if (imagenSrc && imagenSrc !== 'null' && imagenSrc !== 'undefined') {
                 img.src = imagenSrc;
             } else {
                 img.src = 'https://via.placeholder.com/800x600/132d46/00d2ff?text=Sin+Imagen';
@@ -765,6 +765,8 @@
         }
 
         // --- SORTEOS Y TICKETS ---
+        let intervalosContadoresModales = [];
+
         function abrirModalSorteos() {
             const track = document.getElementById('sorteos-track');
             const btnPrev = document.getElementById('btn-prev-sorteo');
@@ -772,6 +774,13 @@
 
             intervalosContadoresModales.forEach(clearInterval);
             intervalosContadoresModales = [];
+
+            if (sorteosGlobal.length === 0) {
+                track.innerHTML = '<p style="color:#fff; padding: 2rem;">No hay sorteos activos en este momento.</p>';
+                document.getElementById('sorteos-modal').classList.add('active'); 
+                bloquearScroll();
+                return;
+            }
 
             track.innerHTML = sorteosGlobal.map(s => {
                 const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
@@ -1144,7 +1153,6 @@
                     return;
                 }
 
-                // ⭐ ACTUALIZAMOS EL ENCABEZADO FIJO CON LOS DATOS ⭐
                 if (data.tickets.length > 0) {
                     const primerTicket = data.tickets[0];
                     resumenNombre.textContent = primerTicket.cliente_nombre;
@@ -1179,7 +1187,6 @@
                                 <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
-                                <!-- ⭐ SE ELIMINÓ EL TEXTO DEL ESTADO AQUÍ ⭐ -->
                             </div>
                         `;
                     });
