@@ -19,6 +19,17 @@
     .btn-editar-sm:hover { background: #1565c0; color: #fff; }
     .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
     .btn-eliminar-sm:hover { background: #c62828; color: #fff; }
+
+    /* ⭐ ESTILOS DEL MODAL DE EDICIÓN ⭐ */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-content { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
 </style>
 </head>
 <body>
@@ -90,7 +101,44 @@
         </main>
     </div>
 
+    <!-- ⭐ MODAL DE EDICIÓN ⭐ -->
+    <div class="modal-overlay" id="modal-editar-ticket">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Datos del Ticket</h3>
+                <button class="modal-close" onclick="cerrarModalEditar()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-ticket">
+                    <input type="hidden" id="edit-ticket-id">
+                    <div class="form-group">
+                        <label>Nombre del Cliente</label>
+                        <input type="text" id="edit-nombre" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;">
+                    </div>
+                    <div class="form-group">
+                        <label>DNI</label>
+                        <input type="text" id="edit-dni" maxlength="8" style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" id="edit-telefono" style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <input type="text" id="edit-departamento" style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="cerrarModalEditar()">Cancelar</button>
+                <button type="submit" form="form-editar-ticket" class="btn btn-primario" id="btn-guardar-edicion">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
 <script>
+let ticketsActuales = [];
+
 async function checkAuth() {
     try {
         const r = await fetch('/api/auth/me');
@@ -142,10 +190,11 @@ async function buscar() {
             return;
         }
 
+        ticketsActuales = data.tickets; // Guardamos los tickets para usarlos en el modal
+
         let nombreCliente = 'Cliente';
         let ubicacionCliente = 'No registrado';
 
-        // Lógica para mostrar ubicación priorizando tickets, si no hay, órdenes
         if (data.tickets.length > 0) {
             nombreCliente = data.tickets[0].cliente_nombre;
             if (data.tickets[0].cliente_departamento) {
@@ -177,7 +226,6 @@ async function buscar() {
                         <p><strong>Fecha:</strong> ${o.creado_en}</p>
                         <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
                         <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
-                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo:</strong> ${o.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
@@ -186,7 +234,6 @@ async function buscar() {
         if (data.tickets.length > 0) {
             html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             data.tickets.forEach(t => {
-                // Se eliminó el badge de estado y se agregaron los botones
                 html += `
                     <div class="resultado-card" style="border-left-color: #ff9800;">
                         <div style="width: 100%;">
@@ -196,7 +243,7 @@ async function buscar() {
                             <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                             <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
                             <div class="acciones-ticket">
-                                <button class="btn-accion-sm btn-editar-sm" onclick="editarTicket(${t.id})">✏️ Editar</button>
+                                <button class="btn-accion-sm btn-editar-sm" onclick="abrirModalEditar(${t.id})">✏️ Editar</button>
                                 <button class="btn-accion-sm btn-eliminar-sm" onclick="eliminarTicket(${t.id})">🗑️ Eliminar</button>
                             </div>
                         </div>
@@ -226,39 +273,59 @@ async function eliminarTicket(id) {
     } catch (e) { alert('Error de red al eliminar'); }
 }
 
-async function editarTicket(id) {
-    const nuevoNombre = prompt('Nuevo nombre del cliente:');
-    if (nuevoNombre === null) return;
-    
-    const nuevoDni = prompt('Nuevo DNI:');
-    if (nuevoDni === null) return;
+function abrirModalEditar(id) {
+    const t = ticketsActuales.find(tk => tk.id === id);
+    if (!t) return;
 
-    const nuevoTelefono = prompt('Nuevo teléfono:');
-    if (nuevoTelefono === null) return;
+    document.getElementById('edit-ticket-id').value = t.id;
+    document.getElementById('edit-nombre').value = t.cliente_nombre;
+    document.getElementById('edit-dni').value = t.cliente_dni || '';
+    document.getElementById('edit-telefono').value = t.cliente_telefono || '';
+    document.getElementById('edit-departamento').value = t.cliente_departamento || '';
 
-    const nuevoDepto = prompt('Nuevo departamento:');
-    if (nuevoDepto === null) return;
+    document.getElementById('modal-editar-ticket').classList.add('active');
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modal-editar-ticket').classList.remove('active');
+}
+
+document.getElementById('form-editar-ticket').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-edicion');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const id = document.getElementById('edit-ticket-id').value;
+    const data = {
+        cliente_nombre: document.getElementById('edit-nombre').value,
+        cliente_dni: document.getElementById('edit-dni').value,
+        cliente_telefono: document.getElementById('edit-telefono').value,
+        cliente_departamento: document.getElementById('edit-departamento').value
+    };
 
     try {
         const r = await fetch(`/api/admin/tickets/${id}/editar`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                cliente_nombre: nuevoNombre, 
-                cliente_dni: nuevoDni, 
-                cliente_telefono: nuevoTelefono,
-                cliente_departamento: nuevoDepto
-            })
+            body: JSON.stringify(data)
         });
+        
         if (r.ok) {
             alert('Ticket actualizado correctamente');
+            cerrarModalEditar();
             buscar();
         } else {
             const d = await r.json();
             alert('Error: ' + d.error);
         }
-    } catch (e) { alert('Error de red al editar'); }
-}
+    } catch (err) {
+        alert('Error de red al editar');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Guardar Cambios';
+    }
+});
 
 checkAuth();
 </script>
