@@ -12,9 +12,8 @@
     .resumen-depto h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #1565c0; text-transform: uppercase; }
     .resumen-depto h3 { margin: 0; font-size: 1rem; color: #1565c0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     
-    /* Estilos para los botones de acción en los resultados */
-    .acciones-ticket { display: flex; gap: 10px; margin-top: 10px; }
-    .btn-accion-sm { padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
+    /* Estilos para los botones de acción en la tabla */
+    .btn-accion-sm { padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
     .btn-editar-sm { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar-sm:hover { background: #1565c0; color: #fff; }
     .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
@@ -30,6 +29,14 @@
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-body { padding: 1.5rem; }
     .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+    
+    /* Contenedor de resultados con scroll */
+    .resultados-container { max-height: 50vh; overflow-y: auto; margin-top: 1rem; border-radius: 8px; }
+    
+    /* Buscador interno de la tabla */
+    .table-search-container { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+    .table-search-input { padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 20px; width: 300px; outline: none; font-size: 0.9rem; }
+    .table-search-input:focus { border-color: var(--color-primario); }
 </style>
 </head>
 <body>
@@ -138,6 +145,9 @@
 
 <script>
 let ticketsActuales = [];
+let ticketsFiltrados = [];
+let paginaActual = 1;
+const itemsPorPagina = 5;
 
 async function checkAuth() {
     try {
@@ -190,7 +200,9 @@ async function buscar() {
             return;
         }
 
-        ticketsActuales = data.tickets; // Guardamos los tickets para usarlos en el modal
+        ticketsActuales = data.tickets;
+        ticketsFiltrados = [...ticketsActuales];
+        paginaActual = 1;
 
         let nombreCliente = 'Cliente';
         let ubicacionCliente = 'No registrado';
@@ -211,6 +223,7 @@ async function buscar() {
         document.getElementById('resumen-departamento').textContent = ubicacionCliente;
         resumenBox.style.display = 'flex'; 
 
+        // ⭐ CONSTRUCCIÓN DE LA TABLA Y EL BUSCADOR ⭐
         let html = '';
 
         if (data.ordenes.length > 0) {
@@ -232,30 +245,96 @@ async function buscar() {
         }
 
         if (data.tickets.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
-            data.tickets.forEach(t => {
-                html += `
-                    <div class="resultado-card" style="border-left-color: #ff9800;">
-                        <div style="width: 100%;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-                                <strong style="font-size: 1.1rem;">Ticket: ${t.numero_ticket}</strong>
-                            </div>
-                            <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-                            <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                            <div class="acciones-ticket">
-                                <button class="btn-accion-sm btn-editar-sm" onclick="abrirModalEditar(${t.id})">✏️ Editar</button>
-                                <button class="btn-accion-sm btn-eliminar-sm" onclick="eliminarTicket(${t.id})">🗑️ Eliminar</button>
-                            </div>
-                        </div>
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">
+                    <h3 style="color:#333; margin:0;">🎟️ Tickets de Sorteo</h3>
+                    <div class="table-search-container">
+                        <input type="text" id="buscador-tabla" class="table-search-input" placeholder="🔍 Buscar ticket, sorteo, nombre..." onkeyup="filtrarTabla()">
                     </div>
-                `;
-            });
+                </div>
+                <div class="resultados-container">
+                    <table id="tabla-tickets">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Cliente</th>
+                                <th>Sorteo</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-tickets"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="paginacion-tabla">
+                    <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+                    <span id="page-info">Página 1 de 1</span>
+                    <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+                </div>
+            `;
         }
 
         cont.innerHTML = html;
+        
+        if (data.tickets.length > 0) {
+            renderizarTablaTickets();
+        }
+
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
+}
+
+// ⭐ FUNCIONES PARA LA TABLA PAGINADA Y BUSCADOR INTELIGENTE ⭐
+function renderizarTablaTickets() {
+    const tbody = document.getElementById('tbody-tickets');
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    
+    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById('btn-prev').disabled = paginaActual === 1;
+    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+
+    if (!ticketsFiltrados.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No se encontraron tickets con esa búsqueda.</td></tr>';
+        return;
+    }
+
+    const inicio = (paginaActual - 1) * itemsPorPagina;
+    const fin = inicio + itemsPorPagina;
+    const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
+
+    tbody.innerHTML = ticketsPagina.map(t => `
+        <tr>
+            <td><strong>${t.numero_ticket}</strong></td>
+            <td>${t.cliente_nombre}<br><small>${t.cliente_dni}</small></td>
+            <td>${t.sorteo_nombre}</td>
+            <td><small>${t.creado_en}</small></td>
+            <td>
+                <button class="btn-accion-sm btn-editar-sm" onclick="abrirModalEditar(${t.id})">✏️ Editar</button>
+                <button class="btn-accion-sm btn-eliminar-sm" onclick="eliminarTicket(${t.id})">🗑️ Eliminar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filtrarTabla() {
+    const texto = document.getElementById('buscador-tabla').value.toLowerCase();
+    ticketsFiltrados = ticketsActuales.filter(t => 
+        (t.numero_ticket && t.numero_ticket.toLowerCase().includes(texto)) ||
+        (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
+        (t.cliente_dni && t.cliente_dni.includes(texto)) ||
+        (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto))
+    );
+    paginaActual = 1;
+    renderizarTablaTickets();
+}
+
+function cambiarPagina(dir) {
+    const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
+    paginaActual += dir;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTablaTickets();
 }
 
 // ⭐ FUNCIONES PARA EDITAR Y ELIMINAR TICKETS ⭐
@@ -277,6 +356,7 @@ function abrirModalEditar(id) {
     const t = ticketsActuales.find(tk => tk.id === id);
     if (!t) return;
 
+    // Se cargan los datos automáticamente en el formulario
     document.getElementById('edit-ticket-id').value = t.id;
     document.getElementById('edit-nombre').value = t.cliente_nombre;
     document.getElementById('edit-dni').value = t.cliente_dni || '';
