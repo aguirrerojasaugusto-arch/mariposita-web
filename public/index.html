@@ -160,6 +160,7 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
+        let intervaloContador; // ⭐ VARIABLE PARA EL CONTADOR ⭐
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -234,24 +235,79 @@
                 sorteosGlobal = await res.json();
                 if (sorteosGlobal.length > 0) {
                     renderHeroContent(0);
-                    intervaloSorteos = setInterval(() => moverHero(1), 5000);
+                    intervaloSorteos = setInterval(() => moverHero(1), 10000);
                 }
             } catch (e) {}
         }
 
         function renderHeroContent(index) {
             const sorteo = sorteosGlobal[index];
+            
+            // Limpiamos el intervalo anterior si existía
+            if(intervaloContador) clearInterval(intervaloContador);
+
+            // Formateamos la hora para que se vea bien (HH:MM)
+            const horaMostrar = sorteo.hora_sorteo ? sorteo.hora_sorteo.substring(0, 5) : '23:59';
+
             document.getElementById('hero-info').innerHTML = `
                 <span style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">🎁 Sorteo Activo</span>
                 <h1 class="hero-titulo-fijo" style="margin-top: 0.5rem;">${sorteo.nombre}</h1>
                 <p class="hero-desc-fija">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
-                <button class="btn-solid" onclick="abrirModalSorteos()" style="margin-top: 1rem;">Ver todos los Sorteos</button>
+                
+                <!-- ⭐ AQUÍ INYECTAMOS EL CONTADOR ⭐ -->
+                <div class="contador-tiempo" id="contador-tiempo">
+                    <div class="contador-bloque"><span id="cd-dias">00</span><small>Días</small></div>
+                    <div class="contador-bloque"><span id="cd-horas">00</span><small>Hrs</small></div>
+                    <div class="contador-bloque"><span id="cd-minutos">00</span><small>Min</small></div>
+                    <div class="contador-bloque"><span id="cd-segundos">00</span><small>Seg</small></div>
+                </div>
+
+                <button class="btn-solid" onclick="abrirModalSorteos()">Ver todos los Sorteos</button>
             `;
+
             if (sorteo.imagen_base64) {
                 document.getElementById('hero-imagen-container').innerHTML = `<img src="${sorteo.imagen_base64}" style="width:100%; height:100%; object-fit:cover; object-position:center; border-radius:12px; display:block;">`;
             } else {
                 document.getElementById('hero-imagen-container').innerHTML = `<div style="width:100%; height:100%; background:#0a192f; display:flex; justify-content:center; align-items:center; color:#8892b0; border-radius:12px;">Sin imagen</div>`;
             }
+
+            // Iniciamos el contador con la fecha exacta
+            iniciarContador(sorteo.fecha_sorteo, horaMostrar);
+        }
+
+        // ⭐ FUNCIÓN DEL CONTADOR CON ZONA HORARIA PERÚ (-05:00) ⭐
+        function iniciarContador(fechaStr, horaStr) {
+            const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00-05:00`).getTime();
+
+            intervaloContador = setInterval(() => {
+                const ahora = new Date().getTime();
+                const distancia = fechaObjetivo - ahora;
+
+                if (distancia < 0) {
+                    clearInterval(intervaloContador);
+                    const ids = ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'];
+                    ids.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = "00";
+                    });
+                    return;
+                }
+
+                const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+                const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+                const elDias = document.getElementById('cd-dias');
+                const elHoras = document.getElementById('cd-horas');
+                const elMinutos = document.getElementById('cd-minutos');
+                const elSegundos = document.getElementById('cd-segundos');
+
+                if (elDias) elDias.textContent = String(dias).padStart(2, '0');
+                if (elHoras) elHoras.textContent = String(horas).padStart(2, '0');
+                if (elMinutos) elMinutos.textContent = String(minutos).padStart(2, '0');
+                if (elSegundos) elSegundos.textContent = String(segundos).padStart(2, '0');
+            }, 1000);
         }
 
         function moverHero(dir) {
@@ -259,7 +315,7 @@
             clearInterval(intervaloSorteos);
             indiceHero = (indiceHero + dir + sorteosGlobal.length) % sorteosGlobal.length;
             renderHeroContent(indiceHero);
-            intervaloSorteos = setInterval(() => moverHero(1), 5000);
+            intervaloSorteos = setInterval(() => moverHero(1), 10000);
         }
 
         async function cargarProductos() {
@@ -419,7 +475,7 @@
             const btnNext = document.getElementById('btn-next-sorteo');
 
             track.innerHTML = sorteosGlobal.map(s => {
-                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00`).getTime();
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00-05:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
                 
