@@ -249,7 +249,6 @@
 
                 document.getElementById('year').textContent = new Date().getFullYear();
 
-                // ⭐ LÓGICA DEL FLYER: Mostrar si existe al cargar la página ⭐
                 if (config.flyer_inicio) {
                     document.getElementById('flyer-img').src = config.flyer_inicio;
                     document.getElementById('flyer-modal').classList.add('active');
@@ -874,7 +873,7 @@
             const resumenNombre = document.getElementById('resumen-nombre-cliente');
             const resumenTotal = document.getElementById('resumen-total-tickets');
 
-            resumenBox.style.display = 'none'; // Ocultar por defecto hasta tener datos
+            resumenBox.style.display = 'none';
             body.innerHTML = '<p style="color:#00d2ff; text-align:center; padding-top:2rem;">Buscando en la base de datos...</p>';
             
             document.getElementById('resultado-overlay').classList.add('active');
@@ -906,7 +905,7 @@
                     const primerTicket = data.tickets[0];
                     resumenNombre.textContent = primerTicket.cliente_nombre;
                     resumenTotal.textContent = data.tickets.length;
-                    resumenBox.style.display = 'flex'; // Mostramos el encabezado
+                    resumenBox.style.display = 'flex'; 
                 }
 
                 let html = '';
@@ -936,10 +935,7 @@
                                 <p style="color:#fff; margin-bottom:0.3rem;"><strong>Ticket:</strong> ${t.numero_ticket}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
                                 <p style="color:#ccc; font-size:0.9rem;"><strong>Fecha:</strong> ${t.creado_en}</p>
-                                <p style="color:${t.estado_pago === 'aprobado' ? '#25d366' : t.estado_pago === 'rechazado' ? '#ff4d4d' : '#ffcc00'}; font-weight:bold;">
-                                    Estado: ${t.estado_pago.toUpperCase()}
-                                </p>
-                                ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:#ff4d4d; font-size:0.85rem;">Motivo: ${t.notas_admin}</p>` : ''}
+                                <!-- ⭐ SE ELIMINÓ EL TEXTO DEL ESTADO AQUÍ ⭐ -->
                             </div>
                         `;
                     });

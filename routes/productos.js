@@ -18,7 +18,6 @@ router.get('/productos/:id', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error al obtener el producto' }); }
 });
 
-// ⭐ SOLUCIÓN DEFINITIVA: SELECT * PARA TRAER HORA_SORTEO ⭐
 router.get('/sorteos', async (req, res) => {
     try {
         const result = await db.execute("SELECT * FROM sorteos WHERE estado = 'activo' ORDER BY fecha_sorteo ASC");
@@ -72,10 +71,18 @@ router.get('/consultar', async (req, res) => {
             sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, notas_admin FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
             args: [`%${query}%`, `%${query}%`]
         });
+        
+        // ⭐ MODIFICACIÓN: Solo traemos tickets con estado_pago = 'aprobado' ⭐
         const ticketsRes = await db.execute({
-            sql: `SELECT t.id, t.numero_ticket, t.estado_pago, t.creado_en, t.notas_admin, t.cliente_nombre, s.nombre as sorteo_nombre, s.fecha_sorteo FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.cliente_telefono LIKE ? OR t.cliente_dni LIKE ? OR t.cliente_nombre LIKE ? ORDER BY t.creado_en DESC`,
+            sql: `SELECT t.id, t.numero_ticket, t.creado_en, t.cliente_nombre, 
+                         s.nombre as sorteo_nombre, s.fecha_sorteo 
+                  FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id 
+                  WHERE (t.cliente_telefono LIKE ? OR t.cliente_dni LIKE ? OR t.cliente_nombre LIKE ?) 
+                  AND t.estado_pago = 'aprobado'
+                  ORDER BY t.creado_en DESC`,
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
+        
         res.json({ ordenes: ordenesRes.rows, tickets: ticketsRes.rows });
     } catch (error) { res.status(500).json({ error: 'Error al consultar' }); }
 });
