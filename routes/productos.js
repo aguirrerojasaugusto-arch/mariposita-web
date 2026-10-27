@@ -63,7 +63,7 @@ router.get('/buscar-dni/:dni', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno al buscar el DNI' }); }
 });
 
-// ⭐ RUTA CORREGIDA PARA MOSTRAR LOS TICKETS Y SU FECHA ⭐
+// ⭐ RUTA CORREGIDA: Ahora trae los datos completos del cliente para cargar en el formulario ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debes ingresar un DNI o Teléfono' });
@@ -75,9 +75,10 @@ router.get('/consultar', async (req, res) => {
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
         
-        // Buscamos en tickets
+        // ⭐ SE AGREGARON LOS CAMPOS FALTANTES AQUÍ ⭐
         const ticketsRes = await db.execute({
             sql: `SELECT t.id, t.numero_ticket, t.creado_en, t.cliente_nombre, t.estado_pago, t.notas_admin,
+                         t.cliente_dni, t.cliente_telefono, t.cliente_departamento,
                          s.nombre as sorteo_nombre, s.fecha_sorteo 
                   FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id 
                   WHERE (t.cliente_telefono LIKE ? OR t.cliente_dni LIKE ? OR t.cliente_nombre LIKE ?) 
