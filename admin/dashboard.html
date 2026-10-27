@@ -4,144 +4,6 @@
 <meta charset="UTF-8"><title>Dashboard · Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/css/admin.css">
-<style>
-    /* ⭐ FONDO DE PANTALLA CON PAISAJE DE LA SIERRA ⭐ */
-    body {
-        background: linear-gradient(rgba(11, 27, 43, 0.75), rgba(11, 27, 43, 0.75)), 
-                    url('https://images.unsplash.com/photo-1580619305218-8423a7ef79b4?q=80&w=2070&auto=format&fit=crop') 
-                    no-repeat center center fixed !important;
-        background-size: cover !important;
-        height: 100vh;
-        margin: 0;
-        overflow: hidden;
-    }
-
-    .admin-layout {
-        background: transparent !important;
-    }
-
-    /* ⭐ SIDEBAR ESTILO "GLASSMORPHISM" OSCURO ⭐ */
-    .sidebar {
-        background: rgba(16, 33, 50, 0.85) !important; 
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-        height: 100vh;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.3);
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* Título del Sidebar */
-    .sidebar h1 {
-        color: #ffffff !important;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    /* ⭐ TARJETA DE PERFIL DE USUARIO ⭐ */
-    .user-profile {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .user-avatar {
-        width: 45px;
-        height: 45px;
-        background: var(--color-secundario);
-        color: #000;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    .user-info {
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-    .user-info strong {
-        color: #fff;
-        font-size: 0.95rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .user-info span {
-        color: #8892b0;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* Enlaces del menú */
-    .sidebar a {
-        color: #cbd5e1 !important; 
-        border-radius: 8px;
-        margin-bottom: 0.2rem;
-        transition: all 0.3s;
-    }
-
-    /* Efecto Hover y Enlace Activo */
-    .sidebar a:hover, 
-    .sidebar a.active {
-        background: rgba(0, 210, 255, 0.15) !important; 
-        color: #00d2ff !important; 
-        border-left: 4px solid #00d2ff;
-        font-weight: 600;
-    }
-
-    /* Botón de cerrar sesión */
-    .sidebar .logout {
-        color: #ff6b6b !important;
-        margin-top: auto; /* Empuja el botón al final */
-    }
-    .sidebar .logout:hover {
-        background: rgba(255, 107, 107, 0.15) !important;
-        color: #ff4d4d !important;
-        border-left: 4px solid #ff4d4d;
-    }
-
-    /* Contenedor principal */
-    .main {
-        background: transparent !important;
-        padding: 2rem 3rem;
-        height: 100vh;
-        overflow-y: auto;
-    }
-
-    .main h2 {
-        color: #ffffff !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-    }
-
-    /* Tarjetas y contenedores */
-    .stat, .card {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
-        border: 1px solid rgba(255,255,255,0.5);
-    }
-
-    /* ⭐ ANIMACIÓN DEL NÚMERO AL ACTUALIZARSE ⭐ */
-    @keyframes flashGreen {
-        0% { background-color: transparent; }
-        30% { background-color: rgba(46, 125, 50, 0.2); }
-        100% { background-color: transparent; }
-    }
-    .actualizado {
-        animation: flashGreen 1s ease-out;
-        border-radius: 4px;
-    }
-</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -208,40 +70,16 @@ async function checkAuth() {
     }
 }
 
-let ventasAnteriores = 0;
-
 async function loadStats() {
-    try {
-        const r = await fetch('/api/admin/dashboard');
-        if (r.status === 401) return location.href = '/admin/login.html';
-        const d = await r.json();
-        
-        // Formatear el número con comas
-        const ventasFormateadas = d.ventas_aprobadas.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        document.getElementById('stats').innerHTML = `
-            <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
-            <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
-            <div class="stat">
-                <div class="num" id="stat-ventas" style="display:inline-block; padding: 0 5px;">S/ ${ventasFormateadas}</div>
-                <div class="label">Ventas aprobadas</div>
-            </div>
-            <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
-        `;
-
-        // Efecto visual si el monto aumentó
-        if (d.ventas_aprobadas > ventasAnteriores && ventasAnteriores !== 0) {
-            const elVentas = document.getElementById('stat-ventas');
-            if (elVentas) {
-                elVentas.classList.add('actualizado');
-                setTimeout(() => elVentas.classList.remove('actualizado'), 1000);
-            }
-        }
-        ventasAnteriores = d.ventas_aprobadas;
-
-    } catch (error) {
-        console.error("Error actualizando dashboard", error);
-    }
+    const r = await fetch('/api/admin/dashboard');
+    if (r.status === 401) return location.href = '/admin/login.html';
+    const d = await r.json();
+    document.getElementById('stats').innerHTML = `
+        <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
+        <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
+        <div class="stat"><div class="num">S/ ${d.ventas_aprobadas.toFixed(2)}</div><div class="label">Ventas aprobadas</div></div>
+        <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
+    `;
 }
 
 async function logout() {
@@ -249,12 +87,7 @@ async function logout() {
     location.href = '/admin/login.html';
 }
 
-// Iniciar
-checkAuth(); 
-loadStats();
-
-// ⭐ ACTUALIZAR AUTOMÁTICAMENTE CADA 10 SEGUNDOS ⭐
-setInterval(loadStats, 10000); 
+checkAuth(); loadStats();
 </script>
 </body>
 </html>

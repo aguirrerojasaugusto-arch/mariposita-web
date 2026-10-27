@@ -1,10 +1,10 @@
 /* =========================================
-   DISEÑO ADMIN - ESTILO CLÍNICA (RODRIDENT)
+   ESTILOS BASE DEL PANEL DE ADMINISTRACIÓN
    ========================================= */
 
 :root {
-    --color-primario: #0077b6; /* Azul fuerte */
-    --color-secundario: #00b4d8; /* Celeste brillante */
+    --color-primario: #0077b6;
+    --color-secundario: #00b4d8;
     --color-fondo: #e0f2f1; 
     --color-sidebar: #ffffff;
     --color-texto: #333333;
@@ -18,7 +18,6 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ⭐ FONDO GLOBAL PARA TODOS LOS PANELES ADMIN ⭐ */
 body {
     font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(rgba(11, 27, 43, 0.75), rgba(11, 27, 43, 0.75)), 
@@ -29,88 +28,12 @@ body {
     min-height: 100vh;
 }
 
-/* --- LOGIN --- */
-.login-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-    background: linear-gradient(135deg, #004a7c 0%, #00b4d8 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.login-bg-image {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: url('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80') center/cover;
-    opacity: 0.15;
-    z-index: 1;
-}
-
-.login-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.login-left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 5%;
-    color: #fff;
-}
-
-.login-left h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; }
-.login-left h1 span { font-weight: 300; }
-.login-left p { font-size: 1.1rem; max-width: 500px; line-height: 1.6; margin-bottom: 3rem; opacity: 0.9; }
-
-.login-features { display: flex; gap: 2rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 2rem; }
-.login-feature { display: flex; align-items: center; gap: 1rem; }
-.login-feature .icon { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; }
-.login-feature div { font-size: 0.9rem; }
-.login-feature strong { display: block; font-size: 1rem; }
-
-.login-right { flex: 1; display: flex; justify-content: center; align-items: center; }
-
-.login-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 20px;
-    padding: 3rem;
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-    text-align: center;
-    color: #fff;
-}
-
-.login-card img { width: 120px; margin-bottom: 1rem; }
-.login-card h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
-.login-card p { font-size: 0.9rem; opacity: 0.8; margin-bottom: 2rem; }
-
-.login-form-group { text-align: left; margin-bottom: 1.2rem; }
-.login-form-group label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; opacity: 0.8; }
-.login-form-group input { width: 100%; padding: 0.9rem 1rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; transition: all 0.3s; }
-.login-form-group input::placeholder { color: rgba(255,255,255,0.6); }
-.login-form-group input:focus { background: rgba(255,255,255,0.3); border-color: #fff; }
-
-.btn-login { width: 100%; padding: 1rem; background: #00b4d8; color: #fff; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 1rem; }
-.btn-login:hover { background: #0096c7; }
-
-.login-secure { margin-top: 2rem; font-size: 0.8rem; opacity: 0.7; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
-
 /* --- LAYOUT GENERAL --- */
 .admin-layout { display: flex; min-height: 100vh; background: transparent !important; }
+.main { flex: 1; padding: 3rem; overflow-y: auto; background: transparent !important; height: 100vh; }
+.main h2 { color: #ffffff !important; font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
-/* ⭐ SIDEBAR ESTILO GLASSMORPHISM OSCURO ⭐ */
+/* --- SIDEBAR GLASSMORPHISM --- */
 .sidebar {
     width: 260px;
     background: rgba(16, 33, 50, 0.85) !important;
@@ -126,74 +49,18 @@ body {
     position: sticky;
     top: 0;
 }
-
-.sidebar h1 {
-    font-size: 1.3rem;
-    color: #ffffff !important;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Tarjeta de Perfil en el Sidebar */
-.user-profile {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.user-avatar {
-    width: 45px;
-    height: 45px;
-    background: var(--color-secundario);
-    color: #000;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-}
+.sidebar h1 { font-size: 1.3rem; color: #ffffff !important; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.user-profile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; }
+.user-avatar { width: 45px; height: 45px; background: var(--color-secundario); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
 .user-info { display: flex; flex-direction: column; overflow: hidden; }
 .user-info strong { color: #fff; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-info span { color: #8892b0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-
-.sidebar a {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: #cbd5e1 !important;
-    padding: 0.8rem 1rem;
-    text-decoration: none;
-    border-radius: 8px;
-    margin-bottom: 0.2rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.sidebar a:hover, .sidebar a.active {
-    background: rgba(0, 210, 255, 0.15) !important;
-    color: #00d2ff !important;
-    border-left: 4px solid #00d2ff;
-    font-weight: 700;
-}
-
+.sidebar a { display: flex; align-items: center; gap: 0.75rem; color: #cbd5e1 !important; padding: 0.8rem 1rem; text-decoration: none; border-radius: 8px; margin-bottom: 0.2rem; font-size: 0.95rem; font-weight: 500; transition: all 0.3s; }
+.sidebar a:hover, .sidebar a.active { background: rgba(0, 210, 255, 0.15) !important; color: #00d2ff !important; border-left: 4px solid #00d2ff; font-weight: 700; }
 .sidebar .logout { margin-top: auto; color: #ff6b6b !important; border-left: 4px solid transparent; }
 .sidebar .logout:hover { background: rgba(255, 107, 107, 0.15) !important; color: #ff4d4d !important; border-left-color: #ff4d4d; }
 
-/* ⭐ ÁREA PRINCIPAL (Transparente) ⭐ */
-.main { flex: 1; padding: 3rem; overflow-y: auto; background: transparent !important; height: 100vh; }
-.main h2 { color: #ffffff !important; font-size: 1.8rem; margin-bottom: 1.5rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-
-/* Tarjetas y Tablas */
+/* --- TARJETAS Y TABLAS --- */
 .card { background: rgba(255, 255, 255, 0.95) !important; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(10px); }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 .stat { background: rgba(255, 255, 255, 0.95) !important; border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2); border-left: 5px solid var(--color-primario); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.5); }
@@ -205,6 +72,7 @@ th { background: #f8f9fa; color: var(--color-texto-claro); text-align: left; pad
 td { padding: 1rem; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.95rem; }
 tr:hover { background: #f8fbff; }
 
+/* --- BOTONES --- */
 .btn { padding: 0.6rem 1.2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; display: inline-block; text-decoration: none; }
 .btn-primario { background: var(--color-primario); color: #fff; }
 .btn-primario:hover { background: #005f8f; }
@@ -214,21 +82,41 @@ tr:hover { background: #f8fbff; }
 .btn-ghost { background: transparent; border: 1px solid #ccc; color: #333; }
 .btn-ghost:hover { background: #f0f0f0; }
 
+/* --- FORMULARIOS --- */
 .form-group { margin-bottom: 1.2rem; }
 .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--color-texto-claro); }
 .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; font-size: 1rem; background: #f9f9f9; transition: border 0.3s; }
 .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primario); background: #fff; }
 
+/* --- ALERTAS --- */
 .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.95rem; }
 .alert-info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #1565c0; }
 .alert-success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; }
 .alert-error { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
 
-@media (max-width: 900px) {
-    .login-content { flex-direction: column; }
-    .login-left { display: none; }
-    .login-right { width: 100%; }
-    .admin-layout { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: relative; }
-    .main { height: auto; }
-}
+/* --- ESTRUCTURA DE MODALES (SIRVE PARA TODOS LOS PANELES) --- */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+.modal-overlay.active { opacity: 1; visibility: visible; }
+.modal-content { background: #fff; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
+.modal-header h3 { margin: 0; font-size: 1.3rem; }
+.modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+.modal-close:hover { color: #ff4d4d; }
+.modal-body { padding: 2rem; overflow-y: auto; }
+.modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+
+/* --- PAGINACIÓN --- */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+.pagination button { background: var(--color-primario); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.pagination button:disabled { background: #ccc; cursor: not-allowed; }
+.pagination span { font-weight: bold; color: #333; }
+
+/* --- BUSCADOR --- */
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
+.search-box:focus { border-color: var(--color-primario); }
+
+/* --- ESTILOS ESPECÍFICOS (DASHBOARD, CONFIG, LOGIN, ETC) --- */
+/* Puedes añadir aquí los estilos particulares de cada vista si lo deseas, 
+   aunque los estilos comunes (tablas, modales, botones) ya están cubiertos. */

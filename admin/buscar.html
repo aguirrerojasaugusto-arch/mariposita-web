@@ -3,168 +3,6 @@
 <head>
 <meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
-<style>
-    .search-container {
-        position: relative;
-        max-width: 800px; 
-        margin: 2rem auto; 
-        background: rgba(255, 255, 255, 0.95);
-        padding: 3rem; 
-        border-radius: 12px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
-        display: flex;
-        flex-direction: column;
-        max-height: 85vh;
-    }
-    .search-title { font-size: 2rem; color: var(--color-primario); margin-bottom: 0.5rem; font-weight: 800; text-align: center; }
-    .search-subtitle { color: #555; margin-bottom: 2rem; font-size: 1rem; text-align: center; }
-    
-    .search-input-group {
-        display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;
-        flex-shrink: 0; 
-    }
-    .search-input-group input {
-        width: 60%; max-width: 400px; padding: 1rem; border: 2px solid #ddd;
-        border-radius: 8px; font-size: 1.2rem; outline: none; transition: border 0.3s;
-    }
-    .search-input-group input:focus { border-color: var(--color-primario); }
-    .search-input-group button {
-        padding: 1rem 2rem; background: var(--color-primario); color: #fff;
-        border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer;
-        font-weight: bold; transition: background 0.3s;
-    }
-    .search-input-group button:hover { background: #005f8f; }
-
-    .btn-cerrar-form {
-        position: absolute;
-        top: 1.5rem;
-        right: 1.5rem;
-        background: #ff4d4d;
-        color: white;
-        border: none;
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        font-size: 1.2rem;
-        font-weight: bold;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
-        transition: transform 0.2s, background 0.2s;
-    }
-    .btn-cerrar-form:hover {
-        background: #cc0000;
-        transform: scale(1.1);
-    }
-
-    .resumen-cliente {
-        background: linear-gradient(135deg, #0d253f 0%, #1a365d 100%);
-        border-radius: 10px;
-        padding: 1.2rem 1.5rem;
-        margin-bottom: 1.5rem;
-        display: none; 
-        justify-content: space-between;
-        align-items: center;
-        color: #fff;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        flex-shrink: 0; 
-    }
-    .resumen-cliente h3 { margin: 0; font-size: 1.2rem; color: #00d2ff; }
-    .resumen-cliente p { margin: 0; font-size: 0.85rem; color: #ccc; text-transform: uppercase; letter-spacing: 1px; }
-    .resumen-total { text-align: right; }
-    .resumen-total h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 900; }
-
-    #resultados {
-        flex-grow: 1;
-        overflow-y: auto;
-        padding-right: 10px; 
-        text-align: left;
-    }
-
-    #resultados::-webkit-scrollbar { width: 8px; }
-    #resultados::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-    #resultados::-webkit-scrollbar-thumb { background: #0077b6; border-radius: 4px; }
-    #resultados::-webkit-scrollbar-thumb:hover { background: #005f8f; }
-
-    .resultado-card {
-        background: #f9f9f9; border-left: 5px solid var(--color-primario);
-        padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; text-align: left;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .resultado-info { flex-grow: 1; }
-    .resultado-header {
-        display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 1px solid #ddd; padding-bottom: 0.5rem; margin-bottom: 1rem;
-    }
-    .badge-estado {
-        padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold;
-    }
-    .estado-pendiente { background: #fff3cd; color: #856404; }
-    .estado-aprobado { background: #d4edda; color: #155724; }
-    .estado-rechazado { background: #f8d7da; color: #721c24; }
-    .estado-enviado { background: #d1ecf1; color: #0c5460; }
-
-    /* ⭐ ESTILOS PARA BOTONES DE ACCIÓN ⭐ */
-    .acciones-ticket {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-left: 1rem;
-    }
-    .btn-accion {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        justify-content: center;
-    }
-    .btn-editar { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
-    .btn-editar:hover { background: #1565c0; color: #fff; }
-    .btn-eliminar { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
-    .btn-eliminar:hover { background: #c62828; color: #fff; }
-
-    /* ⭐ ESTILOS DEL MODAL FLOTANTE (EDITAR) ⭐ */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; visibility: hidden; transition: all 0.3s;
-    }
-    .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-content {
-        background: #fff; width: 90%; max-width: 450px; border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.4); overflow: hidden;
-        display: flex; flex-direction: column;
-        animation: slideUp 0.3s ease-out;
-    }
-    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
-    .modal-header h3 { margin: 0; font-size: 1.2rem; }
-    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
-    .modal-body { padding: 2rem; }
-    
-    /* Inputs del modal más bonitos */
-    .modal-body .form-group { margin-bottom: 1rem; }
-    .modal-body label { display: block; margin-bottom: 0.4rem; font-weight: bold; font-size: 0.85rem; color: #555; }
-    .modal-body input, .modal-body select {
-        width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 8px;
-        font-size: 1rem; outline: none; transition: border 0.3s; text-transform: uppercase;
-    }
-    .modal-body input:focus, .modal-body select:focus { border-color: var(--color-primario); }
-    
-    .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
-    
-</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -184,8 +22,6 @@
     
     <main class="main">
         <div class="search-container">
-            <button class="btn-cerrar-form" id="btn-limpiar" onclick="limpiarFormulario()" title="Cerrar y limpiar">&times;</button>
-
             <h2 class="search-title">Consultar mi Pedido</h2>
             <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
             
@@ -194,89 +30,13 @@
                 <button onclick="buscar()">Buscar</button>
             </div>
 
-            <div id="resumen-cliente-box" class="resumen-cliente">
-                <div>
-                    <p>Participante</p>
-                    <h3 id="resumen-nombre">-</h3>
-                </div>
-                <div class="resumen-total">
-                    <p>Total Tickets</p>
-                    <h2 id="resumen-total">0</h2>
-                </div>
-            </div>
-
             <div id="resultados"></div>
         </div>
     </main>
 </div>
 
-<!-- ⭐ MODAL FLOTANTE PARA EDITAR TICKET ⭐ -->
-<div class="modal-overlay" id="modal-editar">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Editar Ticket</h3>
-            <button class="modal-close" onclick="cerrarModalEditar()">✕</button>
-        </div>
-        <div class="modal-body">
-            <form id="form-editar">
-                <input type="hidden" id="edit-id">
-                <div class="form-group">
-                    <label>Número de Ticket</label>
-                    <input type="text" id="edit-numero" disabled style="background-color: #e9ecef; font-weight: bold; color: #333;">
-                </div>
-                <div class="form-group">
-                    <label>Nombre del Cliente</label>
-                    <input type="text" id="edit-nombre" required>
-                </div>
-                <div class="form-group">
-                    <label>DNI</label>
-                    <input type="text" id="edit-dni" maxlength="8">
-                </div>
-                <div class="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" id="edit-telefono">
-                </div>
-                <div class="form-group">
-                    <label>Departamento</label>
-                    <select id="edit-departamento">
-                        <option value="">Seleccione...</option>
-                        <option value="AMAZONAS">AMAZONAS</option>
-                        <option value="ÁNCASH">ÁNCASH</option>
-                        <option value="APURÍMAC">APURÍMAC</option>
-                        <option value="AREQUIPA">AREQUIPA</option>
-                        <option value="AYACUCHO">AYACUCHO</option>
-                        <option value="CAJAMARCA">CAJAMARCA</option>
-                        <option value="CALLAO">CALLAO</option>
-                        <option value="CUSCO">CUSCO</option>
-                        <option value="HUANCAVELICA">HUANCAVELICA</option>
-                        <option value="HUÁNUCO">HUÁNUCO</option>
-                        <option value="ICA">ICA</option>
-                        <option value="JUNÍN">JUNÍN</option>
-                        <option value="LA LIBERTAD">LA LIBERTAD</option>
-                        <option value="LAMBAYEQUE">LAMBAYEQUE</option>
-                        <option value="LIMA">LIMA</option>
-                        <option value="LORETO">LORETO</option>
-                        <option value="MADRE DE DIOS">MADRE DE DIOS</option>
-                        <option value="MOQUEGUA">MOQUEGUA</option>
-                        <option value="PASCO">PASCO</option>
-                        <option value="PIURA">PIURA</option>
-                        <option value="PUNO">PUNO</option>
-                        <option value="SAN MARTÍN">SAN MARTÍN</option>
-                        <option value="TACNA">TACNA</option>
-                        <option value="TUMBES">TUMBES</option>
-                        <option value="UCAYALI">UCAYALI</option>
-                    </select>
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-ghost" onclick="cerrarModalEditar()">Cancelar</button>
-            <button type="submit" form="form-editar" class="btn btn-primario" id="btn-guardar-edicion">Guardar Cambios</button>
-        </div>
-    </div>
-</div>
-
 <script>
+// ⭐ FUNCIÓN PARA VERIFICAR EL ROL Y OCULTAR MENÚS ⭐
 async function checkAuth() {
     try {
         const r = await fetch('/api/auth/me');
@@ -286,6 +46,7 @@ async function checkAuth() {
             return location.href = '/admin/login.html';
         }
         
+        // Si es vendedor, ocultar las opciones de administrador
         if (d.rol !== 'admin') {
             document.getElementById('nav-productos').style.display = 'none';
             document.getElementById('nav-sorteos').style.display = 'none';
@@ -303,183 +64,75 @@ async function logout() {
     location.href = '/admin/login.html';
 }
 
-function limpiarFormulario() {
-    document.getElementById('input-busqueda').value = '';
-    document.getElementById('resultados').innerHTML = '';
-    document.getElementById('resumen-cliente-box').style.display = 'none';
-    document.getElementById('btn-limpiar').style.display = 'none';
-}
-
 async function buscar() {
     const query = document.getElementById('input-busqueda').value.trim();
     const cont = document.getElementById('resultados');
-    const resumenBox = document.getElementById('resumen-cliente-box');
-    const btnLimpiar = document.getElementById('btn-limpiar');
-
-    resumenBox.style.display = 'none';
-    btnLimpiar.style.display = 'none';
-    document.getElementById('resumen-nombre').textContent = '-';
-    document.getElementById('resumen-total').textContent = '0';
 
     if (!query) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa tu DNI o Teléfono.</p>';
         return;
     }
 
-    cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold; text-align:center; margin-top:2rem;">Buscando en la base de datos...</p>';
+    cont.innerHTML = '<p style="color:var(--color-primario); font-weight:bold;">Buscando en la base de datos...</p>';
 
     try {
         const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
         const data = await res.json();
 
         if (!data.ordenes.length && !data.tickets.length) {
-            cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px; text-align:center;">No se encontraron compras ni tickets registrados con ese número.</div>';
-            btnLimpiar.style.display = 'flex';
+            cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px;">No se encontraron compras ni tickets registrados con ese número.</div>';
             return;
-        }
-
-        if (data.tickets.length > 0) {
-            const primerTicket = data.tickets[0];
-            document.getElementById('resumen-nombre').textContent = primerTicket.cliente_nombre;
-            document.getElementById('resumen-total').textContent = data.tickets.length;
-            resumenBox.style.display = 'flex'; 
         }
 
         let html = '';
 
+        // Mostrar Órdenes de Ropa
         if (data.ordenes.length > 0) {
-            html += '<h3 style="color:#333; margin: 1rem 0; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
             data.ordenes.forEach(o => {
                 const estadoClass = `estado-${o.estado}`;
                 html += `
                     <div class="resultado-card">
-                        <div class="resultado-info">
-                            <div class="resultado-header">
-                                <strong>Orden: ${o.codigo}</strong>
-                                <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
-                            </div>
-                            <p><strong>Fecha:</strong> ${o.creado_en}</p>
-                            <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
-                            <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
-                            ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
+                        <div class="resultado-header">
+                            <strong>Orden: ${o.codigo}</strong>
+                            <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
                         </div>
+                        <p><strong>Fecha:</strong> ${o.creado_en}</p>
+                        <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
+                        <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
+                        ${o.estado === 'rechazado' && o.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${o.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
         }
 
+        // Mostrar Tickets de Sorteo
         if (data.tickets.length > 0) {
-            html += '<h3 style="color:#333; margin: 1.5rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
-            
-            // Guardamos los tickets en una variable global para acceder a ellos desde el modal
-            window.ticketsTemporales = data.tickets;
-
-            data.tickets.forEach((t, index) => {
+            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
+            data.tickets.forEach(t => {
                 const estadoClass = `estado-${t.estado_pago}`;
-                
                 html += `
                     <div class="resultado-card" style="border-left-color: #ff9800;">
-                        <div class="resultado-info">
-                            <div class="resultado-header">
-                                <strong>Ticket: ${t.numero_ticket}</strong>
-                                <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
-                            </div>
-                            <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-                            <p><strong>DNI:</strong> ${t.cliente_dni || 'No registrado'}</p>
-                            <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                            ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
+                        <div class="resultado-header">
+                            <strong>Ticket: ${t.numero_ticket}</strong>
+                            <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
                         </div>
-                        <div class="acciones-ticket">
-                            <!-- ⭐ PASAMOS EL ÍNDICE DEL ARREGLO PARA EVITAR ERRORES DE CARACTERES ⭐ -->
-                            <button class="btn-accion btn-editar" onclick="abrirModalEditarPorIndex(${index})">✏️ Editar</button>
-                            <button class="btn-accion btn-eliminar" onclick="eliminarTicket('${t.id}', '${t.numero_ticket}')">🗑️ Eliminar</button>
-                        </div>
+                        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                        <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
+                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo de rechazo:</strong> ${t.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
         }
 
         cont.innerHTML = html;
-        cont.scrollTop = 0;
-        btnLimpiar.style.display = 'flex';
 
     } catch (error) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold; text-align:center;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
-        btnLimpiar.style.display = 'flex';
+        cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
 }
 
-// ⭐ FUNCIÓN PARA ABRIR EL MODAL Y RELLENAR LOS DATOS ⭐
-function abrirModalEditarPorIndex(index) {
-    const ticket = window.ticketsTemporales[index];
-    
-    document.getElementById('edit-id').value = ticket.id;
-    document.getElementById('edit-numero').value = ticket.numero_ticket;
-    document.getElementById('edit-nombre').value = ticket.cliente_nombre || '';
-    document.getElementById('edit-dni').value = ticket.cliente_dni || '';
-    document.getElementById('edit-telefono').value = ticket.cliente_telefono || '';
-    
-    // Rellenamos el departamento forzando mayúsculas
-    const depto = ticket.cliente_departamento ? ticket.cliente_departamento.toUpperCase() : '';
-    document.getElementById('edit-departamento').value = depto;
-    
-    document.getElementById('modal-editar').classList.add('active');
-}
-
-function cerrarModalEditar() {
-    document.getElementById('modal-editar').classList.remove('active');
-}
-
-// ⭐ GUARDAR CAMBIOS DESDE EL MODAL ⭐
-document.getElementById('form-editar').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btn-guardar-edicion');
-    const id = document.getElementById('edit-id').value;
-    
-    btn.disabled = true;
-    btn.textContent = 'Guardando...';
-
-    const datos = {
-        cliente_nombre: document.getElementById('edit-nombre').value,
-        cliente_dni: document.getElementById('edit-dni').value,
-        cliente_telefono: document.getElementById('edit-telefono').value,
-        cliente_departamento: document.getElementById('edit-departamento').value
-    };
-
-    fetch(`/api/admin/tickets/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-    }).then(res => {
-        if (res.ok) {
-            alert('✅ Ticket editado correctamente.');
-            cerrarModalEditar();
-            buscar(); // Recargar resultados
-        } else {
-            alert('❌ Error al editar el ticket.');
-        }
-    }).finally(() => {
-        btn.disabled = false;
-        btn.textContent = 'Guardar Cambios';
-    });
-});
-
-// ⭐ ELIMINAR TICKET ⭐
-function eliminarTicket(id, numero) {
-    if (!confirm(`⚠️ ¿Estás seguro de eliminar el Ticket ${numero}?\n\nEsta acción liberará el número en la base de datos y el cliente ya no participará.`)) return;
-
-    fetch(`/api/admin/tickets/${id}`, {
-        method: 'DELETE'
-    }).then(res => {
-        if (res.ok) {
-            alert('✅ Ticket eliminado. El número ya está libre.');
-            buscar(); // Recargar resultados
-        } else {
-            alert('❌ Error al eliminar el ticket.');
-        }
-    });
-}
-
+// Ejecutar la verificación de roles al cargar la página
 checkAuth();
 </script>
 </body>

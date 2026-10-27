@@ -1,120 +1,133 @@
-const express = require('express');
-const crypto = require('crypto');
-const { db } = require('../database');
-const { uploadComprobante } = require('../middleware/upload');
-const { esComprobanteYape } = require('../services/validarComprobante');
-const sharp = require('sharp');
-const { createWorker } = require('tesseract.js');
-const router = express.Router();
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todos los Sorteos · Mariposita</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
 
-function generarCodigoTicket() {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let resultado = '';
-    for (let i = 0; i < 6; i++) {
-        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    return `TKT-${resultado}`;
-}
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">Mariposita<span>.</span></a>
+            <div class="nav-links">
+                <a href="/">Inicio</a>
+                <a href="/productos.html">Productos</a>
+                <a href="/sorteos.html">Sorteos</a>
+                <a href="#">Blog</a>
+                <div class="header-search">
+                    <input type="text" id="input-dni" placeholder="Buscar por DNI o Teléfono..." onkeypress="if(event.key === 'Enter') buscarPedidoPublico()">
+                    <button onclick="buscarPedidoPublico()">🔍 Consultar</button>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button class="carrito-btn" onclick="location.href='/carrito.html'">
+                    🛒 Carrito (<span id="carrito-count">0</span>)
+                </button>
+            </div>
+        </nav>
+    </header>
 
-router.post('/tickets', (req, res) => {
-    uploadComprobante(req, res, async (err) => {
-        if (err) return res.status(400).json({ error: err.message });
-        if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
+    <div class="page-header">
+        <h1>Nuestros Sorteos</h1>
+        <p>Participa y gana hermosas prendas bordadas a mano.</p>
+    </div>
 
-        try {
-            const validacion = await esComprobanteYape(req.file.buffer);
-            if (!validacion.valido) return res.status(400).json({ error: validacion.error });
+    <div class="grid-sorteos" id="grid-sorteos">
+        <!-- JS carga los sorteos aquí -->
+    </div>
 
-            const { sorteo_id, nombre, telefono, dni, departamento, cantidad } = req.body;
-            
-            if (!sorteo_id || !nombre || !telefono) {
-                return res.status(400).json({ error: 'Faltan datos personales (Nombre o Teléfono)' });
-            }
+    <footer class="footer">
+        <p>© 2026 Artesanía Mariposita | Hecho con ❤️ en Huancavelica</p>
+    </footer>
 
-            const sorteoRes = await db.execute({
-                sql: "SELECT * FROM sorteos WHERE id = ? AND estado = 'activo'",
-                args: [sorteo_id]
-            });
-            const sorteo = sorteoRes.rows[0];
-            if (!sorteo) return res.status(400).json({ error: 'Sorteo no disponible' });
+    <!-- MODAL DE BÚSQUEDA (Opcional, para que funcione el buscador desde aquí) -->
+    <div class="resultado-overlay" id="resultado-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(3,19,29,0.9);z-index:3000;display:none;justify-content:center;align-items:center;">
+        <div style="background:#112240;border:2px solid var(--accent-cyan);border-radius:12px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto;padding:2rem;position:relative;">
+            <button style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;" onclick="document.getElementById('resultado-overlay').style.display='none'">✕</button>
+            <h2 style="color:#fff;margin-bottom:1rem;">Resultados</h2>
+            <div id="resultado-body" style="color:#ccc;"></div>
+        </div>
+    </div>
 
-            const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T${sorteo.hora_sorteo || '23:59'}:00`);
-            if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
+    <div id="toast" class="toast"></div>
 
-            let textoImagen = "";
+    <script>
+        async function cargarSorteos() {
             try {
-                const processedImage = await sharp(req.file.buffer)
-                    .resize(1500, null, { withoutEnlargement: true })
-                    .grayscale()
-                    .toBuffer();
-
-                const worker = await createWorker('spa');
-                const { data: { text } } = await worker.recognize(processedImage);
-                await worker.terminate();
-                textoImagen = text;
-            } catch (ocrError) {
-                return res.status(400).json({ error: 'No se pudo procesar la imagen.' });
-            }
-
-            const matchOperacion = textoImagen.match(/\b\d{6,9}\b/g);
-            let operacionDetectada = null;
-
-            if (matchOperacion && matchOperacion.length > 0) {
-                operacionDetectada = matchOperacion.sort((a, b) => b.length - a.length)[0];
-                const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [operacionDetectada] });
-                const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [operacionDetectada] });
-                if (opTicket.rows.length > 0 || opOrden.rows.length > 0) {
-                    return res.status(400).json({ error: '⚠️ Este número de operación ya fue registrado en otra compra.' });
+                const res = await fetch('/api/sorteos');
+                const sorteos = await res.json();
+                const grid = document.getElementById('grid-sorteos');
+                
+                if (!sorteos.length) {
+                    grid.innerHTML = '<p style="color:#fff; text-align:center; grid-column: 1/-1;">Pronto anunciaremos nuevos sorteos.</p>';
+                    return;
                 }
-            } else {
-                return res.status(400).json({ error: 'No se encontró el número de operación.' });
+
+                grid.innerHTML = sorteos.map(s => {
+                    const fechaSorteo = new Date(`${s.fecha_sorteo}T23:59:59`).getTime();
+                    const yaFinalizo = new Date().getTime() > fechaSorteo;
+                    
+                    const boton = yaFinalizo 
+                        ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
+                        : `<a href="/sorteo.html?id=${s.id}" class="btn-comprar">Comprar Ticket</a>`;
+
+                    return `
+                        <div class="card-sorteo">
+                            <img src="${s.imagen_base64 ? s.imagen_base64 : 'https://via.placeholder.com/300x250/112240/00d2ff?text=' + encodeURIComponent(s.nombre)}" alt="${s.nombre}">
+                            <div class="info">
+                                <h3>${s.nombre}</h3>
+                                <p>${s.descripcion || ''}</p>
+                                <div class="fecha">📅 Sorteo: ${s.fecha_sorteo}</div>
+                                <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
+                                ${boton}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error("Error al cargar sorteos:", error);
             }
-
-            // ⭐ VALIDACIÓN DE IMAGEN DUPLICADA (Usando el hash base de la imagen)
-            const hashBase = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-            const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hashBase}%`] });
-            
-            if (ticketDup.rows.length > 0) {
-                return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
-            }
-
-            // ⭐ GENERACIÓN MÚLTIPLE DE TICKETS CON HASH ÚNICO POR TICKET ⭐
-            const cantTickets = parseInt(cantidad) || 1;
-            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            const codigosGenerados = [];
-
-            for (let i = 0; i < cantTickets; i++) {
-                let numero;
-                let isUnique = false;
-                while (!isUnique) {
-                    numero = generarCodigoTicket();
-                    const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-                    if (check.rows.length === 0) isUnique = true;
-                }
-                codigosGenerados.push(numero);
-
-                // Creamos un hash único para cada ticket (hash de imagen + código de ticket)
-                // Esto permite que el constraint UNIQUE de la BD no falle al insertar el segundo ticket.
-                const hashUnico = `${hashBase}-${numero}`;
-
-                await db.execute({
-                    sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion)
-                          VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?)`,
-                    args: [sorteo_id, numero, nombre, dni || null, telefono || null, departamento || null, base64Image, hashUnico, operacionDetectada]
-                });
-            }
-
-            res.json({ 
-                success: true, 
-                codigos: codigosGenerados,
-                mensaje: `Se generaron ${cantTickets} tickets correctamente.` 
-            });
-
-        } catch (e) {
-            console.error("Error al crear ticket:", e);
-            res.status(500).json({ error: 'Error interno al guardar el ticket.' });
         }
-    });
-});
 
-module.exports = router;
+        // (Opcional) Lógica simple para el buscador en esta página
+        async function buscarPedidoPublico() {
+            const query = document.getElementById('input-dni').value.trim();
+            if (!query) return alert("Ingresa un DNI o Teléfono");
+            const overlay = document.getElementById('resultado-overlay');
+            const body = document.getElementById('resultado-body');
+            overlay.style.display = 'flex';
+            body.innerHTML = 'Buscando...';
+            try {
+                const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (!data.ordenes.length && !data.tickets.length) {
+                    body.innerHTML = '<p>No se encontraron resultados.</p>';
+                    return;
+                }
+                let html = '';
+                data.tickets.forEach(t => {
+                    html += `<div style="background:#0d253f;padding:1rem;border-radius:8px;margin-bottom:0.5rem;border-left:4px solid var(--accent-cyan);">
+                        <p><strong>Ticket: ${t.numero_ticket}</strong> (${t.estado_pago})</p>
+                        <p>Sorteo: ${t.sorteo_nombre}</p>
+                        <p>Participante: ${t.cliente_nombre}</p>
+                    </div>`;
+                });
+                body.innerHTML = html;
+            } catch (e) { body.innerHTML = 'Error al buscar.'; }
+        }
+
+        function actualizarContador() {
+            const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+            const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+            document.getElementById('carrito-count').textContent = total;
+        }
+
+        cargarSorteos();
+        actualizarContador();
+    </script>
+</body>
+</html>
