@@ -43,7 +43,6 @@ async function initDB() {
             ip TEXT,
             creado_en TEXT DEFAULT (datetime('now', 'localtime'))
         )`,
-        // ⭐ AQUÍ ESTÁ LA CORRECCIÓN: precio REAL (sin NOT NULL ni CHECK) ⭐
         `CREATE TABLE IF NOT EXISTS productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
@@ -55,6 +54,7 @@ async function initDB() {
             activo INTEGER DEFAULT 1,
             creado_en TEXT DEFAULT (datetime('now', 'localtime'))
         )`,
+        // ⭐ TABLA SORTEOS CON HORA_SORTEO INCLUIDA ⭐
         `CREATE TABLE IF NOT EXISTS sorteos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
@@ -62,6 +62,7 @@ async function initDB() {
             precio_ticket REAL NOT NULL CHECK(precio_ticket > 0),
             imagen_base64 TEXT,
             fecha_sorteo TEXT NOT NULL,
+            hora_sorteo TEXT DEFAULT '23:59',
             estado TEXT DEFAULT 'activo' CHECK(estado IN ('activo','cerrado','sorteado')),
             creado_en TEXT DEFAULT (datetime('now', 'localtime'))
         )`,
