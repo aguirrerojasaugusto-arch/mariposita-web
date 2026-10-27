@@ -95,9 +95,27 @@
         </svg>
     </a>
 
+    <!-- ⭐ MODAL DE RESULTADOS CON ENCABEZADO FIJO ⭐ -->
     <div class="resultado-overlay" id="resultado-overlay">
         <div class="resultado-content">
-            <div class="resultado-header"><h2>Resultados</h2><button class="resultado-close" onclick="cerrarResultado()">✕</button></div>
+            <div class="resultado-header">
+                <h2>Resultados</h2>
+                <button class="resultado-close" onclick="cerrarResultado()">✕</button>
+            </div>
+            
+            <!-- ⭐ RESUMEN FIJO (NOMBRE Y TOTAL) ⭐ -->
+            <div class="resumen-cliente-fijo" id="resumen-cliente-fijo" style="display: none;">
+                <div class="info">
+                    <h4>Participante</h4>
+                    <h3 id="resumen-nombre-cliente">-</h3>
+                </div>
+                <div class="total-box-resumen">
+                    <h4>Total Tickets</h4>
+                    <h2 id="resumen-total-tickets">0</h2>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR CON SCROLL PARA LOS TICKETS -->
             <div class="resultado-body" id="resultado-body"></div>
         </div>
     </div>
@@ -231,28 +249,21 @@
 
                 document.getElementById('year').textContent = new Date().getFullYear();
 
-                // ⭐ LÓGICA DEL FLYER: Mostrar si existe ⭐
+                // ⭐ LÓGICA DEL FLYER: Mostrar si existe al cargar la página ⭐
                 if (config.flyer_inicio) {
-                    // Opcional: Usar sessionStorage para no molestar al usuario si recarga la página a cada rato
-                    if (!sessionStorage.getItem('flyer_cerrado')) {
-                        document.getElementById('flyer-img').src = config.flyer_inicio;
-                        document.getElementById('flyer-modal').classList.add('active');
-                        
-                        // Desaparecer automáticamente después de 5 segundos
-                        setTimeout(() => {
-                            cerrarFlyer();
-                        }, 5000); 
-                    }
+                    document.getElementById('flyer-img').src = config.flyer_inicio;
+                    document.getElementById('flyer-modal').classList.add('active');
+                    
+                    setTimeout(() => {
+                        cerrarFlyer();
+                    }, 5000); 
                 }
 
             } catch (e) { console.error("Error al cargar config", e); }
         }
 
-        // ⭐ FUNCIÓN PARA CERRAR EL FLYER ⭐
         function cerrarFlyer() {
             document.getElementById('flyer-modal').classList.remove('active');
-            // Guardamos en sesión que ya lo vio para no mostrarlo si recarga en esta misma sesión
-            sessionStorage.setItem('flyer_cerrado', 'true');
         }
 
         async function initHeroSorteos() {
@@ -859,7 +870,13 @@
             }
 
             const body = document.getElementById('resultado-body');
-            body.innerHTML = '<p style="color:#00d2ff; text-align:center;">Buscando en la base de datos...</p>';
+            const resumenBox = document.getElementById('resumen-cliente-fijo');
+            const resumenNombre = document.getElementById('resumen-nombre-cliente');
+            const resumenTotal = document.getElementById('resumen-total-tickets');
+
+            resumenBox.style.display = 'none'; // Ocultar por defecto hasta tener datos
+            body.innerHTML = '<p style="color:#00d2ff; text-align:center; padding-top:2rem;">Buscando en la base de datos...</p>';
+            
             document.getElementById('resultado-overlay').classList.add('active');
             bloquearScroll();
 
@@ -882,6 +899,14 @@
                         </div>
                     `;
                     return;
+                }
+
+                // ⭐ ACTUALIZAMOS EL ENCABEZADO FIJO CON LOS DATOS ⭐
+                if (data.tickets.length > 0) {
+                    const primerTicket = data.tickets[0];
+                    resumenNombre.textContent = primerTicket.cliente_nombre;
+                    resumenTotal.textContent = data.tickets.length;
+                    resumenBox.style.display = 'flex'; // Mostramos el encabezado
                 }
 
                 let html = '';
@@ -921,16 +946,19 @@
                 }
                 
                 body.innerHTML = html;
+                body.scrollTop = 0;
 
             } catch (error) {
                 console.error("Error al buscar:", error);
-                body.innerHTML = '<p style="color:#ff4d4d; text-align:center;">Error al conectar con el servidor. Intenta más tarde.</p>';
+                body.innerHTML = '<p style="color:#ff4d4d; text-align:center; padding-top:2rem;">Error al conectar con el servidor. Intenta más tarde.</p>';
             }
         }
 
         function cerrarResultado() {
             document.getElementById('resultado-overlay').classList.remove('active');
             document.getElementById('input-dni').value = '';
+            document.getElementById('resumen-cliente-fijo').style.display = 'none';
+            document.getElementById('resultado-body').innerHTML = '';
             
             if(!document.getElementById('ticket-modal').classList.contains('active') && !document.getElementById('sorteos-modal').classList.contains('active')) {
                 desbloquearScroll();
