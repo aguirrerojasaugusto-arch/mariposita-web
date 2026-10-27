@@ -137,7 +137,7 @@ tr:hover { background: #f8fbff; }
 .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
 
 /* ⭐ ESTILOS ESPECÍFICOS DE CONFIGURACIÓN ⭐ */
-.config-modal { background: #ffffff; width: 95%; max-width: 1100px; max-height: 90vh; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.4s ease-out; margin: 2rem auto; }
+.config-modal { background: #ffffff; width: 95%; max-width: 950px; max-height: 90vh; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.4s ease-out; margin: 2rem auto; }
 .config-header { padding: 1.5rem 2rem; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 .config-header h2 { margin: 0; color: var(--color-primario, #0077b6); font-size: 1.5rem; }
 .config-header .btn-cerrar { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; transition: color 0.3s; }
@@ -147,28 +147,58 @@ tr:hover { background: #f8fbff; }
 .config-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 .config-section h3 { color: var(--color-primario, #0077b6); margin-bottom: 1rem; font-size: 1.1rem; }
 
-/* ⭐ GRID DE IMÁGENES CORREGIDO PARA 3 COLUMNAS EN UNA FILA ⭐ */
+/* ⭐ GRID DE IMÁGENES CORREGIDO Y COMPACTO ⭐ */
 .image-grid { 
     display: grid; 
-    grid-template-columns: repeat(3, 1fr); /* Fuerza 3 columnas exactas */
-    gap: 1.5rem; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 1rem; 
 }
-/* Si la pantalla es pequeña, se ajusta a menos columnas */
+
+.image-box { 
+    display: flex; 
+    flex-direction: column; 
+    background: #f9f9f9; 
+    border: 1px solid #eee; 
+    border-radius: 10px; 
+    padding: 1rem; /* Padding reducido */
+}
+.image-box h4 { margin-bottom: 0.8rem; color: #333; font-size: 0.9rem; text-align: center; }
+
+/* Cajas de previsualización más pequeñas */
+.preview-box { 
+    width: 100%; 
+    height: 110px; /* Altura reducida */
+    border: 2px dashed #ccc; 
+    border-radius: 8px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin-bottom: 1rem; 
+    overflow: hidden; 
+    background: #fff; 
+    background-size: cover; 
+    background-position: center; 
+}
+
+/* Logo circular más pequeño */
+.preview-box.logo { 
+    border-radius: 50%; 
+    width: 110px; 
+    height: 110px; 
+    margin: 0 auto 1rem auto; 
+}
+
+.preview-box img { width: 100%; height: 100%; object-fit: contain; }
+
+.file-input-group { display: flex; flex-direction: column; gap: 0.5rem; margin-top: auto; }
+.file-input-group input[type="file"] { width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.75rem; background: #fff; cursor: pointer; }
+.file-input-group input[type="file"]::file-selector-button { background: #e3f2fd; color: #1565c0; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; margin-right: 8px; font-size: 0.75rem; transition: background 0.3s; }
+.file-input-group input[type="file"]::file-selector-button:hover { background: #bbdefb; }
+.file-input-group button { width: 100%; padding: 0.5rem; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
+
 @media (max-width: 900px) {
     .image-grid { grid-template-columns: 1fr; }
 }
-
-.image-box { display: flex; flex-direction: column; background: #f9f9f9; border: 1px solid #eee; border-radius: 12px; padding: 1.5rem; }
-.image-box h4 { margin-bottom: 1rem; color: #333; font-size: 1rem; text-align: center; }
-
-.preview-box { width: 100%; height: 160px; border: 2px dashed #ccc; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-bottom: 1.5rem; overflow: hidden; background: #fff; background-size: cover; background-position: center; }
-.preview-box.logo { border-radius: 50%; width: 160px; height: 160px; margin: 0 auto 1.5rem auto; }
-.preview-box img { width: 100%; height: 100%; object-fit: contain; }
-.file-input-group { display: flex; flex-direction: column; gap: 0.8rem; margin-top: auto; }
-.file-input-group input[type="file"] { width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; background: #fff; cursor: pointer; }
-.file-input-group input[type="file"]::file-selector-button { background: #e3f2fd; color: #1565c0; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-weight: 600; margin-right: 10px; transition: background 0.3s; }
-.file-input-group input[type="file"]::file-selector-button:hover { background: #bbdefb; }
-.file-input-group button { width: 100%; padding: 0.7rem; border-radius: 6px; font-weight: bold; font-size: 0.95rem; }
 
 /* ⭐ ESTILOS ESPECÍFICOS DE BUSCAR CLIENTE ⭐ */
 .search-container { position: relative; max-width: 800px; margin: 2rem auto; background: rgba(255, 255, 255, 0.95); padding: 3rem; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); display: flex; flex-direction: column; max-height: 85vh; }
