@@ -59,7 +59,7 @@ body {
 /* --- LAYOUT GENERAL --- */
 .admin-layout { display: flex; min-height: 100vh; background: transparent !important; }
 
-/* ⭐ SIDEBAR ESTILO GLASSMORPHISM OSCURO ⭐ */
+/* ⭐ SIDEBAR ESTILO GLASSMORPHISM OSCURO (SCROLL INTERNO) ⭐ */
 .sidebar {
     width: 260px;
     background: rgba(16, 33, 50, 0.85) !important;
@@ -74,14 +74,63 @@ body {
     height: 100vh;
     position: sticky;
     top: 0;
+    overflow-y: auto; /* Permite scroll interno si hay muchos enlaces */
 }
-.sidebar h1 { font-size: 1.3rem; color: #ffffff !important; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.user-profile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; }
+
+/* Personalización de la barra de scroll del sidebar para que sea discreta */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+/* ⭐ FIJA EL LOGO Y EL PERFIL ARRIBA ⭐ */
+.sidebar h1, .user-profile {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(16, 33, 50, 0.95) !important; /* Fondo sólido para que el texto no se mezcle al hacer scroll */
+}
+
+.sidebar h1 { 
+    font-size: 1.3rem; 
+    color: #ffffff !important; 
+    margin-bottom: 1rem; 
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem; 
+    padding-bottom: 1rem; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+}
+
+.user-profile { 
+    background: rgba(255, 255, 255, 0.05); 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 10px; 
+    padding: 1rem; 
+    margin-bottom: 1.5rem; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+}
+
 .user-avatar { width: 45px; height: 45px; background: var(--color-secundario); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
 .user-info { display: flex; flex-direction: column; overflow: hidden; }
 .user-info strong { color: #fff; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-info span { color: #8892b0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-.sidebar a { display: flex; align-items: center; gap: 0.75rem; color: #cbd5e1 !important; padding: 0.8rem 1rem; text-decoration: none; border-radius: 8px; margin-bottom: 0.2rem; font-size: 0.95rem; font-weight: 500; transition: all 0.3s; }
+
+.sidebar a { 
+    display: flex; 
+    align-items: center; 
+    gap: 0.75rem; 
+    color: #cbd5e1 !important; 
+    padding: 0.8rem 1rem; 
+    text-decoration: none; 
+    border-radius: 8px; 
+    margin-bottom: 0.2rem; 
+    font-size: 0.95rem; 
+    font-weight: 500; 
+    transition: all 0.3s; 
+}
 .sidebar a:hover, .sidebar a.active { background: rgba(0, 210, 255, 0.15) !important; color: #00d2ff !important; border-left: 4px solid #00d2ff; font-weight: 700; }
 .sidebar .logout { margin-top: auto; color: #ff6b6b !important; border-left: 4px solid transparent; }
 .sidebar .logout:hover { background: rgba(255, 107, 107, 0.15) !important; color: #ff4d4d !important; border-left-color: #ff4d4d; }
@@ -137,7 +186,6 @@ tr:hover { background: #f8fbff; }
 .modal-footer { padding: 1.5rem 2rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
 
 /* ⭐ ESTILOS ESPECÍFICOS DE CONFIGURACIÓN ⭐ */
-/* Se redujo el ancho máximo a 570px (aprox 40% menos de 950px) */
 .config-modal { background: #ffffff; width: 95%; max-width: 570px; max-height: 90vh; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.4s ease-out; margin: 2rem auto; }
 .config-header { padding: 1.5rem 2rem; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 .config-header h2 { margin: 0; color: var(--color-primario, #0077b6); font-size: 1.5rem; }
@@ -148,49 +196,12 @@ tr:hover { background: #f8fbff; }
 .config-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 .config-section h3 { color: var(--color-primario, #0077b6); margin-bottom: 1rem; font-size: 1.1rem; }
 
-/* ⭐ GRID DE IMÁGENES CORREGIDO Y COMPACTO ⭐ */
-.image-grid { 
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 0.8rem; /* Reducido el espacio entre columnas */
-}
-
-.image-box { 
-    display: flex; 
-    flex-direction: column; 
-    background: #f9f9f9; 
-    border: 1px solid #eee; 
-    border-radius: 10px; 
-    padding: 0.8rem; /* Padding reducido */
-}
+.image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
+.image-box { display: flex; flex-direction: column; background: #f9f9f9; border: 1px solid #eee; border-radius: 10px; padding: 0.8rem; }
 .image-box h4 { margin-bottom: 0.5rem; color: #333; font-size: 0.8rem; text-align: center; }
-
-/* Cajas de previsualización más pequeñas */
-.preview-box { 
-    width: 100%; 
-    height: 90px; /* Altura reducida */
-    border: 2px dashed #ccc; 
-    border-radius: 8px; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    margin-bottom: 0.8rem; 
-    overflow: hidden; 
-    background: #fff; 
-    background-size: cover; 
-    background-position: center; 
-}
-
-/* Logo circular más pequeño */
-.preview-box.logo { 
-    border-radius: 50%; 
-    width: 90px; 
-    height: 90px; 
-    margin: 0 auto 0.8rem auto; 
-}
-
+.preview-box { width: 100%; height: 90px; border: 2px dashed #ccc; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.8rem; overflow: hidden; background: #fff; background-size: cover; background-position: center; }
+.preview-box.logo { border-radius: 50%; width: 90px; height: 90px; margin: 0 auto 0.8rem auto; }
 .preview-box img { width: 100%; height: 100%; object-fit: contain; }
-
 .file-input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-top: auto; }
 .file-input-group input[type="file"] { width: 100%; padding: 0.3rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.7rem; background: #fff; cursor: pointer; }
 .file-input-group input[type="file"]::file-selector-button { background: #e3f2fd; color: #1565c0; border: none; padding: 0.2rem 0.4rem; border-radius: 4px; cursor: pointer; font-weight: 600; margin-right: 5px; font-size: 0.7rem; transition: background 0.3s; }
