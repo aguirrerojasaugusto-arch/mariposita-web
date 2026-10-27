@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
 const { uploadProducto } = require('../middleware/upload');
@@ -14,6 +13,7 @@ const uploadConfig = multer({
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
 
+// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
 function generarCodigoTicket() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let resultado = '';
@@ -23,15 +23,6 @@ function generarCodigoTicket() {
     return `TKT-${resultado}`;
 }
 
-// ⭐ FUNCIÓN ESTRICTA PARA LA HORA ⭐
-function formatearHora(horaRaw, horaAnterior = '23:59') {
-    if (!horaRaw || horaRaw === 'undefined' || horaRaw === 'null') return horaAnterior;
-    let h = String(horaRaw).trim();
-    if (h.length > 5) h = h.substring(0, 5);
-    if (/^([01]\d|2[0-3]):([0-5]\d)$/.test(h)) return h;
-    return horaAnterior;
-}
-
 // ============ DASHBOARD ============
 router.get('/dashboard', async (req, res) => {
     try {
@@ -39,7 +30,12 @@ router.get('/dashboard', async (req, res) => {
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
         const va = await db.execute("SELECT COALESCE(SUM(total),0) as t FROM ordenes WHERE estado='aprobado'");
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
-        res.json({ ordenes_pendientes: op.rows[0].c, tickets_pendientes: tp.rows[0].c, ventas_aprobadas: va.rows[0].t, total_ordenes: to.rows[0].c });
+        res.json({ 
+            ordenes_pendientes: op.rows[0].c, 
+            tickets_pendientes: tp.rows[0].c, 
+            ventas_aprobadas: va.rows[0].t, 
+            total_ordenes: to.rows[0].c 
+        });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -57,7 +53,10 @@ router.post('/configuracion', requireAdmin, async (req, res) => {
     const data = req.body || {};
     try {
         for (const [k, v] of Object.entries(data)) {
-            await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [k, String(v)] });
+            await db.execute({
+                sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
+                args: [k, String(v)]
+            });
         }
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -71,8 +70,11 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
 
         try {
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-            const clave = tipo === 'logo' ? 'logo_admin' : (tipo === 'fondo' ? 'fondo_login' : 'flyer_inicio');
-            await db.execute({ sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, base64Image] });
+            const clave = tipo === 'logo' ? 'logo_admin' : 'fondo_login';
+            await db.execute({
+                sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
+                args: [clave, base64Image]
+            });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) {
             res.status(500).json({ error: 'Error al guardar en la base de datos' });
@@ -105,11 +107,16 @@ router.get('/ordenes/:id', async (req, res) => {
         const ordRes = await db.execute({ sql: 'SELECT * FROM ordenes WHERE id = ?', args: [req.params.id] });
         const orden = ordRes.rows[0];
         if (!orden) return res.status(404).json({ error: 'No encontrada' });
-        const itemsRes = await db.execute({ sql: `SELECT oi.*, p.nombre, p.imagen_base64 FROM orden_items oi JOIN productos p ON p.id = oi.producto_id WHERE oi.orden_id = ?`, args: [orden.id] });
+        
+        const itemsRes = await db.execute({
+            sql: `SELECT oi.*, p.nombre, p.imagen_base64 FROM orden_items oi JOIN productos p ON p.id = oi.producto_id WHERE oi.orden_id = ?`,
+            args: [orden.id]
+        });
         res.json({ ...orden, items: itemsRes.rows });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR ÓRDENES ⭐
 router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -121,6 +128,7 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
         if (orden.estado !== 'pendiente') return res.status(400).json({ error: 'Ya fue revisada' });
 
         const nuevoEstado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
+        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
         const queries = [
             { sql: 'UPDATE ordenes SET estado = ?, notas_admin = ? WHERE id = ?', args: [nuevoEstado, notas || null, orden.id] }
@@ -133,7 +141,7 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
             }
         }
 
-        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip] });
+        queries.push({ sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_ORDEN`, `Orden ${orden.codigo}`, req.ip, ahora] });
 
         await db.batch(queries, "write");
         res.json({ success: true, nuevo_estado: nuevoEstado });
@@ -160,6 +168,7 @@ router.get('/tickets/pendientes', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA PARA OBTENER TICKETS APROBADOS (Para imprimir) ⭐
 router.get('/tickets/aprobados', async (req, res) => {
     try {
         const result = await db.execute(`
@@ -173,6 +182,7 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ SOLO ADMIN PUEDE APROBAR/RECHAZAR TICKETS ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -184,16 +194,18 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         if (t.estado_pago !== 'pendiente') return res.status(400).json({ error: 'Ya fue revisado' });
 
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
+        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
         await db.batch([
             { sql: 'UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?', args: [nuevo, notas || t.notas_admin || null, t.id] },
-            { sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))', args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket ${t.numero_ticket}`, req.ip] }
+            { sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket ${t.numero_ticket}`, req.ip, ahora] }
         ], "write");
 
         res.json({ success: true, nuevo_estado: nuevo });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA DE VENTA PRESENCIAL (ACCESIBLE PARA VENDEDORES Y ADMINS) ⭐
 router.post('/tickets/vender', async (req, res) => {
     const { sorteo_id, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad } = req.body;
     
@@ -207,32 +219,28 @@ router.post('/tickets/vender', async (req, res) => {
         if (!sorteo) return res.status(404).json({ error: 'Sorteo no encontrado' });
 
         const cantTickets = parseInt(cantidad) || 1;
-        const codigosGenerados = [];
-        const hashBase = crypto.randomBytes(16).toString('hex');
-
-        for (let i = 0; i < cantTickets; i++) {
-            let numero;
-            let isUnique = false;
-            while (!isUnique) {
-                numero = generarCodigoTicket();
-                const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
-                if (check.rows.length === 0) isUnique = true;
-            }
-            codigosGenerados.push(numero);
-
-            await db.execute({
-                sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
-                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
-                args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, `${hashBase}-${numero}`]
-            });
+        
+        let numero;
+        let isUnique = false;
+        while (!isUnique) {
+            numero = generarCodigoTicket();
+            const check = await db.execute({ sql: 'SELECT id FROM tickets WHERE numero_ticket = ?', args: [numero] });
+            if (check.rows.length === 0) isUnique = true;
         }
 
         await db.execute({
-            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, datetime(\'now\', \'localtime\'))',
-            args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip]
+            sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'))`,
+            args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, cantTickets]
         });
 
-        res.json({ success: true, codigos: codigosGenerados, mensaje: 'Venta registrada correctamente' });
+        const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        await db.execute({
+            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)',
+            args: [req.user.userId, 'VENTA_PRESENCIAL', `Vendió ${cantTickets} ticket(s) a ${cliente_nombre}`, req.ip, ahora]
+        });
+
+        res.json({ success: true, numero_ticket: numero, mensaje: 'Venta registrada correctamente' });
     } catch (e) { 
         console.error(e);
         res.status(500).json({ error: e.message }); 
@@ -251,7 +259,6 @@ router.post('/productos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria } = req.body;
-        // Guardamos la ruta del archivo en la base de datos
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
         try {
@@ -305,17 +312,15 @@ router.post('/sorteos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
-        
-        // Guardamos la ruta del archivo en la base de datos
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
-        
-        // Formateamos la hora
-        const horaFormateada = formatearHora(hora_sorteo, '23:59');
+
+        // Aseguramos que la hora se guarde correctamente (HH:MM)
+        const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
 
         try {
             const r = await db.execute({
                 sql: `INSERT INTO sorteos (nombre, descripcion, precio_ticket, imagen_base64, fecha_sorteo, hora_sorteo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, horaFormateada, estado || 'activo']
+                args: [nombre, descripcion || null, parseFloat(precio_ticket), imagen_path, fecha_sorteo, horaFinal, estado || 'activo']
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -335,11 +340,12 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             let imagen_path = s.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
-            const horaFormateada = formatearHora(hora_sorteo, s.hora_sorteo);
+            // Aseguramos que la hora se guarde correctamente (HH:MM)
+            const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
 
             await db.execute({
                 sql: `UPDATE sorteos SET nombre=?, descripcion=?, precio_ticket=?, imagen_base64=?, fecha_sorteo=?, hora_sorteo=?, estado=? WHERE id=?`,
-                args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_path, fecha_sorteo || s.fecha_sorteo, horaFormateada, estado || s.estado, s.id]
+                args: [nombre || s.nombre, descripcion ?? s.descripcion, precio_ticket ? parseFloat(precio_ticket) : s.precio_ticket, imagen_path, fecha_sorteo || s.fecha_sorteo, horaFinal, estado || s.estado, s.id]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
@@ -376,7 +382,9 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
+            // ⭐ AQUÍ ESTABA EL ERROR: AHORA GUARDAMOS LA RUTA EXACTA ⭐
             const imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
                 args: [imagen_path, count]
