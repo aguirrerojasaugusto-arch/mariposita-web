@@ -94,7 +94,6 @@
         .sorteos-track { display: flex; gap: 1.2rem; transition: transform 0.4s; }
         .card-sorteo-carrusel { background: #0d253f; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; flex-direction: column; width: 280px; min-width: 280px; flex-shrink: 0; }
         
-        /* ⭐ CORRECCIÓN DE LA IMAGEN EN SORTEOS ⭐ */
         .card-sorteo-carrusel .img-wrapper { width: 100%; height: 150px; overflow: hidden; position: relative; background: #000; }
         .card-sorteo-carrusel .img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
         
@@ -1065,7 +1064,8 @@
                                 </div>
                                 <div class="ticket-number-box">
                                     <p>TICKET #</p>
-                                    <h1>${data.numero_ticket.replace('TKT-', '')}</h1>
+                                    <!-- ⭐ AQUÍ SE MUESTRA EL NÚMERO SIN TKT- ⭐ -->
+                                    <h1>${data.numero_ticket}</h1>
                                 </div>
                                 <div class="ticket-details-row">
                                     <div class="ticket-detail-item">
@@ -1093,8 +1093,6 @@
                             </div>
                         </div>
                     `;
-                    
-                    // ⭐ SE HA ELIMINADO EL SETTIMEOUT DE RECARGA AUTOMÁTICA AQUÍ ⭐
 
                 } catch (error) {
                     alert("⚠️ Error: " + error.message); 
@@ -1108,13 +1106,7 @@
             document.getElementById('ticket-modal').classList.add('active'); bloquearScroll();
         }
 
-        function cerrarModalTicket() { 
-            document.getElementById('ticket-modal').classList.remove('active'); 
-            if(!document.getElementById('sorteos-modal').classList.contains('active')) {
-                desbloquearScroll();
-            } 
-        }
-        
+        function cerrarModalTicket() { document.getElementById('ticket-modal').classList.remove('active'); if(!document.getElementById('sorteos-modal').classList.contains('active')) desbloquearScroll(); }
         function actualizarTotalModal() { const cant = parseInt(document.getElementById('cantidad-tickets').value); document.getElementById('total-display').textContent = `S/ ${(sorteoActivo.precio_ticket * cant).toFixed(2)}`; }
 
         async function buscarPedidoPublico() {

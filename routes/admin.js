@@ -19,13 +19,11 @@ const uploadCarruselMemory = multer({
     limits: { fileSize: 10 * 1024 * 1024 }
 }).single('imagen');
 
+// ⭐ GENERADOR DE TICKET NUMÉRICO ALEATORIO (Desde 10000 en adelante) ⭐
 function generarCodigoTicket() {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let resultado = '';
-    for (let i = 0; i < 6; i++) {
-        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    return `TKT-${resultado}`;
+    // Genera un número aleatorio entre 10000 y 99999
+    const numero = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
+    return String(numero);
 }
 
 // ============ DASHBOARD ============
@@ -153,8 +151,10 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
 });
 
 // ============ TICKETS ============
+// ⭐ RUTA CORREGIDA PARA QUE APAREZCAN LOS TICKETS ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
+        // Consulta agrupada corregida
         const result = await db.execute(`
             SELECT 
                 SUBSTR(t.hash_comprobante, 1, INSTR(t.hash_comprobante, '-') - 1) as grupo_id,
@@ -175,7 +175,7 @@ router.get('/tickets/pendientes', async (req, res) => {
             FROM tickets t
             JOIN sorteos s ON s.id = t.sorteo_id
             WHERE t.estado_pago = 'pendiente'
-            GROUP BY grupo_id, t.sorteo_id
+            GROUP BY t.hash_comprobante, t.sorteo_id
             ORDER BY creado_en DESC
         `);
         
@@ -185,7 +185,10 @@ router.get('/tickets/pendientes', async (req, res) => {
             alerta_ocr: !!t.ocr_error,
             notas_admin: t.notas_admin
         })));
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { 
+        console.error("Error en tickets pendientes:", e);
+        res.status(500).json({ error: e.message }); 
+    }
 });
 
 router.get('/tickets/aprobados', async (req, res) => {
@@ -452,5 +455,4 @@ router.delete('/carrusel/:id', requireAdmin, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ EXPORTACIÓN DEL ROUTER (Evita el error de Router.use en Render) ⭐
 module.exports = router;

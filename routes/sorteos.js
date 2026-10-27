@@ -7,14 +7,10 @@ const sharp = require('sharp');
 const { createWorker } = require('tesseract.js');
 const router = express.Router();
 
-// ⭐ FUNCIÓN PARA GENERAR CÓDIGO ALEATORIO ⭐
+// ⭐ FUNCIÓN PARA GENERAR CÓDIGO NUMÉRICO ALEATORIO (Desde 10000 en adelante) ⭐
 function generarCodigoTicket() {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let resultado = '';
-    for (let i = 0; i < 6; i++) {
-        resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-    }
-    return `TKT-${resultado}`;
+    const numero = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000;
+    return String(numero);
 }
 
 router.post('/tickets', (req, res) => {
