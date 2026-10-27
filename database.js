@@ -43,11 +43,12 @@ async function initDB() {
             ip TEXT,
             creado_en TEXT DEFAULT (datetime('now', 'localtime'))
         )`,
+        // ⭐ AQUÍ ESTÁ EL CAMBIO: precio REAL (sin NOT NULL ni CHECK) ⭐
         `CREATE TABLE IF NOT EXISTS productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             descripcion TEXT,
-            precio REAL NOT NULL CHECK(precio > 0),
+            precio REAL,
             stock INTEGER NOT NULL DEFAULT 0 CHECK(stock >= 0),
             imagen_base64 TEXT,
             categoria TEXT DEFAULT 'ropa_tipica',
