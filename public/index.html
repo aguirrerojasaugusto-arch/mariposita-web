@@ -160,7 +160,8 @@
         let indiceSorteoModal = 0;
         let indiceHero = 0;
         let intervaloSorteos;
-        let intervaloContador; // ⭐ VARIABLE PARA EL CONTADOR ⭐
+        let intervaloContadorHero;
+        let intervalosContadoresModales = []; // Para limpiar los contadores del modal
 
         let todosLosProductos = [];
         let productosFiltrados = [];
@@ -243,10 +244,8 @@
         function renderHeroContent(index) {
             const sorteo = sorteosGlobal[index];
             
-            // Limpiamos el intervalo anterior si existía
-            if(intervaloContador) clearInterval(intervaloContador);
+            if(intervaloContadorHero) clearInterval(intervaloContadorHero);
 
-            // Formateamos la hora para que se vea bien (HH:MM)
             const horaMostrar = sorteo.hora_sorteo ? sorteo.hora_sorteo.substring(0, 5) : '23:59';
 
             document.getElementById('hero-info').innerHTML = `
@@ -254,7 +253,6 @@
                 <h1 class="hero-titulo-fijo" style="margin-top: 0.5rem;">${sorteo.nombre}</h1>
                 <p class="hero-desc-fija">${sorteo.descripcion || 'Participa por esta hermosa prenda.'}</p>
                 
-                <!-- ⭐ AQUÍ INYECTAMOS EL CONTADOR ⭐ -->
                 <div class="contador-tiempo" id="contador-tiempo">
                     <div class="contador-bloque"><span id="cd-dias">00</span><small>Días</small></div>
                     <div class="contador-bloque"><span id="cd-horas">00</span><small>Hrs</small></div>
@@ -271,20 +269,18 @@
                 document.getElementById('hero-imagen-container').innerHTML = `<div style="width:100%; height:100%; background:#0a192f; display:flex; justify-content:center; align-items:center; color:#8892b0; border-radius:12px;">Sin imagen</div>`;
             }
 
-            // Iniciamos el contador con la fecha exacta
-            iniciarContador(sorteo.fecha_sorteo, horaMostrar);
+            iniciarContadorHero(sorteo.fecha_sorteo, horaMostrar);
         }
 
-        // ⭐ FUNCIÓN DEL CONTADOR CON ZONA HORARIA PERÚ (-05:00) ⭐
-        function iniciarContador(fechaStr, horaStr) {
+        function iniciarContadorHero(fechaStr, horaStr) {
             const fechaObjetivo = new Date(`${fechaStr}T${horaStr}:00-05:00`).getTime();
 
-            intervaloContador = setInterval(() => {
+            intervaloContadorHero = setInterval(() => {
                 const ahora = new Date().getTime();
                 const distancia = fechaObjetivo - ahora;
 
                 if (distancia < 0) {
-                    clearInterval(intervaloContador);
+                    clearInterval(intervaloContadorHero);
                     const ids = ['cd-dias', 'cd-horas', 'cd-minutos', 'cd-segundos'];
                     ids.forEach(id => {
                         const el = document.getElementById(id);
@@ -474,8 +470,13 @@
             const btnPrev = document.getElementById('btn-prev-sorteo');
             const btnNext = document.getElementById('btn-next-sorteo');
 
+            // Limpiamos los intervalos anteriores si existían
+            intervalosContadoresModales.forEach(clearInterval);
+            intervalosContadoresModales = [];
+
             track.innerHTML = sorteosGlobal.map(s => {
-                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${s.hora_sorteo || '23:59'}:00-05:00`).getTime();
+                const horaFormateada = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
+                const fechaHoraSorteo = new Date(`${s.fecha_sorteo}T${horaFormateada}:00-05:00`).getTime();
                 const ahora = new Date().getTime();
                 const yaFinalizo = ahora > fechaHoraSorteo;
                 
@@ -483,22 +484,72 @@
                     ? `<div class="btn-finalizado">Sorteo Finalizado</div>`
                     : `<button class="btn-comprar" onclick="window.abrirModalTicket(${s.id})">Comprar Ticket</button>`;
 
+                const idDias = `cd-dias-${s.id}`;
+                const idHoras = `cd-horas-${s.id}`;
+                const idMinutos = `cd-minutos-${s.id}`;
+                const idSegundos = `cd-segundos-${s.id}`;
+
                 return `
                     <div class="card-sorteo-carrusel">
                         <div class="img-wrapper">
                             <img src="${s.imagen_base64 || 'https://via.placeholder.com/300x150'}">
                         </div>
                         <div class="info">
-                            <h3>${s.nombre}</h3>
+                            <h3 title="${s.nombre}">${s.nombre}</h3>
                             <div class="precio">S/ ${s.precio_ticket.toFixed(2)}</div>
-                            <div style="font-size: 0.75rem; color: #8892b0; margin-bottom: 0.5rem;">
-                                📅 ${s.fecha_sorteo} - ⏰ ${s.hora_sorteo || '23:59'}
+                            
+                            <div style="font-size: 0.75rem; color: #fff; font-weight: bold; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; display: inline-block; border-left: 3px solid #00d2ff;">
+                                📅 ${s.fecha_sorteo} - ⏰ ${horaFormateada}
                             </div>
+
+                            <!-- ⭐ AQUÍ AGREGAMOS LOS CONTADORES EN EL MODAL ⭐ -->
+                            <div class="contador-tiempo" style="margin-top: 0; margin-bottom: 10px; gap: 3px;" data-fecha="${s.fecha_sorteo}T${horaFormateada}:00-05:00">
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idDias}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Días</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idHoras}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Hrs</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idMinutos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Min</small></div>
+                                <div class="contador-bloque" style="padding: 2px 4px; min-width: 30px;"><span id="${idSegundos}" style="font-size: 0.9rem;">00</span><small style="font-size: 0.45rem;">Seg</small></div>
+                            </div>
+
                             ${boton}
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Iniciar los contadores para cada tarjeta del modal
+            document.querySelectorAll('.sorteos-track .contador-tiempo').forEach(el => {
+                const fechaObjetivo = new Date(el.getAttribute('data-fecha')).getTime();
+                const idDias = el.querySelector('[id^="cd-dias-"]').id;
+                const idHoras = el.querySelector('[id^="cd-horas-"]').id;
+                const idMinutos = el.querySelector('[id^="cd-minutos-"]').id;
+                const idSegundos = el.querySelector('[id^="cd-segundos-"]').id;
+
+                const intervalo = setInterval(() => {
+                    const ahora = new Date().getTime();
+                    const distancia = fechaObjetivo - ahora;
+
+                    if (distancia < 0) {
+                        clearInterval(intervalo);
+                        document.getElementById(idDias).textContent = "00";
+                        document.getElementById(idHoras).textContent = "00";
+                        document.getElementById(idMinutos).textContent = "00";
+                        document.getElementById(idSegundos).textContent = "00";
+                        return;
+                    }
+
+                    const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
+                    const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+                    const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+                    document.getElementById(idDias).textContent = String(dias).padStart(2, '0');
+                    document.getElementById(idHoras).textContent = String(horas).padStart(2, '0');
+                    document.getElementById(idMinutos).textContent = String(minutos).padStart(2, '0');
+                    document.getElementById(idSegundos).textContent = String(segundos).padStart(2, '0');
+                }, 1000);
+                
+                intervalosContadoresModales.push(intervalo);
+            });
 
             indiceSorteoModal = 0;
             if (sorteosGlobal.length <= 2) {
@@ -534,7 +585,15 @@
             }
         }
 
-        function cerrarModalSorteos() { document.getElementById('sorteos-modal').classList.remove('active'); if(!document.getElementById('ticket-modal').classList.contains('active')) desbloquearScroll(); }
+        function cerrarModalSorteos() { 
+            document.getElementById('sorteos-modal').classList.remove('active'); 
+            if(!document.getElementById('ticket-modal').classList.contains('active')) {
+                desbloquearScroll();
+            }
+            // Limpiamos los contadores del modal al cerrarlo para no consumir memoria
+            intervalosContadoresModales.forEach(clearInterval);
+            intervalosContadoresModales = [];
+        }
 
         window.abrirModalTicket = function(id) {
             sorteoActivo = sorteosGlobal.find(s => s.id === id);
@@ -588,7 +647,6 @@
                             <h4>💳 Paga a:</h4>
                             <p>Yape: <span class="pago-numero" id="info-yape">...</span></p>
                             <p>Plin: <span class="pago-numero" id="info-plin">...</span></p>
-                            <!-- ⭐ TITULAR DINÁMICO ⭐ -->
                             <p style="margin-top: 5px; font-size: 0.9rem; color: #ffcc00;">Titular: <span id="info-titular" style="font-weight: bold; font-size: 1rem;">...</span></p>
                         </div>
 
@@ -723,7 +781,6 @@
                         </div>
                     `;
 
-                    // ⭐ RECARGA AUTOMÁTICA DESPUÉS DE 3 SEGUNDOS ⭐
                     setTimeout(() => {
                         location.reload();
                     }, 3000); 
