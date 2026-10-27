@@ -31,31 +31,10 @@
     .badge-alerta { background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-top: 4px; }
     .alert-box { background: #fff3e0; border-left: 4px solid #ef6c00; color: #e65100; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 0.85rem; }
     
-    /* ⭐ INPUTS EN MAYÚSCULAS ⭐ */
-    .form-group input, .form-group select {
-        text-transform: uppercase;
-    }
+    .form-group input, .form-group select { text-transform: uppercase; }
 
-    /* ⭐ ESTILOS PARA LA FILA DE BOTONES PEQUEÑOS ⭐ */
-    .acciones-grupo {
-        display: flex;
-        gap: 5px;
-        align-items: center;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-    }
-    .btn-accion-sm {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: bold;
-        border-radius: 4px;
-        cursor: pointer;
-        border: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.2s;
-    }
+    .acciones-grupo { display: flex; gap: 5px; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+    .btn-accion-sm { padding: 0.3rem 0.5rem; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; border: none; display: inline-flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
     .btn-accion-sm:hover { opacity: 0.8; }
     .btn-aprobar-sm { background: #2e7d32; color: #fff; }
     .btn-rechazar-sm { background: #c62828; color: #fff; }
@@ -82,11 +61,7 @@
             <h2 style="margin:0;">Tickets pendientes</h2>
             <div style="display: flex; gap: 1rem;">
                 <input type="text" id="buscador" class="search-box" placeholder="Buscar por cliente, DNI..." onkeyup="filtrar()">
-                
-                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">
-                    🖨️ Imprimir Tickets
-                </button>
-
+                <button class="btn" style="background: #ff9800; color: #000; font-weight: bold;" onclick="window.open('/admin/imprimir_tickets.html', '_blank')">🖨️ Imprimir Tickets</button>
                 <button class="btn btn-primario" onclick="abrirModalVentaPresencial()">+ Venta Presencial</button>
             </div>
         </div>
@@ -105,7 +80,6 @@
     </main>
 </div>
 
-<!-- MODAL DE DETALLES -->
 <div class="modal-overlay" id="modal-detalles">
     <div class="modal-content">
         <div class="modal-header">
@@ -116,7 +90,6 @@
     </div>
 </div>
 
-<!-- MODAL DE VENTA PRESENCIAL -->
 <div class="modal-overlay" id="modal-venta-presencial">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header" style="background: #2e7d32;">
@@ -131,7 +104,6 @@
                         <option value="">Cargando sorteos...</option>
                     </select>
                 </div>
-                
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>DNI *</label>
@@ -142,7 +114,6 @@
                         <input type="text" id="vp-nombre" required style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;">
                     </div>
                 </div>
-
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group"><label>Teléfono</label><input type="tel" id="vp-telefono" style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px;"></div>
                     <div class="form-group">
@@ -176,7 +147,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Cantidad *</label>
@@ -187,14 +157,12 @@
                         <input type="text" id="vp-total" readonly style="width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; background: #e9ecef; font-weight: bold;">
                     </div>
                 </div>
-                
                 <button type="submit" class="btn btn-primario" style="width:100%; padding: 0.8rem; margin-top: 1rem;" id="btn-vp-guardar">Registrar Venta</button>
             </form>
         </div>
     </div>
 </div>
 
-<!-- TOOLTIP DE COMPROBANTE -->
 <div id="tooltip-comprobante"><img id="tooltip-img" src="" alt="Comprobante"></div>
 
 <script>
@@ -204,7 +172,6 @@ let paginaActual = 1;
 const itemsPorPagina = 8;
 let userRole = 'vendedor';
 let sorteosList = [];
-
 const tooltip = document.getElementById('tooltip-comprobante');
 const tooltipImg = document.getElementById('tooltip-img');
 
@@ -217,7 +184,6 @@ async function checkAuth() {
     const r = await fetch('/api/auth/me');
     const d = await r.json();
     if (!d.logged) return location.href = '/admin/login.html';
-    
     userRole = d.rol;
 
     if (userRole !== 'admin') {
@@ -242,13 +208,11 @@ async function cargarSorteos() {
 async function cargar() {
     const r = await fetch('/api/admin/tickets/pendientes');
     if (r.status === 401) return location.href = '/admin/login.html';
-    
     const data = await r.json();
     if (!Array.isArray(data)) {
         document.getElementById('lista').innerHTML = `<p style="color:red;">Error: ${data.error || 'No se pudieron cargar los datos'}</p>`;
         return;
     }
-
     todosLosTickets = data;
     filtrar();
 }
@@ -286,8 +250,6 @@ function renderizarTabla() {
         <tbody>
         ${ticketsPagina.map((t) => {
             const indexReal = todosLosTickets.findIndex(orig => orig.grupo_id === t.grupo_id);
-            
-            // ⭐ SE CAMBIÓ LA ESTRUCTURA DE LOS BOTONES PARA QUE ESTÉN EN UNA FILA Y SEAN PEQUEÑOS ⭐
             const btnAprobar = userRole === 'admin' 
                 ? `<button class="btn-accion-sm btn-aprobar-sm" onclick="revisar('${t.grupo_id}', ${t.id}, 'aprobar')">✅ Aprobar</button>
                    <button class="btn-accion-sm btn-rechazar-sm" onclick="revisar('${t.grupo_id}', ${t.id}, 'rechazar')">❌ Rechazar</button>`
@@ -295,9 +257,7 @@ function renderizarTabla() {
 
             return `<tr>
                 <td>
-                    <span class="cliente-hover" onmouseenter="mostrarComprobante('${t.comprobante_base64}')" onmouseleave="ocultarComprobante()" onclick="abrirModal(${indexReal})">
-                        ${t.cliente_nombre}
-                    </span>
+                    <span class="cliente-hover" onmouseenter="mostrarComprobante('${t.comprobante_base64}')" onmouseleave="ocultarComprobante()" onclick="abrirModal(${indexReal})">${t.cliente_nombre}</span>
                     <br><small>DNI: ${t.cliente_dni || '—'}</small>
                 </td>
                 <td>${t.sorteo_nombre}</td>
@@ -331,9 +291,7 @@ function mostrarComprobante(src) {
     tooltip.style.display = 'block';
 }
 
-function ocultarComprobante() {
-    tooltip.style.display = 'none';
-}
+function ocultarComprobante() { tooltip.style.display = 'none'; }
 
 document.addEventListener('mousemove', (e) => {
     if (tooltip.style.display === 'block') {
@@ -352,7 +310,6 @@ function cambiarPagina(dir) {
 
 async function abrirModal(index) {
     const t = todosLosTickets[index];
-    
     document.getElementById('modal-title').textContent = `Ticket de ${t.cliente_nombre}`;
     document.getElementById('modal-body').innerHTML = `
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -401,11 +358,25 @@ async function revisar(grupoId, idReal, accion) {
     else alert('Error: ' + d.error);
 }
 
-// --- LÓGICA DE VENTA PRESENCIAL ---
 function abrirModalVentaPresencial() {
     const select = document.getElementById('vp-sorteo');
+    
+    // ⭐ FILTRAR SORTEOS ACTIVOS Y QUE NO HAYAN FINALIZADO ⭐
+    const ahora = new Date().getTime();
+    const sorteosValidos = sorteosList.filter(s => {
+        if (s.estado !== 'activo') return false;
+        const hora = s.hora_sorteo ? s.hora_sorteo.substring(0, 5) : '23:59';
+        const fechaFin = new Date(`${s.fecha_sorteo}T${hora}:00-05:00`).getTime();
+        return fechaFin > ahora;
+    });
+
+    if (sorteosValidos.length === 0) {
+        alert('⚠️ No hay sorteos activos disponibles para vender en este momento.');
+        return;
+    }
+
     select.innerHTML = '<option value="">Selecciona un sorteo</option>' + 
-        sorteosList.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket})</option>`).join('');
+        sorteosValidos.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket})</option>`).join('');
     
     document.getElementById('form-venta-presencial').reset();
     document.getElementById('vp-total').value = 'S/ 0.00';
