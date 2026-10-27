@@ -153,10 +153,8 @@ router.post('/ordenes/:id/revisar', requireAdmin, async (req, res) => {
 });
 
 // ============ TICKETS ============
-// ⭐ RUTA MODIFICADA: Agrupa los tickets por cliente y sorteo ⭐
 router.get('/tickets/pendientes', async (req, res) => {
     try {
-        // Consulta que agrupa los tickets que tienen el mismo comprobante (hash base)
         const result = await db.execute(`
             SELECT 
                 SUBSTR(t.hash_comprobante, 1, INSTR(t.hash_comprobante, '-') - 1) as grupo_id,
@@ -203,23 +201,19 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA MODIFICADA: Aprueba/Rechaza todos los tickets del grupo ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
 
     try {
-        // Primero obtenemos el ticket seleccionado para saber su hash base
         const tRes = await db.execute({ sql: 'SELECT * FROM tickets WHERE id = ?', args: [req.params.id] });
         const t = tRes.rows[0];
         if (!t) return res.status(404).json({ error: 'No encontrado' });
 
-        // Extraemos el hash base
         const hashBase = t.hash_comprobante.split('-')[0];
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
         
-        // Actualizamos todos los tickets que compartan ese hash base
         await db.batch([
             { 
                 sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ?`, 
@@ -289,6 +283,7 @@ router.get('/productos', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ POST CORREGIDO PARA EVITAR NaN ⭐
 router.post('/productos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
@@ -296,15 +291,30 @@ router.post('/productos', requireAdmin, (req, res) => {
         let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
 
         try {
+            // VALIDACIÓN ESTRICTA: Si el precio viene vacío o no es un número, se guarda como null.
+            let precioFinal = null;
+            if (precio !== undefined && precio !== null && precio !== '') {
+                const parsed = parseFloat(precio);
+                if (Number.isFinite(parsed)) precioFinal = parsed;
+            }
+
+            // VALIDACIÓN ESTRICTA: Si el stock viene vacío, se guarda como 0.
+            let stockFinal = 0;
+            if (stock !== undefined && stock !== null && stock !== '') {
+                const parsed = parseInt(stock, 10);
+                if (Number.isFinite(parsed)) stockFinal = parsed;
+            }
+
             const r = await db.execute({
                 sql: `INSERT INTO productos (nombre, descripcion, precio, stock, imagen_base64, categoria) VALUES (?, ?, ?, ?, ?, ?)`,
-                args: [nombre, descripcion || null, parseFloat(precio), parseInt(stock) || 0, imagen_path, categoria || 'ropa_tipica']
+                args: [nombre, descripcion || null, precioFinal, stockFinal, imagen_path, categoria || 'ropa_tipica']
             });
             res.json({ success: true, id: Number(r.lastInsertRowid) });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
 });
 
+// ⭐ PUT CORREGIDO PARA EVITAR NaN ⭐
 router.put('/productos/:id', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
@@ -318,9 +328,22 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
             let imagen_path = p.imagen_base64;
             if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
 
+            // PROTECCIÓN PARA EDICIÓN
+            let precioFinal = p.precio;
+            if (precio !== undefined && precio !== null && precio !== '') {
+                const parsed = parseFloat(precio);
+                if (Number.isFinite(parsed)) precioFinal = parsed;
+            }
+
+            let stockFinal = p.stock;
+            if (stock !== undefined && stock !== null && stock !== '') {
+                const parsed = parseInt(stock, 10);
+                if (Number.isFinite(parsed)) stockFinal = parsed;
+            }
+
             await db.execute({
                 sql: `UPDATE productos SET nombre=?, descripcion=?, precio=?, stock=?, imagen_base64=?, categoria=?, activo=? WHERE id=?`,
-                args: [nombre || p.nombre, descripcion ?? p.descripcion, precio ? parseFloat(precio) : p.precio, stock !== undefined ? parseInt(stock) : p.stock, imagen_path, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id]
+                args: [nombre || p.nombre, descripcion ?? p.descripcion, precioFinal, stockFinal, imagen_path, categoria || p.categoria, activo !== undefined ? parseInt(activo) : p.activo, p.id]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }

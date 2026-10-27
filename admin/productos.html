@@ -32,6 +32,9 @@
     .search-box { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; width: 300px; outline: none; }
     .search-box:focus { border-color: var(--color-primario); }
     .img-tabla { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; margin: 0 auto; }
+
+    /* ⭐ OCULTAR CAMPOS DE PRECIO Y STOCK SOLO AL CREAR NUEVO PRODUCTO ⭐ */
+    .campo-opcional { display: none; }
 </style>
 </head>
 <body>
@@ -79,9 +82,9 @@
                 <div class="form-group"><label>Nombre</label><input name="nombre" id="prod-nombre" required></div>
                 <div class="form-group"><label>Descripción</label><textarea name="descripcion" id="prod-desc" rows="2"></textarea></div>
                 
-                <!-- ⭐ SE QUITÓ EL "required" A PRECIO Y STOCK ⭐ -->
-                <div class="form-group"><label>Precio (Opcional)</label><input type="number" step="0.01" name="precio" id="prod-precio"></div>
-                <div class="form-group"><label>Stock (Opcional)</label><input type="number" name="stock" id="prod-stock" value="0"></div>
+                <!-- ⭐ SE AÑADIÓ LA CLASE "campo-opcional" A ESTOS DOS DIVS ⭐ -->
+                <div class="form-group campo-opcional" id="group-precio"><label>Precio (Opcional)</label><input type="number" step="0.01" name="precio" id="prod-precio"></div>
+                <div class="form-group campo-opcional" id="group-stock"><label>Stock (Opcional)</label><input type="number" name="stock" id="prod-stock" value="0"></div>
                 
                 <div class="form-group"><label>Categoría</label>
                     <select name="categoria" id="prod-cat">
@@ -189,6 +192,11 @@ function abrirModalNuevo() {
     document.getElementById('prod-id').value = '';
     document.getElementById('form-title').textContent = 'Nuevo Producto';
     document.getElementById('btn-guardar').textContent = 'Guardar';
+    
+    // ⭐ OCULTAR LOS CAMPOS DE PRECIO Y STOCK AL CREAR ⭐
+    document.getElementById('group-precio').style.display = 'none';
+    document.getElementById('group-stock').style.display = 'none';
+    
     document.getElementById('modal-producto').classList.add('active');
 }
 
@@ -201,6 +209,11 @@ function editar(p) {
     document.getElementById('prod-cat').value = p.categoria;
     document.getElementById('form-title').textContent = 'Editar Producto #' + p.id;
     document.getElementById('btn-guardar').textContent = 'Actualizar';
+    
+    // ⭐ MOSTRAR LOS CAMPOS DE PRECIO Y STOCK AL EDITAR ⭐
+    document.getElementById('group-precio').style.display = 'block';
+    document.getElementById('group-stock').style.display = 'block';
+    
     document.getElementById('modal-producto').classList.add('active');
 }
 
