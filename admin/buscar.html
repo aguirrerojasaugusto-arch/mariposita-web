@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
+    /* ⭐ ESTILOS DEL ENCABEZADO FIJO DEL CLIENTE ⭐ */
     .resumen-cliente-fijo { display: none; background: #f8f9fa; border: 1px solid #ddd; border-left: 5px solid var(--color-primario); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .resumen-info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
@@ -12,8 +13,14 @@
     .resumen-depto h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #1565c0; text-transform: uppercase; }
     .resumen-depto h3 { margin: 0; font-size: 1rem; color: #1565c0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     
-    /* Estilos para los botones de acción en la tabla */
-    .btn-accion-sm { padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
+    /* ⭐ ESTILOS DE LA TABLA Y ACCIONES ⭐ */
+    .table-container { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 2rem; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 1rem; }
+    .table-header h3 { margin: 0; color: #333; font-size: 1.2rem; }
+    .search-input-group { display: flex; gap: 10px; align-items: center; }
+    .search-input-group input { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; width: 250px; }
+    .search-input-group input:focus { border-color: var(--color-primario); }
+    .btn-accion-sm { padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
     .btn-editar-sm { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar-sm:hover { background: #1565c0; color: #fff; }
     .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
@@ -29,14 +36,6 @@
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-body { padding: 1.5rem; }
     .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
-    
-    /* Contenedor de resultados con scroll */
-    .resultados-container { max-height: 50vh; overflow-y: auto; margin-top: 1rem; border-radius: 8px; }
-    
-    /* Buscador interno de la tabla */
-    .table-search-container { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
-    .table-search-input { padding: 0.5rem 1rem; border: 1px solid #ccc; border-radius: 20px; width: 300px; outline: none; font-size: 0.9rem; }
-    .table-search-input:focus { border-color: var(--color-primario); }
 </style>
 </head>
 <body>
@@ -83,28 +82,32 @@
         </aside>
     
         <main class="main">
-            <div class="search-container">
-                <h2 class="search-title">Consultar mi Pedido</h2>
-                <p class="search-subtitle">Ingresa tu DNI o Teléfono para ver el estado de tus compras y tickets en tiempo real.</p>
-                
+            <!-- ⭐ BUSCADOR EN LA PARTE SUPERIOR ⭐ -->
+            <div class="header-actions" style="margin-bottom: 2rem; background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div>
+                    <h2 style="margin: 0 0 0.5rem 0; color: #333;">Consultar Pedidos</h2>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">Ingresa el DNI o Teléfono del cliente para buscar sus tickets y órdenes.</p>
+                </div>
                 <div class="search-input-group">
-                    <input type="text" id="input-busqueda" placeholder="Ej: 74589612 o 987654321" onkeypress="if(event.key === 'Enter') buscar()">
-                    <button onclick="buscar()">Buscar</button>
+                    <input type="text" id="input-busqueda" placeholder="DNI o Teléfono..." onkeypress="if(event.key === 'Enter') buscar()">
+                    <button class="btn btn-primario" onclick="buscar()" style="padding: 0.6rem 1.5rem;">Buscar</button>
                 </div>
-
-                <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
-                    <div class="resumen-info">
-                        <h4>Cliente</h4>
-                        <h2 id="resumen-nombre">-</h2>
-                    </div>
-                    <div class="resumen-depto">
-                        <h4>Ubicación</h4>
-                        <h3 id="resumen-departamento">-</h3>
-                    </div>
-                </div>
-
-                <div id="resultados"></div>
             </div>
+
+            <!-- ⭐ ENCABEZADO DEL CLIENTE ENCONTRADO ⭐ -->
+            <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
+                <div class="resumen-info">
+                    <h4>Cliente</h4>
+                    <h2 id="resumen-nombre">-</h2>
+                </div>
+                <div class="resumen-depto">
+                    <h4>Ubicación</h4>
+                    <h3 id="resumen-departamento">-</h3>
+                </div>
+            </div>
+
+            <!-- ⭐ CONTENEDOR DE RESULTADOS (TABLA) ⭐ -->
+            <div id="resultados"></div>
         </main>
     </div>
 
@@ -183,7 +186,7 @@ async function buscar() {
     const resumenBox = document.getElementById('resumen-cliente-fijo');
 
     if (!query) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa tu DNI o Teléfono.</p>';
+        cont.innerHTML = '<p style="color:red; font-weight:bold;">Por favor, ingresa un DNI o Teléfono.</p>';
         resumenBox.style.display = 'none';
         return;
     }
@@ -223,36 +226,49 @@ async function buscar() {
         document.getElementById('resumen-departamento').textContent = ubicacionCliente;
         resumenBox.style.display = 'flex'; 
 
-        // ⭐ CONSTRUCCIÓN DE LA TABLA Y EL BUSCADOR ⭐
         let html = '';
 
+        // Órdenes
         if (data.ordenes.length > 0) {
-            html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🛍️ Compras de Ropa</h3>';
-            data.ordenes.forEach(o => {
-                const estadoClass = `estado-${o.estado}`;
-                html += `
-                    <div class="resultado-card">
-                        <div class="resultado-header">
-                            <strong>Orden: ${o.codigo}</strong>
-                            <span class="badge-estado ${estadoClass}">${o.estado.toUpperCase()}</span>
-                        </div>
-                        <p><strong>Fecha:</strong> ${o.creado_en}</p>
-                        <p><strong>Monto Total:</strong> S/ ${o.total.toFixed(2)}</p>
-                        <p><strong>Dirección:</strong> ${o.cliente_direccion}</p>
+            html += `
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>🛍️ Compras de Ropa</h3>
                     </div>
-                `;
-            });
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Orden</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.ordenes.map(o => `
+                                <tr>
+                                    <td><strong>${o.codigo}</strong></td>
+                                    <td>${o.creado_en}</td>
+                                    <td>S/ ${o.total.toFixed(2)}</td>
+                                    <td><span class="badge-estado estado-${o.estado}">${o.estado.toUpperCase()}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
+        // Tickets
         if (data.tickets.length > 0) {
             html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">
-                    <h3 style="color:#333; margin:0;">🎟️ Tickets de Sorteo</h3>
-                    <div class="table-search-container">
-                        <input type="text" id="buscador-tabla" class="table-search-input" placeholder="🔍 Buscar ticket, sorteo, nombre..." onkeyup="filtrarTabla()">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>🎟️ Tickets de Sorteo</h3>
+                        <div class="search-input-group">
+                            <input type="text" id="buscador-tabla" placeholder="Buscar ticket, sorteo, nombre..." onkeyup="filtrarTabla()">
+                        </div>
                     </div>
-                </div>
-                <div class="resultados-container">
                     <table id="tabla-tickets">
                         <thead>
                             <tr>
@@ -265,11 +281,11 @@ async function buscar() {
                         </thead>
                         <tbody id="tbody-tickets"></tbody>
                     </table>
-                </div>
-                <div class="pagination" id="paginacion-tabla">
-                    <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
-                    <span id="page-info">Página 1 de 1</span>
-                    <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+                    <div class="pagination" id="paginacion-tabla" style="padding: 1rem; border-top: 1px solid #eee;">
+                        <button id="btn-prev" onclick="cambiarPagina(-1)">◀ Anterior</button>
+                        <span id="page-info">Página 1 de 1</span>
+                        <button id="btn-next" onclick="cambiarPagina(1)">Siguiente ▶</button>
+                    </div>
                 </div>
             `;
         }
@@ -306,7 +322,7 @@ function renderizarTablaTickets() {
     tbody.innerHTML = ticketsPagina.map(t => `
         <tr>
             <td><strong>${t.numero_ticket}</strong></td>
-            <td>${t.cliente_nombre}<br><small>${t.cliente_dni}</small></td>
+            <td>${t.cliente_nombre}<br><small>${t.cliente_dni || '—'}</small></td>
             <td>${t.sorteo_nombre}</td>
             <td><small>${t.creado_en}</small></td>
             <td>
@@ -356,7 +372,6 @@ function abrirModalEditar(id) {
     const t = ticketsActuales.find(tk => tk.id === id);
     if (!t) return;
 
-    // Se cargan los datos automáticamente en el formulario
     document.getElementById('edit-ticket-id').value = t.id;
     document.getElementById('edit-nombre').value = t.cliente_nombre;
     document.getElementById('edit-dni').value = t.cliente_dni || '';
