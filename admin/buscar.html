@@ -11,11 +11,18 @@
     .resumen-depto { text-align: right; background: #e3f2fd; padding: 0.5rem 1rem; border-radius: 6px; max-width: 50%; }
     .resumen-depto h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #1565c0; text-transform: uppercase; }
     .resumen-depto h3 { margin: 0; font-size: 1rem; color: #1565c0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    /* Estilos para los botones de acción en los resultados */
+    .acciones-ticket { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-accion-sm { padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
+    .btn-editar-sm { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
+    .btn-editar-sm:hover { background: #1565c0; color: #fff; }
+    .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+    .btn-eliminar-sm:hover { background: #c62828; color: #fff; }
 </style>
 </head>
 <body>
 
-    <!-- ⭐ BANNER SUPERIOR ⭐ -->
     <div class="admin-top-bar">
         <div class="admin-top-bar-info">
             <span>📞 95485966</span>
@@ -91,7 +98,6 @@ async function checkAuth() {
         
         if (!d.logged) return location.href = '/admin/login.html';
         
-        // ⭐ PINTAR DATOS DEL PERFIL ⭐
         document.getElementById('user-nombre').textContent = d.nombre;
         document.getElementById('user-rol').textContent = d.rol;
         document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
@@ -139,9 +145,14 @@ async function buscar() {
         let nombreCliente = 'Cliente';
         let ubicacionCliente = 'No registrado';
 
+        // Lógica para mostrar ubicación priorizando tickets, si no hay, órdenes
         if (data.tickets.length > 0) {
             nombreCliente = data.tickets[0].cliente_nombre;
-            if (data.tickets[0].cliente_departamento) ubicacionCliente = data.tickets[0].cliente_departamento;
+            if (data.tickets[0].cliente_departamento) {
+                ubicacionCliente = data.tickets[0].cliente_departamento;
+            } else if (data.ordenes.length > 0 && data.ordenes[0].cliente_direccion) {
+                ubicacionCliente = data.ordenes[0].cliente_direccion;
+            }
         } else if (data.ordenes.length > 0) {
             nombreCliente = data.ordenes[0].cliente_nombre;
             if (data.ordenes[0].cliente_direccion) ubicacionCliente = data.ordenes[0].cliente_direccion;
@@ -175,16 +186,20 @@ async function buscar() {
         if (data.tickets.length > 0) {
             html += '<h3 style="text-align:left; color:#333; margin: 2rem 0 1rem; border-bottom: 2px solid #eee; padding-bottom: 5px;">🎟️ Tickets de Sorteo</h3>';
             data.tickets.forEach(t => {
-                const estadoClass = `estado-${t.estado_pago}`;
+                // Se eliminó el badge de estado y se agregaron los botones
                 html += `
                     <div class="resultado-card" style="border-left-color: #ff9800;">
-                        <div class="resultado-header">
-                            <strong>Ticket: ${t.numero_ticket}</strong>
-                            <span class="badge-estado ${estadoClass}">${t.estado_pago.toUpperCase()}</span>
+                        <div style="width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                                <strong style="font-size: 1.1rem;">Ticket: ${t.numero_ticket}</strong>
+                            </div>
+                            <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
+                            <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
+                            <div class="acciones-ticket">
+                                <button class="btn-accion-sm btn-editar-sm" onclick="editarTicket(${t.id})">✏️ Editar</button>
+                                <button class="btn-accion-sm btn-eliminar-sm" onclick="eliminarTicket(${t.id})">🗑️ Eliminar</button>
+                            </div>
                         </div>
-                        <p><strong>Sorteo:</strong> ${t.sorteo_nombre}</p>
-                        <p><strong>Fecha de compra:</strong> ${t.creado_en}</p>
-                        ${t.estado_pago === 'rechazado' && t.notas_admin ? `<p style="color:red; background:#ffebee; padding:5px; border-radius:4px;"><strong>Motivo:</strong> ${t.notas_admin}</p>` : ''}
                     </div>
                 `;
             });
@@ -194,6 +209,55 @@ async function buscar() {
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
+}
+
+// ⭐ FUNCIONES PARA EDITAR Y ELIMINAR TICKETS ⭐
+async function eliminarTicket(id) {
+    if (!confirm('¿Estás seguro de eliminar este ticket definitivamente?')) return;
+    try {
+        const r = await fetch(`/api/admin/tickets/${id}`, { method: 'DELETE' });
+        if (r.ok) {
+            alert('Ticket eliminado correctamente');
+            buscar(); 
+        } else {
+            const d = await r.json();
+            alert('Error: ' + d.error);
+        }
+    } catch (e) { alert('Error de red al eliminar'); }
+}
+
+async function editarTicket(id) {
+    const nuevoNombre = prompt('Nuevo nombre del cliente:');
+    if (nuevoNombre === null) return;
+    
+    const nuevoDni = prompt('Nuevo DNI:');
+    if (nuevoDni === null) return;
+
+    const nuevoTelefono = prompt('Nuevo teléfono:');
+    if (nuevoTelefono === null) return;
+
+    const nuevoDepto = prompt('Nuevo departamento:');
+    if (nuevoDepto === null) return;
+
+    try {
+        const r = await fetch(`/api/admin/tickets/${id}/editar`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                cliente_nombre: nuevoNombre, 
+                cliente_dni: nuevoDni, 
+                cliente_telefono: nuevoTelefono,
+                cliente_departamento: nuevoDepto
+            })
+        });
+        if (r.ok) {
+            alert('Ticket actualizado correctamente');
+            buscar();
+        } else {
+            const d = await r.json();
+            alert('Error: ' + d.error);
+        }
+    } catch (e) { alert('Error de red al editar'); }
 }
 
 checkAuth();
