@@ -35,6 +35,31 @@
     .form-group input, .form-group select {
         text-transform: uppercase;
     }
+
+    /* ⭐ ESTILOS PARA LA FILA DE BOTONES PEQUEÑOS ⭐ */
+    .acciones-grupo {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    .btn-accion-sm {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s;
+    }
+    .btn-accion-sm:hover { opacity: 0.8; }
+    .btn-aprobar-sm { background: #2e7d32; color: #fff; }
+    .btn-rechazar-sm { background: #c62828; color: #fff; }
+    .btn-ver-sm { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
 </style>
 </head>
 <body>
@@ -260,13 +285,13 @@ function renderizarTabla() {
         <thead><tr><th>Cliente</th><th>Sorteo</th><th>Cant.</th><th>Total</th><th>OCR</th><th>Acciones</th></tr></thead>
         <tbody>
         ${ticketsPagina.map((t) => {
-            // ⭐ AQUÍ SE CORRIGIÓ LA VARIABLE PARA USAR grupo_id ⭐
             const indexReal = todosLosTickets.findIndex(orig => orig.grupo_id === t.grupo_id);
             
+            // ⭐ SE CAMBIÓ LA ESTRUCTURA DE LOS BOTONES PARA QUE ESTÉN EN UNA FILA Y SEAN PEQUEÑOS ⭐
             const btnAprobar = userRole === 'admin' 
-                ? `<button class="btn btn-aprobar" onclick="revisar('${t.grupo_id}', ${t.id}, 'aprobar')">✅ Aprobar</button>
-                   <button class="btn btn-rechazar" onclick="revisar('${t.grupo_id}', ${t.id}, 'rechazar')" style="margin-top:0.35rem;">❌ Rechazar</button>`
-                : `<span style="color:#999; font-size:0.8rem;">Solo lectura</span>`;
+                ? `<button class="btn-accion-sm btn-aprobar-sm" onclick="revisar('${t.grupo_id}', ${t.id}, 'aprobar')">✅ Aprobar</button>
+                   <button class="btn-accion-sm btn-rechazar-sm" onclick="revisar('${t.grupo_id}', ${t.id}, 'rechazar')">❌ Rechazar</button>`
+                : `<span style="color:#999; font-size:0.75rem; font-weight:bold;">Solo lectura</span>`;
 
             return `<tr>
                 <td>
@@ -280,8 +305,10 @@ function renderizarTabla() {
                 <td><strong>S/ ${t.total_pagado.toFixed(2)}</strong></td>
                 <td>${ocrBox(t)}</td>
                 <td>
-                    <button class="btn-detalle" onclick="abrirModal(${indexReal})" style="margin-bottom:0.35rem;">Ver Detalles</button><br>
-                    ${btnAprobar}
+                    <div class="acciones-grupo">
+                        <button class="btn-accion-sm btn-ver-sm" onclick="abrirModal(${indexReal})">👁️ Ver</button>
+                        ${btnAprobar}
+                    </div>
                 </td>
             </tr>`;
         }).join('')}
