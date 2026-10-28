@@ -6,13 +6,25 @@
 <style>
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-content { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
+    .modal-content { background: #fff; width: 90%; max-width: 550px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
     .modal-header h3 { margin: 0; font-size: 1.2rem; }
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-body { padding: 1.5rem; }
     .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+    
+    .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: #555; }
+    
+    /* ⭐ ESTILOS DEL BUSCADOR INTELIGENTE ⭐ */
+    .buscador-container { position: relative; margin-bottom: 1.5rem; }
+    .buscador-input { width: 100%; padding: 0.8rem 1rem; border: 2px solid var(--color-primario); border-radius: 8px; font-size: 1rem; outline: none; }
+    .resultados-busqueda { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .item-resultado { padding: 0.8rem 1rem; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+    .item-resultado:hover { background: #f0f7ff; }
+    .item-resultado strong { display: block; color: #333; font-size: 0.95rem; }
+    .item-resultado small { color: #666; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -49,7 +61,7 @@
                 <a href="/admin/tickets.html">🎁 Tickets</a>
                 <a href="/admin/productos.html">👗 Productos</a>
                 <a href="/admin/sorteos.html">🎰 Sorteos</a>
-                <a href="/admin/ganadores.html" class="active">🏆 Ganadores</a> <!-- ⭐ NUEVO ENLACE ⭐ -->
+                <a href="/admin/ganadores.html" class="active">🏆 Ganadores</a>
                 <a href="/admin/carrusel.html">🖼️ Carrusel</a>
                 <a href="/admin/usuarios.html">👥 Usuarios</a>
                 <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
@@ -70,14 +82,33 @@
         <div class="modal-content">
             <div class="modal-header"><h3>Registrar Nuevo Ganador</h3><button class="modal-close" onclick="cerrarModal()">✕</button></div>
             <div class="modal-body">
+                
+                <!-- ⭐ BUSCADOR INTELIGENTE ⭐ -->
+                <div class="buscador-container">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold; color: var(--color-primario);">
+                        🔍 Buscar Cliente (DNI, Nombre, Celular o Ticket)
+                    </label>
+                    <input type="text" id="input-buscar-cliente" class="buscador-input" placeholder="Escribe para buscar..." autocomplete="off">
+                    <div class="resultados-busqueda" id="resultados-busqueda"></div>
+                </div>
+
                 <form id="form-ganador">
                     <div class="form-group">
                         <label>Sorteo *</label>
-                        <select id="g-sorteo" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></select>
+                        <select id="g-sorteo" required></select>
                     </div>
-                    <div class="form-group"><label>Nombre del Ganador *</label><input type="text" id="g-nombre" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
-                    <div class="form-group"><label>Número de Ticket *</label><input type="text" id="g-ticket" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
-                    <div class="form-group"><label>Premio (Opcional)</label><input type="text" id="g-premio" placeholder="Ej: Pollera Huancavelica" style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
+                    <div class="form-group">
+                        <label>Nombre del Ganador *</label>
+                        <input type="text" id="g-nombre" required readonly style="background:#f4f4f4; cursor:not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Ticket *</label>
+                        <input type="text" id="g-ticket" required readonly style="background:#f4f4f4; cursor:not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Premio (Opcional)</label>
+                        <input type="text" id="g-premio" placeholder="Ej: Pollera Huancavelica">
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -89,6 +120,7 @@
 
 <script>
 let sorteosList = [];
+let todosLosTickets = []; // Guardaremos todos los tickets aprobados aquí
 
 async function checkAuth() {
     const r = await fetch('/api/auth/me');
@@ -99,6 +131,7 @@ async function checkAuth() {
     document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
     cargar();
     cargarSorteos();
+    cargarTickets();
 }
 
 async function logout() {
@@ -113,6 +146,12 @@ async function cargarSorteos() {
         document.getElementById('g-sorteo').innerHTML = '<option value="">Selecciona un sorteo</option>' + 
             sorteosList.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
     }
+}
+
+// ⭐ CARGAR TICKETS PARA EL BUSCADOR ⭐
+async function cargarTickets() {
+    const r = await fetch('/api/admin/tickets/aprobados');
+    if (r.ok) todosLosTickets = await r.json();
 }
 
 async function cargar() {
@@ -142,12 +181,72 @@ async function cargar() {
     }
 }
 
-function abrirModal() { document.getElementById('form-ganador').reset(); document.getElementById('modal-ganador').classList.add('active'); }
+function abrirModal() { 
+    document.getElementById('form-ganador').reset(); 
+    document.getElementById('input-buscar-cliente').value = '';
+    document.getElementById('resultados-busqueda').style.display = 'none';
+    document.getElementById('modal-ganador').classList.add('active'); 
+}
 function cerrarModal() { document.getElementById('modal-ganador').classList.remove('active'); }
+
+// ⭐ LÓGICA DEL BUSCADOR INTELIGENTE ⭐
+document.getElementById('input-buscar-cliente').addEventListener('input', function(e) {
+    const texto = e.target.value.toLowerCase().trim();
+    const contenedor = document.getElementById('resultados-busqueda');
+    
+    if (texto.length < 2) { contenedor.style.display = 'none'; return; }
+
+    const filtrados = todosLosTickets.filter(t => 
+        (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
+        (t.cliente_dni && t.cliente_dni.includes(texto)) ||
+        (t.cliente_telefono && t.cliente_telefono.includes(texto)) ||
+        (t.numero_ticket && t.numero_ticket.toLowerCase().includes(texto))
+    ).slice(0, 5); // Mostrar solo los primeros 5 resultados
+
+    if (filtrados.length === 0) {
+        contenedor.innerHTML = '<div class="item-resultado">No se encontraron tickets.</div>';
+        contenedor.style.display = 'block';
+        return;
+    }
+
+    contenedor.innerHTML = filtrados.map(t => `
+        <div class="item-resultado" onclick="seleccionarCliente(${t.id})">
+            <strong>${t.cliente_nombre}</strong>
+            <small>DNI: ${t.cliente_dni || '—'} | Tel: ${t.cliente_telefono || '—'} | Ticket: ${t.numero_ticket}</small>
+        </div>
+    `).join('');
+    contenedor.style.display = 'block';
+});
+
+// ⭐ AUTOCOMPLETAR CAMPOS AL SELECCIONAR ⭐
+function seleccionarCliente(idTicket) {
+    const ticket = todosLosTickets.find(t => t.id === idTicket);
+    if (!ticket) return;
+
+    document.getElementById('g-nombre').value = ticket.cliente_nombre;
+    document.getElementById('g-ticket').value = ticket.numero_ticket;
+    document.getElementById('g-sorteo').value = ticket.sorteo_id;
+    
+    document.getElementById('resultados-busqueda').style.display = 'none';
+    document.getElementById('input-buscar-cliente').value = '';
+}
+
+// Ocultar resultados si se hace clic fuera
+document.addEventListener('click', function(e) {
+    if (!document.querySelector('.buscador-container').contains(e.target)) {
+        document.getElementById('resultados-busqueda').style.display = 'none';
+    }
+});
 
 document.getElementById('form-ganador').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-guardar');
+    
+    if (!document.getElementById('g-nombre').value) {
+        alert('Por favor, busca y selecciona un cliente primero.');
+        return;
+    }
+
     btn.disabled = true; btn.textContent = 'Registrando...';
 
     const data = {
