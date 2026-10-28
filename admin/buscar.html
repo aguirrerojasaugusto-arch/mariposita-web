@@ -26,6 +26,11 @@
     .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
     .btn-eliminar-sm:hover { background: #c62828; color: #fff; }
 
+    /* ⭐ ESTILOS DEL FILTRO SELECT ⭐ */
+    .filtros-group { display: flex; gap: 10px; align-items: center; }
+    .select-filtro { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; background: #fff; cursor: pointer; }
+    .select-filtro:focus { border-color: var(--color-primario); }
+
     /* ⭐ ESTILOS DEL MODAL DE EDICIÓN ⭐ */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
@@ -265,8 +270,16 @@ async function buscar() {
                 <div class="table-container">
                     <div class="table-header">
                         <h3>🎟️ Tickets de Sorteo</h3>
-                        <div class="search-input-group">
-                            <input type="text" id="buscador-tabla" placeholder="Buscar ticket, sorteo, nombre..." onkeyup="filtrarTabla()">
+                        <div class="filtros-group">
+                            <!-- ⭐ FILTRO DE ESTADO AGREGADO ⭐ -->
+                            <select id="filtro-estado" class="select-filtro" onchange="aplicarFiltros()">
+                                <option value="todos">Todos los estados</option>
+                                <option value="aprobado">Solo Aprobados</option>
+                                <option value="rechazado">Solo Rechazados</option>
+                            </select>
+                            <div class="search-input-group">
+                                <input type="text" id="buscador-tabla" placeholder="Buscar ticket, sorteo, nombre..." onkeyup="aplicarFiltros()">
+                            </div>
                         </div>
                     </div>
                     <table id="tabla-tickets">
@@ -276,6 +289,7 @@ async function buscar() {
                                 <th>Cliente</th>
                                 <th>Sorteo</th>
                                 <th>Fecha</th>
+                                <th>Estado</th> <!-- ⭐ COLUMNA DE ESTADO AGREGADA ⭐ -->
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -293,7 +307,7 @@ async function buscar() {
         cont.innerHTML = html;
         
         if (data.tickets.length > 0) {
-            renderizarTablaTickets();
+            aplicarFiltros(); // Llamamos al filtro en lugar de renderizar directo
         }
 
     } catch (error) {
@@ -301,7 +315,31 @@ async function buscar() {
     }
 }
 
-// ⭐ FUNCIONES PARA LA TABLA PAGINADA Y BUSCADOR INTELIGENTE ⭐
+// ⭐ FUNCIÓN QUE APLICA EL FILTRO Y EL BUSCADOR ⭐
+function aplicarFiltros() {
+    const texto = document.getElementById('buscador-tabla').value.toLowerCase();
+    const estadoFiltro = document.getElementById('filtro-estado').value;
+
+    ticketsFiltrados = ticketsActuales.filter(t => {
+        // 1. Filtro de búsqueda de texto
+        const coincideTexto = (t.numero_ticket && t.numero_ticket.toLowerCase().includes(texto)) ||
+                              (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
+                              (t.cliente_dni && t.cliente_dni.includes(texto)) ||
+                              (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto));
+        
+        // 2. Filtro de estado
+        let coincideEstado = true;
+        if (estadoFiltro === 'aprobado') coincideEstado = (t.estado_pago === 'aprobado');
+        if (estadoFiltro === 'rechazado') coincideEstado = (t.estado_pago === 'rechazado');
+
+        return coincideTexto && coincideEstado;
+    });
+
+    paginaActual = 1;
+    renderizarTablaTickets();
+}
+
+// ⭐ FUNCIONES PARA LA TABLA PAGINADA ⭐
 function renderizarTablaTickets() {
     const tbody = document.getElementById('tbody-tickets');
     const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
@@ -311,7 +349,7 @@ function renderizarTablaTickets() {
     document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No se encontraron tickets con esa búsqueda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No se encontraron tickets con esa búsqueda.</td></tr>';
         return;
     }
 
@@ -319,30 +357,24 @@ function renderizarTablaTickets() {
     const fin = inicio + itemsPorPagina;
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
-    tbody.innerHTML = ticketsPagina.map(t => `
+    tbody.innerHTML = ticketsPagina.map(t => {
+        let colorEstado = '#ff9800';
+        if (t.estado_pago === 'aprobado') colorEstado = '#2e7d32';
+        if (t.estado_pago === 'rechazado') colorEstado = '#c62828';
+
+        return `
         <tr>
             <td><strong>${t.numero_ticket}</strong></td>
             <td>${t.cliente_nombre}<br><small>${t.cliente_dni || '—'}</small></td>
             <td>${t.sorteo_nombre}</td>
             <td><small>${t.creado_en}</small></td>
+            <td><span style="color:${colorEstado}; font-weight:bold; font-size:0.85rem;">${t.estado_pago.toUpperCase()}</span></td>
             <td>
                 <button class="btn-accion-sm btn-editar-sm" onclick="abrirModalEditar(${t.id})">✏️ Editar</button>
                 <button class="btn-accion-sm btn-eliminar-sm" onclick="eliminarTicket(${t.id})">🗑️ Eliminar</button>
             </td>
         </tr>
-    `).join('');
-}
-
-function filtrarTabla() {
-    const texto = document.getElementById('buscador-tabla').value.toLowerCase();
-    ticketsFiltrados = ticketsActuales.filter(t => 
-        (t.numero_ticket && t.numero_ticket.toLowerCase().includes(texto)) ||
-        (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
-        (t.cliente_dni && t.cliente_dni.includes(texto)) ||
-        (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto))
-    );
-    paginaActual = 1;
-    renderizarTablaTickets();
+    `}).join('');
 }
 
 function cambiarPagina(dir) {
