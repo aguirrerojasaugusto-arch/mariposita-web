@@ -29,7 +29,8 @@ router.get('/config-publica', async (req, res) => {
     try {
         const keys = [
             'numero_yape', 'numero_plin', 'nombre_titular', 'whatsapp', 
-            'email_contacto', 'telefono_contacto', 'ubicacion', 'logo_admin', 'fondo_login', 'flyer_inicio'
+            'email_contacto', 'telefono_contacto', 'ubicacion', 'logo_admin', 'fondo_login', 'flyer_inicio',
+            'facebook_url', 'tiktok_url', 'youtube_url' // ⭐ NUEVAS LLAVES
         ];
         const placeholders = keys.map(() => '?').join(',');
         const result = await db.execute({

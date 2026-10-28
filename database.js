@@ -42,7 +42,11 @@ async function initDB() {
 
     const configs = [
         ['numero_yape', '999 999 999'], ['numero_plin', '999 999 999'], ['nombre_titular', 'Artesanía Mariposita'], 
-        ['whatsapp', '999 999 999'], ['email_contacto', 'contacto@mariposita.pe'], ['logo_admin', null], ['fondo_login', null]
+        ['whatsapp', '999 999 999'], ['email_contacto', 'contacto@mariposita.pe'], ['logo_admin', null], ['fondo_login', null],
+        // ⭐ NUEVAS REDES SOCIALES ⭐
+        ['facebook_url', 'https://facebook.com'],
+        ['tiktok_url', 'https://tiktok.com'],
+        ['youtube_url', 'https://youtube.com']
     ];
     for (const [clave, valor] of configs) {
         await db.execute({ sql: 'INSERT OR IGNORE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, valor] });
