@@ -605,6 +605,7 @@
             renderizarProductos();
         }
 
+        // ⭐ FUNCIÓN MODIFICADA PARA QUITAR PRECIO Y STOCK ⭐
         function renderizarProductos() {
             const track = document.getElementById('grid-productos');
             const btnPrev = document.getElementById('btn-prev-prod');
@@ -623,8 +624,7 @@
                     <div class="info">
                         <h3 title="${p.nombre}">${p.nombre}</h3>
                         <p>${p.descripcion || ''}</p>
-                        <div class="precio">S/ ${p.precio ? p.precio.toFixed(2) : '0.00'}</div>
-                        <div class="stock">Stock: ${p.stock} unidades</div>
+                        <!-- Se han eliminado las líneas de Precio y Stock aquí -->
                         <div class="btn-deshabilitado">Solo para visualización</div>
                     </div>
                 </div>
