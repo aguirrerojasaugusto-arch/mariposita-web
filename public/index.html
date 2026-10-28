@@ -49,12 +49,34 @@
         .prod-nav-btn:hover { background: var(--accent-cyan); color: #03131d; }
         .prod-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #555; color: #555; background: transparent; }
 
-        /* ⭐ ESTILOS NUEVOS PARA EL CARRUSEL DE GANADORES ⭐ */
+        /* ⭐ ESTILOS ACTUALIZADOS PARA EL CARRUSEL DE GANADORES ⭐ */
         .ganadores-carousel-container { position: relative; display: flex; align-items: center; gap: 1rem; padding: 0 5%; max-width: 1200px; margin: 0 auto; justify-content: center; }
         .ganadores-viewport { overflow: hidden; width: 100%; max-width: 904px; border-radius: 8px; }
         .ganadores-track { display: flex; gap: 2rem; transition: transform 0.4s ease-in-out; }
         .card-ganador { width: 280px; min-width: 280px; flex-shrink: 0; background: linear-gradient(135deg, #112240 0%, #1a365d 100%); border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        
+        /* ⭐ CONTENEDOR DE LA IMAGEN DEL PREMIO ⭐ */
+        .ganador-imagen-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            border: 3px solid #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+        }
+        .ganador-imagen-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ajusta la imagen sin deformarla */
+            padding: 5px;
+        }
         .ganador-trofeo { font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.5)); }
+        
         .card-ganador h3 { color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; }
         .card-ganador .ganador-premio { color: #ffcc00; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem; }
         .card-ganador .ganador-ticket { background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 20px; color: #8892b0; font-size: 0.85rem; border: 1px dashed rgba(255,255,255,0.2); }
@@ -355,7 +377,7 @@
         <!-- ⭐ NUEVO BLOQUE DE REDES SOCIALES ⭐ -->
         <div style="max-width: 1200px; margin: 0 auto; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="color: #fff; font-size: 1rem; font-weight: 700; text-transform: uppercase;">Nuestras transmisiones en VIVO</h3>
+                <h3 style="color: #fff; font-size: 1rem; font-weight: 700; text-transform: uppercase;">Síguenos en nuestras redes</h3>
                 <span style="color: #8892b0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Más novedades, sorteos y ganadores</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
@@ -657,14 +679,20 @@
                 return;
             }
 
-            track.innerHTML = todosLosGanadores.map(g => `
+            track.innerHTML = todosLosGanadores.map(g => {
+                // Si el sorteo tiene imagen, la mostramos. Si no, mostramos el trofeo.
+                const imagenHTML = g.sorteo_imagen 
+                    ? `<div class="ganador-imagen-container"><img src="${g.sorteo_imagen}" alt="Premio"></div>`
+                    : `<div class="ganador-trofeo">🏆</div>`;
+
+                return `
                 <div class="card-ganador">
-                    <div class="ganador-trofeo">🏆</div>
+                    ${imagenHTML}
                     <h3>${g.cliente_nombre}</h3>
                     <p class="ganador-premio">${g.premio || 'Sorteo: ' + g.sorteo_nombre}</p>
                     <div class="ganador-ticket">Ticket: <strong>${g.numero_ticket}</strong></div>
                 </div>
-            `).join('');
+            `}).join('');
 
             if (todosLosGanadores.length <= ganadoresPorVista) {
                 btnPrev.style.display = 'none'; btnNext.style.display = 'none';

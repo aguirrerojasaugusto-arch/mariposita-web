@@ -30,7 +30,7 @@ router.get('/config-publica', async (req, res) => {
         const keys = [
             'numero_yape', 'numero_plin', 'nombre_titular', 'whatsapp', 
             'email_contacto', 'telefono_contacto', 'ubicacion', 'logo_admin', 'fondo_login', 'flyer_inicio',
-            'facebook_url', 'tiktok_url', 'youtube_url' // ⭐ NUEVAS LLAVES
+            'facebook_url', 'tiktok_url', 'youtube_url'
         ];
         const placeholders = keys.map(() => '?').join(',');
         const result = await db.execute({
@@ -92,11 +92,11 @@ router.get('/consultar', async (req, res) => {
     }
 });
 
-// ⭐ RUTA PÚBLICA DE GANADORES ⭐
+// ⭐ RUTA DE GANADORES MODIFICADA: Incluye la imagen del sorteo ⭐
 router.get('/ganadores', async (req, res) => {
     try {
         const result = await db.execute(`
-            SELECT g.*, s.nombre as sorteo_nombre 
+            SELECT g.*, s.nombre as sorteo_nombre, s.imagen_base64 as sorteo_imagen 
             FROM ganadores g JOIN sorteos s ON s.id = g.sorteo_id ORDER BY g.creado_en DESC
         `);
         res.json(result.rows);
