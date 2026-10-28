@@ -63,6 +63,7 @@
                 <a href="/admin/tickets.html">🎁 Tickets</a>
                 <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
                 <a href="/admin/sorteos.html" class="active" id="nav-sorteos">🎰 Sorteos</a>
+                <a href="/admin/ganadores.html" id="nav-ganadores">🏆 Ganadores</a> <!-- ⭐ ENLACE AGREGADO ⭐ -->
                 <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
                 <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
                 <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
@@ -141,6 +142,7 @@ async function checkAuth() {
 
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
+        document.getElementById('nav-ganadores').style.display = 'none';
         document.getElementById('nav-carrusel').style.display = 'none';
         document.getElementById('nav-usuarios').style.display = 'none';
         document.getElementById('nav-config').style.display = 'none';
