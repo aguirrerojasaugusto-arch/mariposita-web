@@ -71,7 +71,6 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         if (!tipo || !req.file) return res.status(400).json({ error: 'Faltan datos' });
 
         try {
-            // ⭐ SUBIMOS EL LOGO/FONDO/FLYER A CLOUDINARY
             const resultado = await subirACloudinary(req.file.buffer);
             const imagen_url = resultado.secure_url;
             
@@ -81,8 +80,9 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
                 args: [clave, imagen_url]
             });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
-        } catch (error) {
-            res.status(500).json({ error: 'Error al guardar en la base de datos' });
+        } catch (uploadError) {
+            console.error("❌ ERROR REAL CLOUDINARY (Config):", uploadError);
+            res.status(500).json({ error: 'Error nube: ' + uploadError.message });
         }
     });
 });
@@ -325,7 +325,8 @@ router.post('/productos', requireAdmin, (req, res) => {
                 const resultado = await subirACloudinary(req.file.buffer);
                 imagen_path = resultado.secure_url;
             } catch (uploadError) {
-                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                console.error("❌ ERROR REAL CLOUDINARY (Producto POST):", uploadError);
+                return res.status(500).json({ error: 'Error nube: ' + uploadError.message });
             }
         }
 
@@ -367,7 +368,8 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
                     const resultado = await subirACloudinary(req.file.buffer);
                     imagen_path = resultado.secure_url;
                 } catch (uploadError) {
-                    return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                    console.error("❌ ERROR REAL CLOUDINARY (Producto PUT):", uploadError);
+                    return res.status(500).json({ error: 'Error nube: ' + uploadError.message });
                 }
             }
 
@@ -420,7 +422,8 @@ router.post('/sorteos', requireAdmin, (req, res) => {
                 const resultado = await subirACloudinary(req.file.buffer);
                 imagen_path = resultado.secure_url;
             } catch (uploadError) {
-                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                console.error("❌ ERROR REAL CLOUDINARY (Sorteo POST):", uploadError);
+                return res.status(500).json({ error: 'Error nube: ' + uploadError.message });
             }
         }
 
@@ -452,7 +455,8 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
                     const resultado = await subirACloudinary(req.file.buffer);
                     imagen_path = resultado.secure_url;
                 } catch (uploadError) {
-                    return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                    console.error("❌ ERROR REAL CLOUDINARY (Sorteo PUT):", uploadError);
+                    return res.status(500).json({ error: 'Error nube: ' + uploadError.message });
                 }
             }
 
@@ -502,7 +506,8 @@ router.post('/carrusel', requireAdmin, (req, res) => {
                 const resultado = await subirACloudinary(req.file.buffer);
                 imagen_url = resultado.secure_url;
             } catch (uploadError) {
-                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                console.error("❌ ERROR REAL CLOUDINARY (Carrusel):", uploadError);
+                return res.status(500).json({ error: 'Error nube: ' + uploadError.message });
             }
             
             await db.execute({
