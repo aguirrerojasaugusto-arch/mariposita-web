@@ -274,7 +274,6 @@ router.post('/tickets/vender', async (req, res) => {
     }
 });
 
-// ⭐ NUEVA RUTA: ELIMINAR UN TICKET INDIVIDUAL DESDE BÚSQUEDA ⭐
 router.delete('/tickets/:id', requireAdmin, async (req, res) => {
     try {
         await db.execute({ sql: 'DELETE FROM tickets WHERE id = ?', args: [req.params.id] });
@@ -284,7 +283,6 @@ router.delete('/tickets/:id', requireAdmin, async (req, res) => {
     }
 });
 
-// ⭐ NUEVA RUTA: EDITAR UN TICKET INDIVIDUAL DESDE BÚSQUEDA ⭐
 router.put('/tickets/:id/editar', requireAdmin, async (req, res) => {
     const { cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento } = req.body;
     try {
@@ -477,6 +475,36 @@ router.post('/carrusel', requireAdmin, (req, res) => {
 router.delete('/carrusel/:id', requireAdmin, async (req, res) => {
     try {
         await db.execute({ sql: 'DELETE FROM carrusel WHERE id = ?', args: [req.params.id] });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ============ GANADORES ============
+router.get('/ganadores', async (req, res) => {
+    try {
+        const result = await db.execute(`
+            SELECT g.*, s.nombre as sorteo_nombre 
+            FROM ganadores g JOIN sorteos s ON s.id = g.sorteo_id ORDER BY g.creado_en DESC
+        `);
+        res.json(result.rows);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/ganadores', requireAdmin, async (req, res) => {
+    const { sorteo_id, cliente_nombre, numero_ticket, premio } = req.body;
+    if (!sorteo_id || !cliente_nombre || !numero_ticket) return res.status(400).json({ error: 'Faltan datos' });
+    try {
+        await db.execute({
+            sql: `INSERT INTO ganadores (sorteo_id, cliente_nombre, numero_ticket, premio) VALUES (?, ?, ?, ?)`,
+            args: [sorteo_id, cliente_nombre.toUpperCase(), numero_ticket, premio || null]
+        });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.delete('/ganadores/:id', requireAdmin, async (req, res) => {
+    try {
+        await db.execute({ sql: 'DELETE FROM ganadores WHERE id = ?', args: [req.params.id] });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

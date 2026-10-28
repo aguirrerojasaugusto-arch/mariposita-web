@@ -63,7 +63,6 @@ router.get('/buscar-dni/:dni', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno al buscar el DNI' }); }
 });
 
-// ⭐ RUTA CORREGIDA: Trae datos completos y SOLO tickets aprobados para la tienda pública ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debes ingresar un DNI o Teléfono' });
@@ -74,7 +73,6 @@ router.get('/consultar', async (req, res) => {
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
         
-        // ⭐ FILTRO AGREGADO: AND t.estado_pago = 'aprobado' ⭐
         const ticketsRes = await db.execute({
             sql: `SELECT t.id, t.numero_ticket, t.creado_en, t.cliente_nombre, t.estado_pago, t.notas_admin,
                          t.cliente_dni, t.cliente_telefono, t.cliente_departamento,
@@ -91,6 +89,17 @@ router.get('/consultar', async (req, res) => {
         console.error("Error en consultar:", error);
         res.status(500).json({ error: 'Error al consultar' }); 
     }
+});
+
+// ⭐ RUTA PÚBLICA DE GANADORES ⭐
+router.get('/ganadores', async (req, res) => {
+    try {
+        const result = await db.execute(`
+            SELECT g.*, s.nombre as sorteo_nombre 
+            FROM ganadores g JOIN sorteos s ON s.id = g.sorteo_id ORDER BY g.creado_en DESC
+        `);
+        res.json(result.rows);
+    } catch (error) { res.status(500).json({ error: 'Error al obtener ganadores' }); }
 });
 
 module.exports = router;

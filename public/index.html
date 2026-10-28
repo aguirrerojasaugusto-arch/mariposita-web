@@ -49,6 +49,17 @@
         .prod-nav-btn:hover { background: var(--accent-cyan); color: #03131d; }
         .prod-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #555; color: #555; background: transparent; }
 
+        /* ⭐ ESTILOS NUEVOS PARA EL CARRUSEL DE GANADORES ⭐ */
+        .ganadores-carousel-container { position: relative; display: flex; align-items: center; gap: 1rem; padding: 0 5%; max-width: 1200px; margin: 0 auto; justify-content: center; }
+        .ganadores-viewport { overflow: hidden; width: 100%; max-width: 904px; border-radius: 8px; }
+        .ganadores-track { display: flex; gap: 2rem; transition: transform 0.4s ease-in-out; }
+        .card-ganador { width: 280px; min-width: 280px; flex-shrink: 0; background: linear-gradient(135deg, #112240 0%, #1a365d 100%); border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .ganador-trofeo { font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.5)); }
+        .card-ganador h3 { color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .card-ganador .ganador-premio { color: #ffcc00; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem; }
+        .card-ganador .ganador-ticket { background: rgba(0,0,0,0.3); padding: 0.5rem 1rem; border-radius: 20px; color: #8892b0; font-size: 0.85rem; border: 1px dashed rgba(255,255,255,0.2); }
+        .card-ganador .ganador-ticket strong { color: #00d2ff; }
+
         .viewer-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
         .viewer-modal.active { display: flex; opacity: 1; }
         .viewer-controls { position: absolute; top: 20px; right: 30px; display: flex; gap: 15px; z-index: 2; }
@@ -197,6 +208,8 @@
                 </a>
                 <nav class="nav-links">
                     <a href="/">Inicio</a><a href="#productos">Productos</a><a href="javascript:void(0)" onclick="abrirModalSorteos()">Sorteos</a>
+                    <!-- ⭐ ENLACE A GANADORES ⭐ -->
+                    <a href="#ganadores">Ganadores</a>
                     <div class="header-search">
                         <input type="text" id="input-dni" placeholder="Buscar por DNI o Nº telefono..." onkeypress="if(event.key === 'Enter') buscarPedidoPublico()">
                         <button onclick="buscarPedidoPublico()">🔍 Mis Tickets</button>
@@ -226,6 +239,18 @@
                 <div class="productos-track" id="grid-productos"></div>
             </div>
             <button class="prod-nav-btn" id="btn-next-prod" onclick="moverProductos(1)">&#10095;</button>
+        </div>
+    </section>
+
+    <!-- ⭐ NUEVA SECCIÓN GANADORES DEBAJO DE PRODUCTOS ⭐ -->
+    <section class="section" id="ganadores" style="background-color: #0d253f; padding-top: 2rem;">
+        <h2 class="section-title">Nuestros Ganadores</h2>
+        <div class="ganadores-carousel-container">
+            <button class="prod-nav-btn" id="btn-prev-ganador" onclick="moverGanadores(-1)">&#10094;</button>
+            <div class="ganadores-viewport">
+                <div class="ganadores-track" id="grid-ganadores"></div>
+            </div>
+            <button class="prod-nav-btn" id="btn-next-ganador" onclick="moverGanadores(1)">&#10095;</button>
         </div>
     </section>
 
@@ -344,6 +369,12 @@
         let indiceProducto = 0;
         const itemsPorVista = 3;
         const anchoTarjetaProducto = 312;
+
+        // ⭐ VARIABLES GANADORES ⭐
+        let todosLosGanadores = [];
+        let indiceGanador = 0;
+        const ganadoresPorVista = 3;
+        const anchoTarjetaGanador = 312;
 
         function bloquearScroll() { document.body.classList.add('no-scroll'); }
         function desbloquearScroll() { document.body.classList.remove('no-scroll'); }
@@ -552,6 +583,64 @@
             const maxIndex = productosFiltrados.length - itemsPorVista;
             btnPrev.disabled = indiceProducto === 0;
             btnNext.disabled = indiceProducto === maxIndex;
+        }
+
+        // ⭐ FUNCIONES DE GANADORES ⭐
+        async function cargarGanadores() {
+            try {
+                const res = await fetch('/api/ganadores');
+                todosLosGanadores = await res.json();
+                renderizarGanadores();
+            } catch (error) { console.error("Error cargando ganadores", error); }
+        }
+
+        function renderizarGanadores() {
+            const track = document.getElementById('grid-ganadores');
+            const btnPrev = document.getElementById('btn-prev-ganador');
+            const btnNext = document.getElementById('btn-next-ganador');
+
+            if (!todosLosGanadores.length) {
+                track.innerHTML = '<p style="padding:2rem; color:#fff; text-align:center;">Aún no hay ganadores registrados.</p>';
+                btnPrev.style.display = 'none'; btnNext.style.display = 'none';
+                return;
+            }
+
+            track.innerHTML = todosLosGanadores.map(g => `
+                <div class="card-ganador">
+                    <div class="ganador-trofeo">🏆</div>
+                    <h3>${g.cliente_nombre}</h3>
+                    <p class="ganador-premio">${g.premio || 'Sorteo: ' + g.sorteo_nombre}</p>
+                    <div class="ganador-ticket">Ticket: <strong>${g.numero_ticket}</strong></div>
+                </div>
+            `).join('');
+
+            if (todosLosGanadores.length <= ganadoresPorVista) {
+                btnPrev.style.display = 'none'; btnNext.style.display = 'none';
+                track.style.transform = `translateX(0px)`;
+            } else {
+                btnPrev.style.display = 'flex'; btnNext.style.display = 'flex';
+                actualizarCarruselGanadores();
+            }
+        }
+
+        function moverGanadores(dir) {
+            if (todosLosGanadores.length <= ganadoresPorVista) return;
+            indiceGanador += dir;
+            const maxIndex = todosLosGanadores.length - ganadoresPorVista;
+            if (indiceGanador < 0) indiceGanador = 0;
+            if (indiceGanador > maxIndex) indiceGanador = maxIndex;
+            actualizarCarruselGanadores();
+        }
+
+        function actualizarCarruselGanadores() {
+            const track = document.getElementById('grid-ganadores');
+            const desplazamiento = indiceGanador * anchoTarjetaGanador;
+            track.style.transform = `translateX(-${desplazamiento}px)`;
+            const btnPrev = document.getElementById('btn-prev-ganador');
+            const btnNext = document.getElementById('btn-next-ganador');
+            const maxIndex = todosLosGanadores.length - ganadoresPorVista;
+            btnPrev.disabled = indiceGanador === 0;
+            btnNext.disabled = indiceGanador === maxIndex;
         }
 
         let isDragging = false;
@@ -966,6 +1055,7 @@
         cargarConfiguracionYLogo();
         initHeroSorteos(); 
         cargarProductos(); 
+        cargarGanadores(); // ⭐ Llamada final para cargar ganadores
     </script>
 </body>
 </html>

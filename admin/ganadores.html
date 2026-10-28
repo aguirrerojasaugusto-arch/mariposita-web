@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><title>Ganadores · Admin</title>
+<link rel="stylesheet" href="/admin/css/admin.css">
+<style>
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-content { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: var(--color-primario); color: #fff; }
+    .modal-header h3 { margin: 0; font-size: 1.2rem; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+</style>
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/dashboard.html" class="admin-logo-block">
+                <img src="/admin/img/logo.png" alt="Logo" class="admin-logo-icon">
+                <div class="admin-logo-text"><strong>MARIPOSITA</strong><span>Artesanía Textil</span></div>
+            </a>
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar">A</div>
+                <div class="user-info"><strong id="user-nombre">Cargando...</strong><span id="user-rol">Admin</span></div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard.html">📊 Dashboard</a>
+            <a href="/admin/ordenes.html">📦 Órdenes</a>
+            <a href="/admin/tickets.html">🎁 Tickets</a>
+            <a href="/admin/productos.html">👗 Productos</a>
+            <a href="/admin/sorteos.html">🎰 Sorteos</a>
+            <a href="/admin/ganadores.html" class="active">🏆 Ganadores</a> <!-- NUEVO ENLACE -->
+            <a href="/admin/carrusel.html">🖼️ Carrusel</a>
+            <a href="/admin/usuarios.html">👥 Usuarios</a>
+            <a href="/admin/buscar.html">🔍 Buscar Cliente</a>
+            <a href="/admin/configuracion.html">⚙️ Configuración</a>
+            <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+            <h2 style="margin:0;">Registro de Ganadores</h2>
+            <button class="btn btn-primario" onclick="abrirModal()">+ Registrar Ganador</button>
+        </div>
+        <div id="lista"></div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="modal-ganador">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Registrar Nuevo Ganador</h3><button class="modal-close" onclick="cerrarModal()">✕</button></div>
+        <div class="modal-body">
+            <form id="form-ganador">
+                <div class="form-group">
+                    <label>Sorteo *</label>
+                    <select id="g-sorteo" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></select>
+                </div>
+                <div class="form-group"><label>Nombre del Ganador *</label><input type="text" id="g-nombre" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
+                <div class="form-group"><label>Número de Ticket *</label><input type="text" id="g-ticket" required style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
+                <div class="form-group"><label>Premio (Opcional)</label><input type="text" id="g-premio" placeholder="Ej: Pollera Huancavelica" style="width:100%; padding:0.8rem; border:1px solid #ccc; border-radius:6px;"></div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+            <button type="submit" form="form-ganador" class="btn btn-primario" id="btn-guardar">Registrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let sorteosList = [];
+
+async function checkAuth() {
+    const r = await fetch('/api/auth/me');
+    const d = await r.json();
+    if (!d.logged) return location.href = '/admin/login.html';
+    document.getElementById('user-nombre').textContent = d.nombre;
+    document.getElementById('user-rol').textContent = d.rol;
+    document.getElementById('user-avatar').textContent = d.nombre.charAt(0).toUpperCase();
+    cargar();
+    cargarSorteos();
+}
+
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    location.href = '/admin/login.html';
+}
+
+async function cargarSorteos() {
+    const r = await fetch('/api/admin/sorteos');
+    if (r.ok) {
+        sorteosList = await r.json();
+        document.getElementById('g-sorteo').innerHTML = '<option value="">Selecciona un sorteo</option>' + 
+            sorteosList.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+    }
+}
+
+async function cargar() {
+    const r = await fetch('/api/admin/ganadores');
+    if (r.ok) {
+        const ganadores = await r.json();
+        const lista = document.getElementById('lista');
+        if (!ganadores.length) {
+            lista.innerHTML = '<div class="alert alert-info">Aún no has registrado ningún ganador.</div>';
+            return;
+        }
+        lista.innerHTML = `<table>
+            <thead><tr><th>Fecha</th><th>Ganador</th><th>Ticket</th><th>Sorteo</th><th>Premio</th></tr></thead>
+            <tbody>
+                ${ganadores.map(g => `
+                    <tr>
+                        <td>${g.creado_en}</td>
+                        <td><strong>${g.cliente_nombre}</strong></td>
+                        <td>${g.numero_ticket}</td>
+                        <td>${g.sorteo_nombre}</td>
+                        <td>${g.premio || '—'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>`;
+    }
+}
+
+function abrirModal() { document.getElementById('form-ganador').reset(); document.getElementById('modal-ganador').classList.add('active'); }
+function cerrarModal() { document.getElementById('modal-ganador').classList.remove('active'); }
+
+document.getElementById('form-ganador').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+
+    const data = {
+        sorteo_id: document.getElementById('g-sorteo').value,
+        cliente_nombre: document.getElementById('g-nombre').value,
+        numero_ticket: document.getElementById('g-ticket').value,
+        premio: document.getElementById('g-premio').value
+    };
+
+    try {
+        const res = await fetch('/api/admin/ganadores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            alert('✅ Ganador registrado correctamente');
+            cerrarModal();
+            cargar();
+        } else {
+            const d = await res.json();
+            alert('❌ Error: ' + d.error);
+        }
+    } catch (err) { alert('Error de red'); } 
+    finally { btn.disabled = false; btn.textContent = 'Registrar'; }
+});
+
+checkAuth();
+</script>
+</body>
+</html>
