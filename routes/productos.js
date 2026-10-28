@@ -63,25 +63,25 @@ router.get('/buscar-dni/:dni', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno al buscar el DNI' }); }
 });
 
-// ⭐ RUTA CORREGIDA: Ahora trae los datos completos del cliente para cargar en el formulario ⭐
+// ⭐ RUTA CORREGIDA: Trae datos completos y SOLO tickets aprobados para la tienda pública ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Debes ingresar un DNI o Teléfono' });
     
     try {
-        // Buscamos en órdenes incluyendo el nombre
         const ordenesRes = await db.execute({
             sql: `SELECT codigo, total, estado, creado_en, cliente_direccion, cliente_nombre, notas_admin FROM ordenes WHERE cliente_telefono LIKE ? OR cliente_dni LIKE ? OR cliente_nombre LIKE ? ORDER BY creado_en DESC`,
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
         
-        // ⭐ SE AGREGARON LOS CAMPOS FALTANTES AQUÍ ⭐
+        // ⭐ FILTRO AGREGADO: AND t.estado_pago = 'aprobado' ⭐
         const ticketsRes = await db.execute({
             sql: `SELECT t.id, t.numero_ticket, t.creado_en, t.cliente_nombre, t.estado_pago, t.notas_admin,
                          t.cliente_dni, t.cliente_telefono, t.cliente_departamento,
                          s.nombre as sorteo_nombre, s.fecha_sorteo 
                   FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id 
                   WHERE (t.cliente_telefono LIKE ? OR t.cliente_dni LIKE ? OR t.cliente_nombre LIKE ?) 
+                  AND t.estado_pago = 'aprobado'
                   ORDER BY t.creado_en DESC`,
             args: [`%${query}%`, `%${query}%`, `%${query}%`]
         });
