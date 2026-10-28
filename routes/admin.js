@@ -3,7 +3,8 @@ const multer = require('multer');
 const crypto = require('crypto');
 const { db } = require('../database');
 const { requireAdmin, requireVendedor } = require('../middleware/auth');
-const { uploadProducto } = require('../middleware/upload');
+// ⭐ IMPORTAMOS LA NUEVA FUNCIÓN
+const { uploadProducto, subirACloudinary } = require('../middleware/upload');
 
 const router = express.Router();
 router.use(requireVendedor); 
@@ -70,11 +71,14 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
         if (!tipo || !req.file) return res.status(400).json({ error: 'Faltan datos' });
 
         try {
-            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            // ⭐ SUBIMOS EL LOGO/FONDO/FLYER A CLOUDINARY
+            const resultado = await subirACloudinary(req.file.buffer);
+            const imagen_url = resultado.secure_url;
+            
             const clave = tipo === 'logo' ? 'logo_admin' : (tipo === 'fondo' ? 'fondo_login' : 'flyer_inicio');
             await db.execute({
                 sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
-                args: [clave, base64Image]
+                args: [clave, imagen_url]
             });
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (error) {
@@ -314,7 +318,16 @@ router.post('/productos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio, stock, categoria } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        let imagen_path = null;
+        if (req.file) {
+            try {
+                const resultado = await subirACloudinary(req.file.buffer);
+                imagen_path = resultado.secure_url;
+            } catch (uploadError) {
+                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+            }
+        }
 
         try {
             let precioFinal = null;
@@ -349,7 +362,14 @@ router.put('/productos/:id', requireAdmin, (req, res) => {
             if (!p) return res.status(404).json({ error: 'No encontrado' });
 
             let imagen_path = p.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            if (req.file) {
+                try {
+                    const resultado = await subirACloudinary(req.file.buffer);
+                    imagen_path = resultado.secure_url;
+                } catch (uploadError) {
+                    return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                }
+            }
 
             let precioFinal = p.precio;
             if (precio !== undefined && precio !== null && precio !== '') {
@@ -393,7 +413,16 @@ router.post('/sorteos', requireAdmin, (req, res) => {
     uploadProducto(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
         const { nombre, descripcion, precio_ticket, fecha_sorteo, hora_sorteo, estado } = req.body;
-        let imagen_path = req.file ? `/uploads/imagenes/${req.file.filename}` : null;
+        
+        let imagen_path = null;
+        if (req.file) {
+            try {
+                const resultado = await subirACloudinary(req.file.buffer);
+                imagen_path = resultado.secure_url;
+            } catch (uploadError) {
+                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+            }
+        }
 
         const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : '23:59';
 
@@ -418,7 +447,14 @@ router.put('/sorteos/:id', requireAdmin, (req, res) => {
             if (!s) return res.status(404).json({ error: 'No encontrado' });
 
             let imagen_path = s.imagen_base64;
-            if (req.file) imagen_path = `/uploads/imagenes/${req.file.filename}`;
+            if (req.file) {
+                try {
+                    const resultado = await subirACloudinary(req.file.buffer);
+                    imagen_path = resultado.secure_url;
+                } catch (uploadError) {
+                    return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+                }
+            }
 
             const horaFinal = hora_sorteo ? hora_sorteo.substring(0, 5) : s.hora_sorteo;
 
@@ -461,11 +497,17 @@ router.post('/carrusel', requireAdmin, (req, res) => {
             const count = countRes.rows[0].c;
             if (count >= 5) return res.status(400).json({ error: 'El carrusel solo permite 5 imágenes.' });
             
-            const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            let imagen_url = null;
+            try {
+                const resultado = await subirACloudinary(req.file.buffer);
+                imagen_url = resultado.secure_url;
+            } catch (uploadError) {
+                return res.status(500).json({ error: 'Error al subir la imagen a la nube' });
+            }
             
             await db.execute({
                 sql: 'INSERT INTO carrusel (imagen_base64, orden) VALUES (?, ?)',
-                args: [base64Image, count]
+                args: [imagen_url, count]
             });
             res.json({ success: true });
         } catch (e) { res.status(500).json({ error: e.message }); }
