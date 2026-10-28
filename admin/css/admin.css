@@ -314,3 +314,61 @@ tr:hover { background: #f8fbff; }
     .sidebar { width: 100%; height: auto; position: relative; overflow: visible; }
     .main { height: auto; padding: 1.5rem; overflow-y: visible; }
 }
+
+/* =========================================================
+   RESPONSIVE DESIGN (PANEL DE ADMINISTRACIÓN)
+   ========================================================= */
+
+/* 📱 TABLETS (Menos de 1024px) */
+@media (max-width: 1024px) {
+    .sidebar { width: 220px; } /* Sidebar más angosto */
+    .main { padding: 2rem 1.5rem; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .modal-body { grid-template-columns: 1fr; } /* Modales a 1 columna */
+}
+
+/* 📱 CELULARES (Menos de 768px) */
+@media (max-width: 768px) {
+    /* Layout General */
+    .admin-layout { flex-direction: column; height: auto; overflow: visible; }
+    
+    /* Sidebar en móvil */
+    .sidebar { width: 100%; height: auto; position: relative; padding: 1rem; }
+    .sidebar-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .admin-logo-block { margin-bottom: 0; }
+    .user-profile { margin-bottom: 0; padding: 0.5rem; }
+    .sidebar-nav { flex-direction: row; overflow-x: auto; padding: 0.5rem 0; gap: 0.5rem; }
+    .sidebar-nav a { white-space: nowrap; margin-bottom: 0; }
+    .sidebar-nav .logout { margin-top: 0; }
+    
+    /* Área Principal */
+    .main { padding: 1.5rem 1rem; height: auto; overflow-y: visible; }
+    .header-actions { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .search-input-group { flex-direction: column; width: 100%; }
+    .search-input-group input, .search-input-group button { width: 100%; }
+    
+    /* Tablas */
+    table { display: block; overflow-x: auto; white-space: nowrap; } /* Permite scroll horizontal en tablas */
+    th, td { padding: 0.75rem; font-size: 0.85rem; }
+    
+    /* Tarjetas de estadísticas (Dashboard) */
+    .stats-grid { grid-template-columns: 1fr; }
+    
+    /* Modales */
+    .modal-content { width: 95%; max-height: 95vh; }
+    .modal-header, .modal-body, .modal-footer { padding: 1rem; }
+    
+    /* Formularios en línea (Grids de 2 columnas a 1) */
+    .form-row { grid-template-columns: 1fr !important; gap: 0 !important; }
+    
+    /* Configuración (Imágenes) */
+    .image-grid { grid-template-columns: 1fr; }
+    
+    /* Resumen Fijo (Buscar Cliente) */
+    .resumen-cliente-fijo { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .resumen-depto { text-align: left; max-width: 100%; width: 100%; }
+    
+    /* Filtros de Tabla (Buscar Cliente) */
+    .filtros-group { flex-direction: column; width: 100%; }
+    .select-filtro, .search-input-group { width: 100%; }
+}
