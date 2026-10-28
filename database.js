@@ -31,7 +31,6 @@ async function initDB() {
         `CREATE TABLE IF NOT EXISTS orden_items (id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL REFERENCES ordenes(id) ON DELETE CASCADE, producto_id INTEGER NOT NULL REFERENCES productos(id), cantidad INTEGER NOT NULL CHECK(cantidad > 0), precio_unitario REAL NOT NULL)`,
         `CREATE TABLE IF NOT EXISTS configuracion (clave TEXT PRIMARY KEY, valor TEXT)`,
         `CREATE TABLE IF NOT EXISTS carrusel (id INTEGER PRIMARY KEY AUTOINCREMENT, imagen_base64 TEXT NOT NULL, orden INTEGER DEFAULT 0, creado_en TEXT DEFAULT (datetime('now', 'localtime')))`,
-        // ⭐ NUEVA TABLA GANADORES ⭐
         `CREATE TABLE IF NOT EXISTS ganadores (id INTEGER PRIMARY KEY AUTOINCREMENT, sorteo_id INTEGER NOT NULL REFERENCES sorteos(id), cliente_nombre TEXT NOT NULL, numero_ticket TEXT NOT NULL, premio TEXT, creado_en TEXT DEFAULT (datetime('now', 'localtime')))`,
         `CREATE INDEX IF NOT EXISTS idx_productos_activo ON productos(activo)`,
         `CREATE INDEX IF NOT EXISTS idx_ordenes_estado ON ordenes(estado)`,
@@ -43,10 +42,8 @@ async function initDB() {
     const configs = [
         ['numero_yape', '999 999 999'], ['numero_plin', '999 999 999'], ['nombre_titular', 'Artesanía Mariposita'], 
         ['whatsapp', '999 999 999'], ['email_contacto', 'contacto@mariposita.pe'], ['logo_admin', null], ['fondo_login', null],
-        // ⭐ NUEVAS REDES SOCIALES ⭐
-        ['facebook_url', 'https://facebook.com'],
-        ['tiktok_url', 'https://tiktok.com'],
-        ['youtube_url', 'https://youtube.com']
+        ['telefono_contacto', '999 999 999'], ['ubicacion', 'Huancavelica, Perú'],
+        ['facebook_url', 'https://facebook.com'], ['tiktok_url', 'https://tiktok.com'], ['youtube_url', 'https://youtube.com']
     ];
     for (const [clave, valor] of configs) {
         await db.execute({ sql: 'INSERT OR IGNORE INTO configuracion (clave, valor) VALUES (?, ?)', args: [clave, valor] });
