@@ -537,13 +537,26 @@ router.get('/ganadores', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ MODIFICACIÓN AQUÍ: Extrae el departamento automáticamente
 router.post('/ganadores', requireAdmin, async (req, res) => {
     const { sorteo_id, cliente_nombre, numero_ticket, premio } = req.body;
     if (!sorteo_id || !cliente_nombre || !numero_ticket) return res.status(400).json({ error: 'Faltan datos' });
+    
     try {
+        // Buscamos el departamento en la tabla de tickets
+        const ticketRes = await db.execute({
+            sql: 'SELECT cliente_departamento FROM tickets WHERE numero_ticket = ? LIMIT 1',
+            args: [numero_ticket]
+        });
+        
+        let departamentoCliente = null;
+        if (ticketRes.rows.length > 0) {
+            departamentoCliente = ticketRes.rows[0].cliente_departamento;
+        }
+
         await db.execute({
-            sql: `INSERT INTO ganadores (sorteo_id, cliente_nombre, numero_ticket, premio) VALUES (?, ?, ?, ?)`,
-            args: [sorteo_id, cliente_nombre.toUpperCase(), numero_ticket, premio || null]
+            sql: `INSERT INTO ganadores (sorteo_id, cliente_nombre, numero_ticket, premio, departamento) VALUES (?, ?, ?, ?, ?)`,
+            args: [sorteo_id, cliente_nombre.toUpperCase(), numero_ticket, premio || null, departamentoCliente]
         });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
