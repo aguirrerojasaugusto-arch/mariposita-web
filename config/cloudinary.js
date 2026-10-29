@@ -1,9 +1,10 @@
 const cloudinary = require('cloudinary').v2;
 
+// ⚠️ PRUEBA DE EMERGENCIA: Escribimos las credenciales directamente
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'bvwbvsqk',                  // Tu Cloud Name
+  api_key: '177269444393927',              // Reemplaza con tu número (ej. 177269...)
+  api_secret: 'GtmsC0xwr_FihqsOM6kfTI0f5fU',        // Reemplaza con tu secreto (ej. Gtms...)
   secure: true
 });
 
