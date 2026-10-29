@@ -260,7 +260,7 @@ router.post('/tickets/vender', async (req, res) => {
 
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
-                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', 'localtime'), ?)`,
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', '-05:00'), ?)`, // ⭐ CAMBIO AQUÍ
                 args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, `${hashBase}-${numero}`]
             });
         }
