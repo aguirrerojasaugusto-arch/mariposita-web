@@ -58,7 +58,6 @@ body {
 
 /* --- LOGIN --- */
 .login-container { display: flex; height: 100vh; width: 100vw; background: linear-gradient(135deg, #004a7c 0%, #00b4d8 100%); position: relative; overflow: hidden; }
-/* ... (resto de estilos de login intactos) ... */
 .login-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80') center/cover; opacity: 0.15; z-index: 1; }
 .login-content { position: relative; z-index: 2; display: flex; width: 100%; max-width: 1400px; margin: 0 auto; padding: 2rem; }
 .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5%; color: #fff; }
@@ -199,10 +198,43 @@ body {
 
 /* --- TARJETAS Y TABLAS --- */
 .card { background: rgba(255, 255, 255, 0.95) !important; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(10px); }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-.stat { background: rgba(255, 255, 255, 0.95) !important; border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2); border-left: 5px solid var(--color-primario); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.5); }
-.stat .num { font-size: 2.2rem; font-weight: 700; color: var(--color-primario); }
-.stat .label { color: var(--color-texto-claro); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem; }
+
+/* ⭐ ESTILOS DE TARJETAS OPTIMIZADOS ⭐ */
+.stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Tarjetas más pequeñas */
+    gap: 1rem; /* Espaciado más compacto */
+    margin-bottom: 2rem; 
+}
+
+.stat { 
+    background: rgba(255, 255, 255, 0.95) !important; 
+    border-radius: 12px; 
+    padding: 1.2rem; /* Menos relleno para que no sean tan altas */
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
+    border-left: 5px solid var(--color-primario); 
+    backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255,255,255,0.5); 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat .num { 
+    font-size: 1.8rem; /* Letra un poco más pequeña */
+    font-weight: 700; 
+    color: var(--color-primario); 
+    line-height: 1.2;
+}
+
+.stat .label { 
+    color: var(--color-texto-claro); 
+    font-size: 0.75rem; /* Texto más pequeño */
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    margin-top: 0.3rem; 
+    line-height: 1.2;
+}
 
 table { width: 100%; border-collapse: collapse; background: rgba(255, 255, 255, 0.95) !important; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
 th { background: #f8f9fa; color: var(--color-texto-claro); text-align: left; padding: 1rem; font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #eee; }
