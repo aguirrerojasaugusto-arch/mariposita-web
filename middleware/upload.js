@@ -26,11 +26,21 @@ const uploadComprobante = multer({
     fileFilter
 }).single('comprobante');
 
-// ⭐ 3. Función para enviar el archivo a Cloudinary
+// ⭐ 3. Función para enviar el archivo a Cloudinary (CON OPTIMIZACIÓN AUTOMÁTICA)
 const subirACloudinary = (buffer) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-            { folder: 'mariposita' },
+            { 
+                folder: 'mariposita',
+                // ⭐ OPTIMIZACIÓN AUTOMÁTICA
+                // Redimensiona a un ancho máximo de 1200px (para no guardar fotos gigantes)
+                // f_auto elige el mejor formato (WebP)
+                // q_auto ajusta la calidad sin perder nitidez
+                transformation: [
+                    { width: 1200, crop: "limit" },
+                    { fetch_format: "auto", quality: "auto" }
+                ]
+            },
             (error, result) => {
                 if (error) return reject(error);
                 resolve(result);
