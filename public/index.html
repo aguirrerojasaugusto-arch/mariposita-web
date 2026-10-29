@@ -685,11 +685,17 @@
                     ? `<div class="ganador-imagen-container"><img src="${g.sorteo_imagen}" alt="Premio"></div>`
                     : `<div class="ganador-trofeo">🏆</div>`;
 
+                // ⭐ MOSTRAMOS EL DEPARTAMENTO SI EXISTE
+                const departamento = g.departamento 
+                    ? `<div style="font-size:0.8rem; color:#8892b0; margin-bottom:0.5rem;">📍 ${g.departamento}</div>` 
+                    : '';
+
                 return `
                 <div class="card-ganador">
                     ${imagenHTML}
                     <h3>${g.cliente_nombre}</h3>
-                    <p class="ganador-premio">${g.premio || 'Sorteo: ' + g.sorteo_nombre}</p>
+                    <p class="ganador-premio" style="margin-bottom: 0.2rem;">${g.premio || 'Sorteo: ' + g.sorteo_nombre}</p>
+                    ${departamento} <!-- Aquí se muestra el departamento -->
                     <div class="ganador-ticket">Ticket: <strong>${g.numero_ticket}</strong></div>
                 </div>
             `}).join('');

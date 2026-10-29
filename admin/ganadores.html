@@ -105,6 +105,11 @@
                         <label>Número de Ticket *</label>
                         <input type="text" id="g-ticket" required readonly style="background:#f4f4f4; cursor:not-allowed;">
                     </div>
+                    <!-- ⭐ CAMPO DEPARTAMENTO AGREGADO ⭐ -->
+                    <div class="form-group">
+                        <label>Departamento</label>
+                        <input type="text" id="g-departamento" readonly style="background:#f4f4f4; cursor:not-allowed;" placeholder="Se autocompleta al seleccionar cliente">
+                    </div>
                     <div class="form-group">
                         <label>Premio (Opcional)</label>
                         <input type="text" id="g-premio" placeholder="Ej: Pollera Huancavelica">
@@ -164,13 +169,14 @@ async function cargar() {
             return;
         }
         lista.innerHTML = `<table>
-            <thead><tr><th>Fecha</th><th>Ganador</th><th>Ticket</th><th>Sorteo</th><th>Premio</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Ganador</th><th>Ticket</th><th>Departamento</th><th>Sorteo</th><th>Premio</th><th>Acciones</th></tr></thead>
             <tbody>
                 ${ganadores.map(g => `
                     <tr>
                         <td>${g.creado_en}</td>
                         <td><strong>${g.cliente_nombre}</strong></td>
                         <td>${g.numero_ticket}</td>
+                        <td>${g.departamento || '—'}</td> <!-- ⭐ NUEVA COLUMNA -->
                         <td>${g.sorteo_nombre}</td>
                         <td>${g.premio || '—'}</td>
                         <td><button class="btn btn-rechazar" onclick="eliminar(${g.id})">Eliminar</button></td>
@@ -227,6 +233,9 @@ function seleccionarCliente(idTicket) {
     document.getElementById('g-ticket').value = ticket.numero_ticket;
     document.getElementById('g-sorteo').value = ticket.sorteo_id;
     
+    // ⭐ AUTOCOMPLETAMOS EL DEPARTAMENTO
+    document.getElementById('g-departamento').value = ticket.cliente_departamento || 'No registrado';
+    
     document.getElementById('resultados-busqueda').style.display = 'none';
     document.getElementById('input-buscar-cliente').value = '';
 }
@@ -253,7 +262,8 @@ document.getElementById('form-ganador').addEventListener('submit', async (e) => 
         sorteo_id: document.getElementById('g-sorteo').value,
         cliente_nombre: document.getElementById('g-nombre').value,
         numero_ticket: document.getElementById('g-ticket').value,
-        premio: document.getElementById('g-premio').value
+        premio: document.getElementById('g-premio').value,
+        departamento: document.getElementById('g-departamento').value // ⭐ Agregamos esto para enviarlo
     };
 
     try {
