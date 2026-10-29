@@ -5,10 +5,17 @@
 <link rel="stylesheet" href="/admin/css/admin.css">
 <style>
     /* ⭐ ESTILOS DEL ENCABEZADO FIJO DEL CLIENTE ⭐ */
-    .resumen-cliente-fijo { display: none; background: #f8f9fa; border: 1px solid #ddd; border-left: 5px solid var(--color-primario); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; }
+    .resumen-cliente-fijo { display: none; background: #f8f9fa; border: 1px solid #ddd; border-left: 5px solid var(--color-primario); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; flex-wrap: wrap; gap: 1rem; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .resumen-info h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .resumen-info h2 { margin: 0; font-size: 1.3rem; color: #333; }
+    
+    /* ⭐ NUEVOS ESTILOS PARA LOS CONTADORES ⭐ */
+    .resumen-contadores { display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .contador-box { background: #e3f2fd; padding: 0.4rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: bold; color: #1565c0; }
+    .contador-box.aprobado { background: #e8f5e9; color: #2e7d32; }
+    .contador-box.rechazado { background: #ffebee; color: #c62828; }
+    
     .resumen-depto { text-align: right; background: #e3f2fd; padding: 0.5rem 1rem; border-radius: 6px; max-width: 50%; }
     .resumen-depto h4 { margin: 0 0 0.2rem 0; font-size: 0.75rem; color: #1565c0; text-transform: uppercase; }
     .resumen-depto h3 { margin: 0; font-size: 1rem; color: #1565c0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -17,19 +24,21 @@
     .table-container { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 2rem; }
     .table-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 1rem; }
     .table-header h3 { margin: 0; color: #333; font-size: 1.2rem; }
-    .search-input-group { display: flex; gap: 10px; align-items: center; }
+    
+    /* ⭐ ESTILOS DEL BUSCADOR Y FILTROS ⭐ */
+    .search-input-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .search-input-group input { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; width: 250px; }
     .search-input-group input:focus { border-color: var(--color-primario); }
+    
+    .filtros-group { display: flex; gap: 10px; align-items: center; }
+    .select-filtro { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; background: #fff; cursor: pointer; }
+    .select-filtro:focus { border-color: var(--color-primario); }
+
     .btn-accion-sm { padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
     .btn-editar-sm { background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
     .btn-editar-sm:hover { background: #1565c0; color: #fff; }
     .btn-eliminar-sm { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
     .btn-eliminar-sm:hover { background: #c62828; color: #fff; }
-
-    /* ⭐ ESTILOS DEL FILTRO SELECT ⭐ */
-    .filtros-group { display: flex; gap: 10px; align-items: center; }
-    .select-filtro { padding: 0.6rem 1rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; outline: none; background: #fff; cursor: pointer; }
-    .select-filtro:focus { border-color: var(--color-primario); }
 
     /* ⭐ ESTILOS DEL MODAL DE EDICIÓN ⭐ */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
@@ -88,23 +97,45 @@
         </aside>
     
         <main class="main">
-            <!-- ⭐ BUSCADOR EN LA PARTE SUPERIOR ⭐ -->
+            <!-- ⭐ BUSCADOR EN LA PARTE SUPERIOR CON FILTRO INTEGRADO ⭐ -->
             <div class="header-actions" style="margin-bottom: 2rem; background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div>
+                <div style="margin-bottom: 1rem;">
                     <h2 style="margin: 0 0 0.5rem 0; color: #333;">Consultar Pedidos</h2>
                     <p style="margin: 0; color: #666; font-size: 0.9rem;">Ingresa el DNI o Teléfono del cliente para buscar sus tickets y órdenes.</p>
                 </div>
+                
                 <div class="search-input-group">
+                    <div class="filtros-group">
+                        <!-- ⭐ FILTRO MOVIDO AQUÍ AL COSTADO ⭐ -->
+                        <select id="filtro-estado" class="select-filtro" onchange="aplicarFiltros()">
+                            <option value="todos">Todos los estados</option>
+                            <option value="aprobado">Aprobados</option>
+                            <option value="rechazado">Rechazados</option>
+                        </select>
+                    </div>
                     <input type="text" id="input-busqueda" placeholder="DNI o Teléfono..." onkeypress="if(event.key === 'Enter') buscar()">
                     <button class="btn btn-primario" onclick="buscar()" style="padding: 0.6rem 1.5rem;">Buscar</button>
                 </div>
             </div>
 
-            <!-- ⭐ ENCABEZADO DEL CLIENTE ENCONTRADO ⭐ -->
+            <!-- ⭐ ENCABEZADO DEL CLIENTE ENCONTRADO CON CONTADORES ⭐ -->
             <div class="resumen-cliente-fijo" id="resumen-cliente-fijo">
                 <div class="resumen-info">
                     <h4>Cliente</h4>
                     <h2 id="resumen-nombre">-</h2>
+                    
+                    <!-- ⭐ NUEVOS CONTADORES AGREGADOS AQUÍ ⭐ -->
+                    <div class="resumen-contadores">
+                        <div class="contador-box">
+                            Total: <span id="contador-total">0</span>
+                        </div>
+                        <div class="contador-box aprobado">
+                            Aprobados: <span id="contador-aprobados">0</span>
+                        </div>
+                        <div class="contador-box rechazado">
+                            Rechazados: <span id="contador-rechazados">0</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="resumen-depto">
                     <h4>Ubicación</h4>
@@ -210,6 +241,19 @@ async function buscar() {
         }
 
         ticketsActuales = data.tickets;
+        
+        // ⭐ CALCULAMOS LOS CONTADORES PARA EL RESUMEN ⭐
+        let totalTickets = ticketsActuales.length;
+        let totalAprobados = ticketsActuales.filter(t => t.estado_pago === 'aprobado').length;
+        let totalRechazados = ticketsActuales.filter(t => t.estado_pago === 'rechazado').length;
+
+        // Actualizamos los números en el HTML
+        document.getElementById('contador-total').textContent = totalTickets;
+        document.getElementById('contador-aprobados').textContent = totalAprobados;
+        document.getElementById('contador-rechazados').textContent = totalRechazados;
+
+        // Reiniciamos el filtro a "Todos" cada vez que se busca un nuevo cliente
+        document.getElementById('filtro-estado').value = 'todos';
         ticketsFiltrados = [...ticketsActuales];
         paginaActual = 1;
 
@@ -271,17 +315,7 @@ async function buscar() {
                 <div class="table-container">
                     <div class="table-header">
                         <h3>🎟️ Tickets de Sorteo</h3>
-                        <div class="filtros-group">
-                            <!-- ⭐ FILTRO DE ESTADO AGREGADO ⭐ -->
-                            <select id="filtro-estado" class="select-filtro" onchange="aplicarFiltros()">
-                                <option value="todos">Todos los estados</option>
-                                <option value="aprobado">Solo Aprobados</option>
-                                <option value="rechazado">Solo Rechazados</option>
-                            </select>
-                            <div class="search-input-group">
-                                <input type="text" id="buscador-tabla" placeholder="Buscar ticket, sorteo, nombre..." onkeyup="aplicarFiltros()">
-                            </div>
-                        </div>
+                        <!-- El buscador interno fue eliminado como pediste -->
                     </div>
                     <table id="tabla-tickets">
                         <thead>
@@ -290,7 +324,7 @@ async function buscar() {
                                 <th>Cliente</th>
                                 <th>Sorteo</th>
                                 <th>Fecha</th>
-                                <th>Estado</th> <!-- ⭐ COLUMNA DE ESTADO AGREGADA ⭐ -->
+                                <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -308,7 +342,7 @@ async function buscar() {
         cont.innerHTML = html;
         
         if (data.tickets.length > 0) {
-            aplicarFiltros(); // Llamamos al filtro en lugar de renderizar directo
+            aplicarFiltros(); // Llamamos al filtro para pintar la tabla de tickets
         }
 
     } catch (error) {
@@ -316,24 +350,15 @@ async function buscar() {
     }
 }
 
-// ⭐ FUNCIÓN QUE APLICA EL FILTRO Y EL BUSCADOR ⭐
+// ⭐ FUNCIÓN QUE APLICA EL FILTRO (AHORA SOLO USA EL SELECT DE ARRIBA) ⭐
 function aplicarFiltros() {
-    const texto = document.getElementById('buscador-tabla').value.toLowerCase();
     const estadoFiltro = document.getElementById('filtro-estado').value;
 
     ticketsFiltrados = ticketsActuales.filter(t => {
-        // 1. Filtro de búsqueda de texto
-        const coincideTexto = (t.numero_ticket && t.numero_ticket.toLowerCase().includes(texto)) ||
-                              (t.cliente_nombre && t.cliente_nombre.toLowerCase().includes(texto)) ||
-                              (t.cliente_dni && t.cliente_dni.includes(texto)) ||
-                              (t.sorteo_nombre && t.sorteo_nombre.toLowerCase().includes(texto));
-        
-        // 2. Filtro de estado
         let coincideEstado = true;
         if (estadoFiltro === 'aprobado') coincideEstado = (t.estado_pago === 'aprobado');
         if (estadoFiltro === 'rechazado') coincideEstado = (t.estado_pago === 'rechazado');
-
-        return coincideTexto && coincideEstado;
+        return coincideEstado;
     });
 
     paginaActual = 1;
@@ -350,7 +375,7 @@ function renderizarTablaTickets() {
     document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No se encontraron tickets con esa búsqueda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No hay tickets con ese estado.</td></tr>';
         return;
     }
 
