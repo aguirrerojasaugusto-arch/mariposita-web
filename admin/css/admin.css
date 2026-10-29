@@ -199,41 +199,48 @@ body {
 /* --- TARJETAS Y TABLAS --- */
 .card { background: rgba(255, 255, 255, 0.95) !important; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.5); backdrop-filter: blur(10px); }
 
-/* ⭐ ESTILOS DE TARJETAS OPTIMIZADOS ⭐ */
+/* ⭐ ESTILOS DE TARJETAS CUADRADAS Y CENTRADAS ⭐ */
 .stats-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Tarjetas más pequeñas */
-    gap: 1rem; /* Espaciado más compacto */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Un poco más angostas para que quepan más */
+    gap: 1.2rem; 
     margin-bottom: 2rem; 
 }
 
 .stat { 
     background: rgba(255, 255, 255, 0.95) !important; 
     border-radius: 12px; 
-    padding: 1.2rem; /* Menos relleno para que no sean tan altas */
+    padding: 1rem; 
     box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
-    border-left: 5px solid var(--color-primario); 
+    border-left: none; /* Quitamos el borde lateral para que se vea como un cuadrado perfecto */
+    border-top: 5px solid var(--color-primario); /* Ahora el color va arriba */
     backdrop-filter: blur(10px); 
     border: 1px solid rgba(255,255,255,0.5); 
+    
+    /* ⭐ TRUCO PARA HACERLAS CUADRADAS Y CENTRAR EL CONTENIDO ⭐ */
+    aspect-ratio: 1 / 1; 
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .stat .num { 
-    font-size: 1.8rem; /* Letra un poco más pequeña */
-    font-weight: 700; 
+    font-size: 2rem; 
+    font-weight: 800; 
     color: var(--color-primario); 
-    line-height: 1.2;
+    line-height: 1;
+    margin-bottom: 0.3rem;
 }
 
 .stat .label { 
     color: var(--color-texto-claro); 
-    font-size: 0.75rem; /* Texto más pequeño */
+    font-size: 0.7rem; 
     text-transform: uppercase; 
     letter-spacing: 0.5px; 
-    margin-top: 0.3rem; 
-    line-height: 1.2;
+    line-height: 1.1;
+    padding: 0 5px;
 }
 
 table { width: 100%; border-collapse: collapse; background: rgba(255, 255, 255, 0.95) !important; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
