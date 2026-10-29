@@ -411,7 +411,10 @@ function abrirModalVentaPresencial() {
         sorteosValidos.map(s => `<option value="${s.id}" data-precio="${s.precio_ticket}">${s.nombre} (S/ ${s.precio_ticket})</option>`).join('');
     
     document.getElementById('form-venta-presencial').reset();
-    document.getElementById('vp-total').value = 'S/ 0.00';
+    
+    // ⭐ Forzamos el cálculo inicial después de cargar el modal
+    setTimeout(() => calcularTotalVenta(), 100);
+    
     document.getElementById('modal-venta-presencial').classList.add('active');
 }
 
