@@ -32,11 +32,21 @@ router.get('/dashboard', async (req, res) => {
         const tp = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='pendiente'");
         const va = await db.execute("SELECT COALESCE(SUM(total),0) as t FROM ordenes WHERE estado='aprobado'");
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
+        
+        // ⭐ NUEVAS CONSULTAS PARA TICKETS
+        const ta = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='aprobado'");
+        const tr = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='rechazado'");
+        const mta = await db.execute("SELECT COALESCE(SUM(s.precio_ticket),0) as m FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.estado_pago='aprobado'");
+
         res.json({ 
             ordenes_pendientes: op.rows[0].c, 
             tickets_pendientes: tp.rows[0].c, 
             ventas_aprobadas: va.rows[0].t, 
-            total_ordenes: to.rows[0].c 
+            total_ordenes: to.rows[0].c,
+            // ⭐ NUEVOS DATOS AL JSON
+            tickets_aprobados: ta.rows[0].c,
+            tickets_rechazados: tr.rows[0].c,
+            monto_tickets_aprobados: mta.rows[0].m
         });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });

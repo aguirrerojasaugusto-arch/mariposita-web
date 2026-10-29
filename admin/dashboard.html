@@ -82,10 +82,28 @@ async function loadStats() {
     const r = await fetch('/api/admin/dashboard');
     if (r.status === 401) return location.href = '/admin/login.html';
     const d = await r.json();
+    
+    // ⭐ NUEVAS TARJETAS DE TICKETS AGREGADAS AQUÍ ⭐
     document.getElementById('stats').innerHTML = `
         <div class="stat"><div class="num">${d.ordenes_pendientes}</div><div class="label">Órdenes pendientes</div></div>
         <div class="stat"><div class="num">${d.tickets_pendientes}</div><div class="label">Tickets pendientes</div></div>
-        <div class="stat"><div class="num">S/ ${d.ventas_aprobadas.toFixed(2)}</div><div class="label">Ventas aprobadas</div></div>
+        
+        <div class="stat" style="border-left-color: #2e7d32;">
+            <div class="num" style="color: #2e7d32;">${d.tickets_aprobados}</div>
+            <div class="label">Tickets Aprobados</div>
+        </div>
+        
+        <div class="stat" style="border-left-color: #c62828;">
+            <div class="num" style="color: #c62828;">${d.tickets_rechazados}</div>
+            <div class="label">Tickets Rechazados</div>
+        </div>
+        
+        <div class="stat" style="border-left-color: #ff9800;">
+            <div class="num" style="color: #ff9800;">S/ ${d.monto_tickets_aprobados.toFixed(2)}</div>
+            <div class="label">Monto en Tickets Aprobados</div>
+        </div>
+
+        <div class="stat"><div class="num">S/ ${d.ventas_aprobadas.toFixed(2)}</div><div class="label">Ventas Ropa Aprobadas</div></div>
         <div class="stat"><div class="num">${d.total_ordenes}</div><div class="label">Órdenes totales</div></div>
     `;
 }
