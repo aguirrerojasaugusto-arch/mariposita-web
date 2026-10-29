@@ -428,6 +428,49 @@ function calcularTotalVenta() {
     }
 }
 
+// ⭐ NUEVO: Búsqueda automática al escribir el DNI en Venta Presencial
+document.getElementById('vp-dni').addEventListener('input', function(e) {
+    const dni = e.target.value.trim();
+    const inputNombre = document.getElementById('vp-nombre');
+    const inputTelefono = document.getElementById('vp-telefono');
+    const selectDepto = document.getElementById('vp-departamento');
+
+    if (dni.length === 8) {
+        inputNombre.value = 'Buscando...';
+        
+        fetch(`/api/buscar-dni/${dni}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.encontrado) {
+                    inputNombre.value = data.cliente.nombre;
+                    inputTelefono.value = data.cliente.telefono || '';
+                    
+                    if (data.cliente.departamento) {
+                        const opciones = selectDepto.options;
+                        for (let i = 0; i < opciones.length; i++) {
+                            if (opciones[i].value.toUpperCase() === data.cliente.departamento.toUpperCase()) {
+                                selectDepto.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    inputNombre.value = '';
+                    inputTelefono.value = '';
+                    selectDepto.value = 'Amazonas';
+                    inputNombre.focus();
+                }
+            })
+            .catch(err => {
+                console.error("Error buscando DNI:", err);
+                inputNombre.value = '';
+            });
+    } else if (dni.length < 8) {
+        inputNombre.value = '';
+        inputTelefono.value = '';
+    }
+});
+
 document.getElementById('form-venta-presencial').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-vp-guardar');
