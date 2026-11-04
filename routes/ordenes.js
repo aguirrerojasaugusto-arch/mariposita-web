@@ -19,13 +19,14 @@ router.get('/consultar', async (req, res) => {
     res.setHeader('Expires', '0');
 
     try {
-        // ⭐ FORZAMOS A TURSO A LEER DEL NODO PRINCIPAL (SIN RÉPLICAS) ⭐
+        // Buscar órdenes por DNI o Teléfono
+        // ⭐ USAMOS mode: "write" PARA FORZAR LECTURA DEL NODO PRINCIPAL EN TURSO ⭐
         const ordenesRes = await db.execute({
             sql: `SELECT * FROM ordenes 
                   WHERE cliente_dni = ? OR cliente_telefono = ? 
                   ORDER BY creado_en DESC`,
             args: [query, query],
-            consistency: "strong" // ⭐ CLAVE PARA TURSO ⭐
+            mode: "write" 
         });
 
         const ticketsRes = await db.execute({
@@ -35,7 +36,7 @@ router.get('/consultar', async (req, res) => {
                   WHERE t.cliente_dni = ? OR t.cliente_telefono = ? 
                   ORDER BY t.creado_en DESC`,
             args: [query, query],
-            consistency: "strong" // ⭐ CLAVE PARA TURSO ⭐
+            mode: "write"
         });
 
         res.json({
@@ -58,7 +59,7 @@ router.get('/buscar-cliente/:dni', async (req, res) => {
             sql: `SELECT cliente_nombre as nombre, cliente_telefono as telefono, cliente_direccion as direccion 
                   FROM ordenes WHERE cliente_dni = ? ORDER BY creado_en DESC LIMIT 1`,
             args: [dni],
-            consistency: "strong"
+            mode: "write"
         });
         const cliente = result.rows[0];
         if (cliente) res.json({ encontrado: true, cliente });
