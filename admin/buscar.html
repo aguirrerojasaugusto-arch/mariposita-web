@@ -251,7 +251,10 @@ async function buscar() {
     resumenBox.style.display = 'none';
 
     try {
-        const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}`);
+        // ⭐ MODIFICACIÓN AQUÍ: Forzamos al navegador a no usar caché ⭐
+        const res = await fetch(`/api/consultar?query=${encodeURIComponent(query)}&t=${new Date().getTime()}`, {
+            cache: "no-store"
+        });
         const data = await res.json();
 
         if (!data.ordenes.length && !data.tickets.length) {
