@@ -8,7 +8,7 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ⭐ ============ RUTA /api/consultar CORREGIDA ============ ⭐
+// ⭐ ============ RUTA /api/consultar CON DIAGNÓSTICO ============ ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
@@ -38,6 +38,14 @@ router.get('/consultar', async (req, res) => {
             args: [query, query],
             mode: "write"
         });
+
+        // ⭐ LOGS DE DIAGNÓSTICO ⭐
+        console.log("=========================================");
+        console.log("🔍 DIAGNÓSTICO /api/consultar");
+        console.log("Query recibido:", query);
+        console.log("Tickets devueltos por Turso:", ticketsRes.rows.length);
+        console.log("Estados:", ticketsRes.rows.map(t => t.estado_pago));
+        console.log("=========================================");
 
         res.json({
             ordenes: ordenesRes.rows,
