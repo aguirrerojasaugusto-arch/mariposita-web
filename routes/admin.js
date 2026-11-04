@@ -222,7 +222,7 @@ router.get('/tickets/aprobados', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ RUTA CORREGIDA PARA EVITAR ERRORES CON HASH NULO ⭐
+// ⭐ RUTA CORREGIDA Y VERIFICADA CONTRA TURSO ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -234,37 +234,43 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
 
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const hashBase = t.hash_comprobante && t.hash_comprobante.includes('-') ? t.hash_comprobante.split('-')[0] : null;
 
-        // ⭐ LÓGICA CORREGIDA: Si no hay hash, actualizamos solo este ticket
-        if (t.hash_comprobante && t.hash_comprobante.includes('-')) {
-            const hashBase = t.hash_comprobante.split('-')[0];
-            await db.batch([
-                { 
-                    sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`, 
-                    args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id] 
-                },
-                { 
-                    sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
-                    args: [req.user.userId, `${accion.toUpperCase()}_TICKET_GRUPAL`, `Grupo de tickets de ${t.cliente_nombre}`, req.ip, ahora] 
-                }
-            ], "write");
+        // 1. Ejecutamos la actualización en modo "write" (esperando la confirmación de Turso)
+        if (hashBase) {
+            await db.execute({
+                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`,
+                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id],
+                mode: "write" // ⭐ CLAVE PARA TURSO ⭐
+            });
         } else {
-            // Fallback: si no hay hash válido, actualizamos solo el ticket seleccionado
-            await db.batch([
-                { 
-                    sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?`, 
-                    args: [nuevo, notas || t.notas_admin || null, t.id] 
-                },
-                { 
-                    sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
-                    args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket #${t.numero_ticket} de ${t.cliente_nombre}`, req.ip, ahora] 
-                }
-            ], "write");
+            await db.execute({
+                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?`,
+                args: [nuevo, notas || t.notas_admin || null, t.id],
+                mode: "write"
+            });
+        }
+
+        // 2. Registramos el log de actividad
+        await db.execute({
+            sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)',
+            args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket #${t.numero_ticket} de ${t.cliente_nombre}`, req.ip, ahora],
+            mode: "write"
+        });
+
+        // 3. Verificación final: Leemos el ticket para confirmar que se guardó
+        const checkRes = await db.execute({ sql: 'SELECT estado_pago FROM tickets WHERE id = ?', args: [req.params.id] });
+        const estadoFinal = checkRes.rows[0].estado_pago;
+
+        console.log(`✅ TICKET ACTUALIZADO EN TURSO: #${t.numero_ticket} -> ${estadoFinal}`);
+
+        if (estadoFinal !== nuevo) {
+            return res.status(500).json({ error: `Error crítico: El ticket no se actualizó a ${nuevo}. Estado actual: ${estadoFinal}` });
         }
 
         res.json({ success: true, nuevo_estado: nuevo });
     } catch (e) { 
-        console.error("Error al revisar ticket:", e);
+        console.error("❌ ERROR REAL EN RENDER:", e);
         res.status(500).json({ error: e.message }); 
     }
 });
