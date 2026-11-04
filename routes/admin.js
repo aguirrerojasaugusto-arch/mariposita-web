@@ -33,7 +33,6 @@ router.get('/dashboard', async (req, res) => {
         const va = await db.execute("SELECT COALESCE(SUM(total),0) as t FROM ordenes WHERE estado='aprobado'");
         const to = await db.execute("SELECT COUNT(*) as c FROM ordenes");
         
-        // ⭐ NUEVAS CONSULTAS PARA TICKETS
         const ta = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='aprobado'");
         const tr = await db.execute("SELECT COUNT(*) as c FROM tickets WHERE estado_pago='rechazado'");
         const mta = await db.execute("SELECT COALESCE(SUM(s.precio_ticket),0) as m FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.estado_pago='aprobado'");
@@ -43,7 +42,6 @@ router.get('/dashboard', async (req, res) => {
             tickets_pendientes: tp.rows[0].c, 
             ventas_aprobadas: va.rows[0].t, 
             total_ordenes: to.rows[0].c,
-            // ⭐ NUEVOS DATOS AL JSON
             tickets_aprobados: ta.rows[0].c,
             tickets_rechazados: tr.rows[0].c,
             monto_tickets_aprobados: mta.rows[0].m
@@ -203,17 +201,28 @@ router.get('/tickets/pendientes', async (req, res) => {
 
 router.get('/tickets/aprobados', async (req, res) => {
     try {
-        const result = await db.execute(`
+        const estado = req.query.estado;
+        let sql = `
             SELECT t.*, s.nombre as sorteo_nombre 
             FROM tickets t 
             JOIN sorteos s ON s.id = t.sorteo_id 
-            WHERE t.estado_pago = 'aprobado' 
-            ORDER BY t.creado_en DESC
-        `);
+        `;
+        const args = [];
+        
+        if (estado && estado !== 'todos') {
+            sql += ` WHERE t.estado_pago = ? `;
+            args.push(estado);
+        } else {
+            sql += ` WHERE t.estado_pago = 'aprobado' `;
+        }
+        sql += ` ORDER BY t.creado_en DESC`;
+        
+        const result = await db.execute({ sql, args });
         res.json(result.rows);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ⭐ RUTA CORREGIDA PARA EVITAR ERRORES CON HASH NULO ⭐
 router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
     const { accion, notas } = req.body || {};
     if (!['aprobar', 'rechazar'].includes(accion)) return res.status(400).json({ error: 'Acción inválida' });
@@ -223,23 +232,41 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         const t = tRes.rows[0];
         if (!t) return res.status(404).json({ error: 'No encontrado' });
 
-        const hashBase = t.hash_comprobante.split('-')[0];
         const nuevo = accion === 'aprobar' ? 'aprobado' : 'rechazado';
         const ahora = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        
-        await db.batch([
-            { 
-                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`, 
-                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id] 
-            },
-            { 
-                sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
-                args: [req.user.userId, `${accion.toUpperCase()}_TICKET_GRUPAL`, `Grupo de tickets de ${t.cliente_nombre}`, req.ip, ahora] 
-            }
-        ], "write");
+
+        // ⭐ LÓGICA CORREGIDA: Si no hay hash, actualizamos solo este ticket
+        if (t.hash_comprobante && t.hash_comprobante.includes('-')) {
+            const hashBase = t.hash_comprobante.split('-')[0];
+            await db.batch([
+                { 
+                    sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`, 
+                    args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id] 
+                },
+                { 
+                    sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
+                    args: [req.user.userId, `${accion.toUpperCase()}_TICKET_GRUPAL`, `Grupo de tickets de ${t.cliente_nombre}`, req.ip, ahora] 
+                }
+            ], "write");
+        } else {
+            // Fallback: si no hay hash válido, actualizamos solo el ticket seleccionado
+            await db.batch([
+                { 
+                    sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE id = ?`, 
+                    args: [nuevo, notas || t.notas_admin || null, t.id] 
+                },
+                { 
+                    sql: 'INSERT INTO logs_actividad (usuario_id, accion, detalle, ip, creado_en) VALUES (?, ?, ?, ?, ?)', 
+                    args: [req.user.userId, `${accion.toUpperCase()}_TICKET`, `Ticket #${t.numero_ticket} de ${t.cliente_nombre}`, req.ip, ahora] 
+                }
+            ], "write");
+        }
 
         res.json({ success: true, nuevo_estado: nuevo });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { 
+        console.error("Error al revisar ticket:", e);
+        res.status(500).json({ error: e.message }); 
+    }
 });
 
 router.post('/tickets/vender', async (req, res) => {
@@ -270,7 +297,7 @@ router.post('/tickets/vender', async (req, res) => {
 
             await db.execute({
                 sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, estado_pago, notas_admin, creado_en, hash_comprobante)
-                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', '-05:00'), ?)`, // ⭐ CAMBIO AQUÍ
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 'aprobado', 'Venta presencial en tienda', datetime('now', '-05:00'), ?)`,
                 args: [sorteo_id, numero, cliente_nombre, cliente_dni, cliente_telefono || null, cliente_departamento || null, `${hashBase}-${numero}`]
             });
         }
@@ -547,13 +574,11 @@ router.get('/ganadores', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ⭐ MODIFICACIÓN AQUÍ: Extrae el departamento automáticamente
 router.post('/ganadores', requireAdmin, async (req, res) => {
     const { sorteo_id, cliente_nombre, numero_ticket, premio } = req.body;
     if (!sorteo_id || !cliente_nombre || !numero_ticket) return res.status(400).json({ error: 'Faltan datos' });
     
     try {
-        // Buscamos el departamento en la tabla de tickets
         const ticketRes = await db.execute({
             sql: 'SELECT cliente_departamento FROM tickets WHERE numero_ticket = ? LIMIT 1',
             args: [numero_ticket]
