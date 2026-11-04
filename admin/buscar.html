@@ -271,9 +271,10 @@ async function buscar() {
         document.getElementById('contador-aprobados').textContent = totalAprobados;
         document.getElementById('contador-rechazados').textContent = totalRechazados;
 
-        // Reiniciamos el filtro a "Todos" cada vez que se busca un nuevo cliente
-        document.getElementById('filtro-estado').value = 'todos';
-        ticketsFiltrados = [...ticketsActuales];
+        // ⭐ MEJORA: Mantenemos el filtro seleccionado en lugar de reiniciarlo a 'todos'
+        // document.getElementById('filtro-estado').value = 'todos'; // <- Línea original comentada
+        const filtroActual = document.getElementById('filtro-estado').value;
+        ticketsFiltrados = [...ticketsActuales]; // Se sobrescribe en aplicarFiltros
         paginaActual = 1;
 
         let nombreCliente = 'Cliente';
@@ -368,6 +369,8 @@ async function buscar() {
         cont.innerHTML = html;
         
         if (data.tickets.length > 0) {
+            // ⭐ MEJORA: Restauramos el filtro que estaba seleccionado antes de buscar
+            document.getElementById('filtro-estado').value = filtroActual;
             aplicarFiltros(); // Llamamos al filtro para pintar la tabla de tickets
         }
 
@@ -429,7 +432,14 @@ function renderizarTablaTickets() {
     document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No hay tickets con ese estado.</td></tr>';
+        // ⭐ MEJORA: Mensaje dinámico según el filtro aplicado
+        const estadoFiltro = document.getElementById('filtro-estado').value;
+        let mensaje = 'No hay tickets con ese estado.';
+        if (estadoFiltro === 'aprobado') mensaje = 'No hay tickets APROBADOS para este cliente.';
+        if (estadoFiltro === 'rechazado') mensaje = 'No hay tickets RECHAZADOS para este cliente.';
+        if (estadoFiltro === 'todos') mensaje = 'Este cliente no tiene tickets registrados.';
+        
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #666;">${mensaje}</td></tr>`;
         return;
     }
 
