@@ -260,21 +260,7 @@ async function buscar() {
         }
 
         ticketsActuales = data.tickets;
-        
-        // ⭐ CALCULAMOS LOS CONTADORES PARA EL RESUMEN ⭐
-        let totalTickets = ticketsActuales.length;
-        let totalAprobados = ticketsActuales.filter(t => t.estado_pago === 'aprobado').length;
-        let totalRechazados = ticketsActuales.filter(t => t.estado_pago === 'rechazado').length;
-
-        // Actualizamos los números en el HTML
-        document.getElementById('contador-total').textContent = totalTickets;
-        document.getElementById('contador-aprobados').textContent = totalAprobados;
-        document.getElementById('contador-rechazados').textContent = totalRechazados;
-
-        // ⭐ MEJORA: Mantenemos el filtro seleccionado en lugar de reiniciarlo a 'todos'
-        // document.getElementById('filtro-estado').value = 'todos'; // <- Línea original comentada
         const filtroActual = document.getElementById('filtro-estado').value;
-        ticketsFiltrados = [...ticketsActuales]; // Se sobrescribe en aplicarFiltros
         paginaActual = 1;
 
         let nombreCliente = 'Cliente';
@@ -369,7 +355,6 @@ async function buscar() {
         cont.innerHTML = html;
         
         if (data.tickets.length > 0) {
-            // ⭐ MEJORA: Restauramos el filtro que estaba seleccionado antes de buscar
             document.getElementById('filtro-estado').value = filtroActual;
             aplicarFiltros(); // Llamamos al filtro para pintar la tabla de tickets
         }
@@ -409,6 +394,15 @@ function exportarAExcel() {
 function aplicarFiltros() {
     const estadoFiltro = document.getElementById('filtro-estado').value;
 
+    // ⭐ CALCULAMOS LOS CONTADORES AQUÍ PARA QUE SE ACTUALICEN AL CAMBIAR EL FILTRO ⭐
+    let totalTickets = ticketsActuales.length;
+    let totalAprobados = ticketsActuales.filter(t => t.estado_pago === 'aprobado').length;
+    let totalRechazados = ticketsActuales.filter(t => t.estado_pago === 'rechazado').length;
+
+    document.getElementById('contador-total').textContent = totalTickets;
+    document.getElementById('contador-aprobados').textContent = totalAprobados;
+    document.getElementById('contador-rechazados').textContent = totalRechazados;
+
     ticketsFiltrados = ticketsActuales.filter(t => {
         let coincideEstado = true;
         if (estadoFiltro === 'aprobado') coincideEstado = (t.estado_pago === 'aprobado');
@@ -423,13 +417,19 @@ function aplicarFiltros() {
 // ⭐ FUNCIONES PARA LA TABLA PAGINADA ⭐
 function renderizarTablaTickets() {
     const tbody = document.getElementById('tbody-tickets');
-    
+    const pageInfo = document.getElementById('page-info');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    // ⭐ VALIDACIÓN CLAVE PARA EVITAR EL ERROR "Cannot set properties of null" ⭐
+    if (!tbody || !pageInfo || !btnPrev || !btnNext) return;
+
     // Calculamos las páginas basándonos en los tickets YA FILTRADOS
     const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
     
-    document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
-    document.getElementById('btn-prev').disabled = paginaActual === 1;
-    document.getElementById('btn-next').disabled = paginaActual === totalPaginas;
+    pageInfo.textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    btnPrev.disabled = paginaActual === 1;
+    btnNext.disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
         // ⭐ MEJORA: Mensaje dinámico según el filtro aplicado
