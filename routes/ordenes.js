@@ -8,55 +8,13 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ⭐ ============ RUTA /api/consultar CON DIAGNÓSTICO ============ ⭐
+// ⭐ ============ RUTA VIEJA COMENTADA (SE USA routes/consulta.js) ⭐ ============
+/*
 router.get('/consultar', async (req, res) => {
-    const query = req.query.query;
-    if (!query) return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
-
-    // ⭐ OBLIGAMOS AL NAVEGADOR A NO GUARDAR EN CACHÉ ⭐
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-
-    try {
-        // Buscar órdenes por DNI o Teléfono
-        // ⭐ USAMOS mode: "write" PARA FORZAR LECTURA DEL NODO PRINCIPAL EN TURSO ⭐
-        const ordenesRes = await db.execute({
-            sql: `SELECT * FROM ordenes 
-                  WHERE cliente_dni = ? OR cliente_telefono = ? 
-                  ORDER BY creado_en DESC`,
-            args: [query, query],
-            mode: "write" 
-        });
-
-        const ticketsRes = await db.execute({
-            sql: `SELECT t.*, s.nombre as sorteo_nombre 
-                  FROM tickets t 
-                  JOIN sorteos s ON s.id = t.sorteo_id 
-                  WHERE t.cliente_dni = ? OR t.cliente_telefono = ? 
-                  ORDER BY t.creado_en DESC`,
-            args: [query, query],
-            mode: "write"
-        });
-
-        // ⭐ LOGS DE DIAGNÓSTICO ⭐
-        console.log("=========================================");
-        console.log("🔍 DIAGNÓSTICO /api/consultar");
-        console.log("Query recibido:", query);
-        console.log("Tickets devueltos por Turso:", ticketsRes.rows.length);
-        console.log("Estados:", ticketsRes.rows.map(t => t.estado_pago));
-        console.log("=========================================");
-
-        res.json({
-            ordenes: ordenesRes.rows,
-            tickets: ticketsRes.rows
-        });
-    } catch (e) {
-        console.error("Error en /api/consultar:", e);
-        res.status(500).json({ error: 'Error interno al consultar' });
-    }
+    // ...
 });
-// ⭐ ============ FIN DE LA RUTA ============ ⭐
+*/
+// ⭐ ============ FIN DE LA RUTA COMENTADA ============ ⭐
 
 router.get('/buscar-cliente/:dni', async (req, res) => {
     const dni = req.params.dni;
