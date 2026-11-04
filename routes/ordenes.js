@@ -8,6 +8,41 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+// ⭐ ============ NUEVA RUTA AGREGADA: /api/consultar ============ ⭐
+router.get('/consultar', async (req, res) => {
+    const query = req.query.query;
+    if (!query) return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
+
+    try {
+        // Buscar órdenes por DNI o Teléfono
+        const ordenesRes = await db.execute({
+            sql: `SELECT * FROM ordenes 
+                  WHERE cliente_dni = ? OR cliente_telefono = ? 
+                  ORDER BY creado_en DESC`,
+            args: [query, query]
+        });
+
+        // Buscar tickets por DNI o Teléfono (SIN FILTRAR POR ESTADO)
+        const ticketsRes = await db.execute({
+            sql: `SELECT t.*, s.nombre as sorteo_nombre 
+                  FROM tickets t 
+                  JOIN sorteos s ON s.id = t.sorteo_id 
+                  WHERE t.cliente_dni = ? OR t.cliente_telefono = ? 
+                  ORDER BY t.creado_en DESC`,
+            args: [query, query]
+        });
+
+        res.json({
+            ordenes: ordenesRes.rows,
+            tickets: ticketsRes.rows
+        });
+    } catch (e) {
+        console.error("Error en /api/consultar:", e);
+        res.status(500).json({ error: 'Error interno al consultar' });
+    }
+});
+// ⭐ ============ FIN DE LA NUEVA RUTA ============ ⭐
+
 router.get('/buscar-cliente/:dni', async (req, res) => {
     const dni = req.params.dni;
     if (!dni) return res.status(400).json({ error: 'DNI requerido' });
