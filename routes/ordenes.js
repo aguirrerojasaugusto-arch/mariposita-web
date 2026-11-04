@@ -8,28 +8,34 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// ⭐ ============ NUEVA RUTA AGREGADA: /api/consultar ============ ⭐
+// ⭐ ============ RUTA /api/consultar CORREGIDA ============ ⭐
 router.get('/consultar', async (req, res) => {
     const query = req.query.query;
     if (!query) return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
 
+    // ⭐ OBLIGAMOS AL NAVEGADOR A NO GUARDAR EN CACHÉ ⭐
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     try {
-        // Buscar órdenes por DNI o Teléfono
+        // ⭐ FORZAMOS A TURSO A LEER DEL NODO PRINCIPAL (SIN RÉPLICAS) ⭐
         const ordenesRes = await db.execute({
             sql: `SELECT * FROM ordenes 
                   WHERE cliente_dni = ? OR cliente_telefono = ? 
                   ORDER BY creado_en DESC`,
-            args: [query, query]
+            args: [query, query],
+            consistency: "strong" // ⭐ CLAVE PARA TURSO ⭐
         });
 
-        // Buscar tickets por DNI o Teléfono (SIN FILTRAR POR ESTADO)
         const ticketsRes = await db.execute({
             sql: `SELECT t.*, s.nombre as sorteo_nombre 
                   FROM tickets t 
                   JOIN sorteos s ON s.id = t.sorteo_id 
                   WHERE t.cliente_dni = ? OR t.cliente_telefono = ? 
                   ORDER BY t.creado_en DESC`,
-            args: [query, query]
+            args: [query, query],
+            consistency: "strong" // ⭐ CLAVE PARA TURSO ⭐
         });
 
         res.json({
@@ -41,7 +47,7 @@ router.get('/consultar', async (req, res) => {
         res.status(500).json({ error: 'Error interno al consultar' });
     }
 });
-// ⭐ ============ FIN DE LA NUEVA RUTA ============ ⭐
+// ⭐ ============ FIN DE LA RUTA ============ ⭐
 
 router.get('/buscar-cliente/:dni', async (req, res) => {
     const dni = req.params.dni;
@@ -51,7 +57,8 @@ router.get('/buscar-cliente/:dni', async (req, res) => {
         const result = await db.execute({
             sql: `SELECT cliente_nombre as nombre, cliente_telefono as telefono, cliente_direccion as direccion 
                   FROM ordenes WHERE cliente_dni = ? ORDER BY creado_en DESC LIMIT 1`,
-            args: [dni]
+            args: [dni],
+            consistency: "strong"
         });
         const cliente = result.rows[0];
         if (cliente) res.json({ encontrado: true, cliente });
