@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8"><title>Consultar Estado · Admin</title>
 <link rel="stylesheet" href="/admin/css/admin.css">
+<!-- ⭐ LIBRERÍA PARA EXPORTAR A EXCEL (XLSX) ⭐ -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <style>
     /* ⭐ ESTILOS DEL ENCABEZADO FIJO DEL CLIENTE ⭐ */
     .resumen-cliente-fijo { display: none; background: #f8f9fa; border: 1px solid #ddd; border-left: 5px solid var(--color-primario); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease-out; flex-wrap: wrap; gap: 1rem; }
@@ -50,6 +52,23 @@
     .modal-close { background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
     .modal-body { padding: 1.5rem; }
     .modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 1rem; background: #f9f9f9; }
+
+    /* ⭐ ESTILO PARA EL BOTÓN DE EXCEL ⭐ */
+    .btn-excel {
+        background-color: #1D6F42;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: opacity 0.2s;
+    }
+    .btn-excel:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
@@ -315,7 +334,14 @@ async function buscar() {
                 <div class="table-container">
                     <div class="table-header">
                         <h3>🎟️ Tickets de Sorteo</h3>
-                        <!-- El buscador interno fue eliminado como pediste -->
+                        <!-- ⭐ NUEVO BOTÓN PARA EXPORTAR A EXCEL ⭐ -->
+                        <button class="btn-excel" onclick="exportarAExcel()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5v2z"/>
+                              <path d="M3 12v-1h10v1H3Zm0 2v-1h10v1H3Z"/>
+                            </svg>
+                            Exportar a Excel
+                        </button>
                     </div>
                     <table id="tabla-tickets">
                         <thead>
@@ -348,6 +374,35 @@ async function buscar() {
     } catch (error) {
         cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
     }
+}
+
+// ⭐ FUNCIÓN PARA EXPORTAR A EXCEL ⭐
+function exportarAExcel() {
+    if (!ticketsFiltrados.length) {
+        alert('No hay tickets para exportar con los filtros actuales.');
+        return;
+    }
+
+    // Mapeamos los datos filtrados para que tengan encabezados bonitos
+    const datosExcel = ticketsFiltrados.map(t => ({
+        'Ticket': t.numero_ticket,
+        'Cliente': t.cliente_nombre,
+        'DNI': t.cliente_dni || '',
+        'Teléfono': t.cliente_telefono || '',
+        'Departamento': t.cliente_departamento || '',
+        'Sorteo': t.sorteo_nombre,
+        'Fecha': t.creado_en,
+        'Estado': t.estado_pago.toUpperCase()
+    }));
+
+    // Creamos la hoja de cálculo
+    const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
+
+    // Generamos el archivo y forzamos la descarga
+    const nombreArchivo = `Reporte_Tickets_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, nombreArchivo);
 }
 
 // ⭐ FUNCIÓN QUE APLICA EL FILTRO (AHORA SOLO USA EL SELECT DE ARRIBA) ⭐
