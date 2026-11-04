@@ -383,7 +383,6 @@ function exportarAExcel() {
         return;
     }
 
-    // Mapeamos los datos filtrados para que tengan encabezados bonitos
     const datosExcel = ticketsFiltrados.map(t => ({
         'Ticket': t.numero_ticket,
         'Cliente': t.cliente_nombre,
@@ -395,17 +394,15 @@ function exportarAExcel() {
         'Estado': t.estado_pago.toUpperCase()
     }));
 
-    // Creamos la hoja de cálculo
     const worksheet = XLSX.utils.json_to_sheet(datosExcel);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
 
-    // Generamos el archivo y forzamos la descarga
     const nombreArchivo = `Reporte_Tickets_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(workbook, nombreArchivo);
 }
 
-// ⭐ FUNCIÓN QUE APLICA EL FILTRO (AHORA SOLO USA EL SELECT DE ARRIBA) ⭐
+// ⭐ FUNCIÓN CORREGIDA: Filtra el array en memoria ANTES de paginar ⭐
 function aplicarFiltros() {
     const estadoFiltro = document.getElementById('filtro-estado').value;
 
@@ -416,13 +413,15 @@ function aplicarFiltros() {
         return coincideEstado;
     });
 
-    paginaActual = 1;
+    paginaActual = 1; // Volvemos a la página 1 al filtrar
     renderizarTablaTickets();
 }
 
 // ⭐ FUNCIONES PARA LA TABLA PAGINADA ⭐
 function renderizarTablaTickets() {
     const tbody = document.getElementById('tbody-tickets');
+    
+    // Calculamos las páginas basándonos en los tickets YA FILTRADOS
     const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
     
     document.getElementById('page-info').textContent = `Página ${paginaActual} de ${totalPaginas}`;
@@ -436,6 +435,8 @@ function renderizarTablaTickets() {
 
     const inicio = (paginaActual - 1) * itemsPorPagina;
     const fin = inicio + itemsPorPagina;
+    
+    // Slice de los tickets filtrados
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
     tbody.innerHTML = ticketsPagina.map(t => {
