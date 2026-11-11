@@ -62,6 +62,8 @@ app.use('/api', require('./routes/ordenes'));
 
 // ⭐ NUEVA RUTA DE CONSULTA LIMPIA ⭐
 app.use('/api', require('./routes/consulta')); 
+// ⭐ NUEVO MÓDULO INDEPENDIENTE DE CONSULTA DE TICKETS ⭐
+app.use('/api', require('./routes/consulta_tickets'));
 
 app.use('/api', require('./routes/sorteos')); 
 app.use('/api/auth', require('./routes/auth'));
