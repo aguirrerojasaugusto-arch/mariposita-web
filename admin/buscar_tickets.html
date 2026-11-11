@@ -218,7 +218,6 @@ async function buscar() {
     resumenBox.style.display = 'none';
 
     try {
-        // ⭐ CONECTADO A LA NUEVA RUTA INDEPENDIENTE ⭐
         const res = await fetch(`/api/consultar-tickets?query=${encodeURIComponent(query)}&t=${new Date().getTime()}`, {
             cache: "no-store"
         });

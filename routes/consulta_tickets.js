@@ -15,7 +15,7 @@ router.get('/consultar-tickets', async (req, res) => {
     res.setHeader('Expires', '0');
 
     try {
-        // ⭐ FORZAMOS LA LECTURA ESCRITURA (Para evitar caché de Turso) ⭐
+        // ⭐ FORZAMOS LA LECTURA PARA EVITAR CACHÉ DE TURSO ⭐
         await db.execute({ sql: "SELECT 1", mode: "write" });
 
         const ticketsRes = await db.execute({
