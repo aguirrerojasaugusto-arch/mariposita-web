@@ -81,7 +81,6 @@
                 <a href="/admin/ganadores.html" id="nav-ganadores">🏆 Ganadores</a>
                 <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
                 <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
-                <!-- ⭐ ÚNICO BOTÓN DE BÚSQUEDA ⭐ -->
                 <a href="/admin/buscar_tickets.html" class="active">🔍 Buscar Tickets</a>
                 <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
                 <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
@@ -221,34 +220,38 @@ async function buscar() {
         const res = await fetch(`/api/consultar-tickets?query=${encodeURIComponent(query)}&t=${new Date().getTime()}`, {
             cache: "no-store"
         });
-        const data = await res.json();
+        
+        // ⭐ CAPTURAMOS EL ERROR DEL SERVIDOR ⭐
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Error desconocido del servidor');
+        }
 
+        const data = await res.json();
         console.log("Datos recibidos del servidor (Módulo Tickets):", data);
 
-        // ⭐ PRUEBA DE DIAGNÓSTICO CORREGIDA ⭐
         if (!data.tickets || data.tickets.length === 0) {
-            console.warn("No se encontró nada con esa búsqueda. Haciendo prueba de conexión general...");
+            console.warn("No se encontró nada. Probando ?query=all...");
+            const resAll = await fetch(`/api/consultar-tickets?query=all&t=${new Date().getTime()}`, { cache: "no-store" });
             
-            const resAll = await fetch(`/api/consultar-tickets?query=all&t=${new Date().getTime()}`, {
-                cache: "no-store"
-            });
+            if (!resAll.ok) {
+                const errorData = await resAll.json();
+                throw new Error("Error en la consulta general: " + (errorData.error || 'Desconocido'));
+            }
+            
             const dataAll = await resAll.json();
             
             if (dataAll.tickets && dataAll.tickets.length > 0) {
-                console.log("TICKETS TOTALES EN LA BASE DE DATOS:", dataAll.tickets);
-                
-                // Construimos el mensaje de alerta de forma segura
+                console.log("TICKETS EN LA BD:", dataAll.tickets);
                 let alertHtml = '<div class="alert alert-warning" style="background:#fff3e0; color:#ef6c00; padding:1rem; border-radius:8px;">';
-                alertHtml += '<strong>Alerta de Diagnóstico:</strong> La búsqueda por "' + query + '" no arrojó resultados, pero el sistema SÍ está conectado a la base de datos (encontró ' + dataAll.tickets.length + ' tickets en total).';
-                alertHtml += '<br><br>Revisa la consola (F12) para ver los tickets que existen realmente.';
+                alertHtml += '<strong>Alerta de Diagnóstico:</strong> La búsqueda por "' + query + '" no arrojó resultados, pero el sistema SÍ está conectado (encontró ' + dataAll.tickets.length + ' tickets).';
+                alertHtml += '<br><br>Revisa la consola (F12) para ver los tickets que existen.';
                 alertHtml += '</div>';
-                
                 cont.innerHTML = alertHtml;
-                return;
             } else {
-                cont.innerHTML = '<div class="alert alert-danger" style="background:#ffebee; color:#c62828; padding:1rem; border-radius:8px;"><strong>Error Crítico:</strong> La base de datos está totalmente vacía o la conexión falló.</div>';
-                return;
+                cont.innerHTML = '<div class="alert alert-danger" style="background:#ffebee; color:#c62828; padding:1rem; border-radius:8px;"><strong>Error Crítico:</strong> La base de datos devolvió 0 tickets en la prueba general.</div>';
             }
+            return;
         }
 
         ticketsActuales = data.tickets;
@@ -301,7 +304,10 @@ async function buscar() {
         aplicarFiltros(); 
 
     } catch (error) {
-        cont.innerHTML = '<p style="color:red; font-weight:bold;">Error al consultar. Asegúrate de que el servidor esté corriendo.</p>';
+        // Mostramos el error técnico en pantalla para que sepamos qué pasa
+        cont.innerHTML = `<div class="alert alert-danger" style="background:#ffebee; color:#c62828; padding:1rem; border-radius:8px;">
+            <strong>Error de Servidor:</strong><br>${error.message}
+        </div>`;
         console.error(error);
     }
 }
