@@ -17,7 +17,6 @@ router.get('/consultar', async (req, res) => {
 
     try {
         // ⭐ BUSCAMOS DIRECTAMENTE EN TURSO CON MODO ESCRITURA ⭐
-        // Esto evita que Turso nos devuelva datos cacheados de una réplica
         const ordenesRes = await db.execute({
             sql: `SELECT * FROM ordenes WHERE cliente_dni = ? OR cliente_telefono = ? ORDER BY creado_en DESC`,
             args: [query, query],
@@ -25,8 +24,6 @@ router.get('/consultar', async (req, res) => {
         });
 
         // ⭐ BÚSQUEDA MEJORADA DE TICKETS ⭐
-        // 1. Busca por DNI, Teléfono o Nombre (por si acaso)
-        // 2. Ordena por ID para que los más nuevos salgan primero
         const ticketsRes = await db.execute({
             sql: `SELECT t.*, s.nombre as sorteo_nombre 
                   FROM tickets t 
@@ -44,7 +41,7 @@ router.get('/consultar', async (req, res) => {
         }
 
         res.json({
-            ordenes: ordenesRes.rows,
+            ordenes: [], // ⭐ FORZAMOS VACÍO PARA ENFOCARNOS SOLO EN TICKETS ⭐
             tickets: ticketsRes.rows
         });
     } catch (e) {
