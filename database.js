@@ -16,6 +16,9 @@ if (process.env.NODE_ENV === 'production' && !process.env.TURSO_DATABASE_URL) {
 const db = createClient({
     url: process.env.TURSO_DATABASE_URL || 'file:mariposita.db',
     authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+    // ⭐ FORZAMOS LA SINCRONIZACIÓN PARA QUE RENDER SIEMPRE VEA LOS DATOS NUEVOS ⭐
+    syncUrl: process.env.TURSO_DATABASE_URL,
+    syncInterval: 60
 });
 
 async function initDB() {

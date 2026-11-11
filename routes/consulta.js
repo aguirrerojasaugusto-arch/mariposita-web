@@ -16,6 +16,9 @@ router.get('/consultar', async (req, res) => {
     res.setHeader('Expires', '0');
 
     try {
+        // ⭐ FORZAMOS UNA SINCRONIZACIÓN DE TURSO JUSTO ANTES DE CONSULTAR ⭐
+        await db.execute({ sql: "SELECT 1", mode: "write" });
+
         // ⭐ BUSCAMOS DIRECTAMENTE EN TURSO CON MODO ESCRITURA ⭐
         const ordenesRes = await db.execute({
             sql: `SELECT * FROM ordenes WHERE cliente_dni = ? OR cliente_telefono = ? ORDER BY creado_en DESC`,
