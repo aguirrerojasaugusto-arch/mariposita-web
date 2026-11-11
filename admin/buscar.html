@@ -357,9 +357,14 @@ async function buscar() {
 
         cont.innerHTML = html;
         
+        // ⭐ MODIFICACIÓN AQUÍ: Forzamos a que se apliquen los filtros para actualizar contadores y tabla ⭐
         if (data.tickets.length > 0) {
             document.getElementById('filtro-estado').value = filtroActual;
-            aplicarFiltros(); // Llamamos al filtro para pintar la tabla de tickets
+            aplicarFiltros(); 
+        } else {
+            document.getElementById('contador-total').textContent = 0;
+            document.getElementById('contador-aprobados').textContent = 0;
+            document.getElementById('contador-rechazados').textContent = 0;
         }
 
     } catch (error) {
@@ -367,14 +372,18 @@ async function buscar() {
     }
 }
 
-// ⭐ FUNCIÓN PARA EXPORTAR A EXCEL ⭐
+// ⭐ FUNCIÓN CORREGIDA PARA EXPORTAR A EXCEL ⭐
 function exportarAExcel() {
-    if (!ticketsFiltrados.length) {
+    // Si el filtro está en "todos", exportamos todos los tickets. Si no, exportamos los filtrados.
+    const estadoFiltro = document.getElementById('filtro-estado').value;
+    const datosAExportar = (estadoFiltro === 'todos') ? ticketsActuales : ticketsFiltrados;
+
+    if (!datosAExportar || datosAExportar.length === 0) {
         alert('No hay tickets para exportar con los filtros actuales.');
         return;
     }
 
-    const datosExcel = ticketsFiltrados.map(t => ({
+    const datosExcel = datosAExportar.map(t => ({
         'Ticket': t.numero_ticket,
         'Cliente': t.cliente_nombre,
         'DNI': t.cliente_dni || '',
@@ -393,11 +402,11 @@ function exportarAExcel() {
     XLSX.writeFile(workbook, nombreArchivo);
 }
 
-// ⭐ FUNCIÓN CORREGIDA: Filtra el array en memoria ANTES de paginar ⭐
+// ⭐ FUNCIÓN CORREGIDA: Calcula contadores reales y filtra correctamente ⭐
 function aplicarFiltros() {
     const estadoFiltro = document.getElementById('filtro-estado').value;
 
-    // ⭐ CALCULAMOS LOS CONTADORES AQUÍ PARA QUE SE ACTUALICEN AL CAMBIAR EL FILTRO ⭐
+    // Calculamos contadores basados en TODOS los tickets del cliente
     let totalTickets = ticketsActuales.length;
     let totalAprobados = ticketsActuales.filter(t => t.estado_pago === 'aprobado').length;
     let totalRechazados = ticketsActuales.filter(t => t.estado_pago === 'rechazado').length;
@@ -406,14 +415,14 @@ function aplicarFiltros() {
     document.getElementById('contador-aprobados').textContent = totalAprobados;
     document.getElementById('contador-rechazados').textContent = totalRechazados;
 
-    ticketsFiltrados = ticketsActuales.filter(t => {
-        let coincideEstado = true;
-        if (estadoFiltro === 'aprobado') coincideEstado = (t.estado_pago === 'aprobado');
-        if (estadoFiltro === 'rechazado') coincideEstado = (t.estado_pago === 'rechazado');
-        return coincideEstado;
-    });
+    // Filtramos para la tabla
+    if (estadoFiltro === 'todos') {
+        ticketsFiltrados = [...ticketsActuales];
+    } else {
+        ticketsFiltrados = ticketsActuales.filter(t => t.estado_pago === estadoFiltro);
+    }
 
-    paginaActual = 1; // Volvemos a la página 1 al filtrar
+    paginaActual = 1;
     renderizarTablaTickets();
 }
 
@@ -424,10 +433,8 @@ function renderizarTablaTickets() {
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
 
-    // ⭐ VALIDACIÓN CLAVE PARA EVITAR EL ERROR "Cannot set properties of null" ⭐
     if (!tbody || !pageInfo || !btnPrev || !btnNext) return;
 
-    // Calculamos las páginas basándonos en los tickets YA FILTRADOS
     const totalPaginas = Math.ceil(ticketsFiltrados.length / itemsPorPagina) || 1;
     
     pageInfo.textContent = `Página ${paginaActual} de ${totalPaginas}`;
@@ -435,7 +442,6 @@ function renderizarTablaTickets() {
     btnNext.disabled = paginaActual === totalPaginas;
 
     if (!ticketsFiltrados.length) {
-        // ⭐ MEJORA: Mensaje dinámico según el filtro aplicado
         const estadoFiltro = document.getElementById('filtro-estado').value;
         let mensaje = 'No hay tickets con ese estado.';
         if (estadoFiltro === 'aprobado') mensaje = 'No hay tickets APROBADOS para este cliente.';
@@ -449,7 +455,6 @@ function renderizarTablaTickets() {
     const inicio = (paginaActual - 1) * itemsPorPagina;
     const fin = inicio + itemsPorPagina;
     
-    // Slice de los tickets filtrados
     const ticketsPagina = ticketsFiltrados.slice(inicio, fin);
 
     tbody.innerHTML = ticketsPagina.map(t => {
