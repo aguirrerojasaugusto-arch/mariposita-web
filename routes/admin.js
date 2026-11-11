@@ -237,10 +237,11 @@ router.post('/tickets/:id/revisar', requireAdmin, async (req, res) => {
         const hashBase = t.hash_comprobante && t.hash_comprobante.includes('-') ? t.hash_comprobante.split('-')[0] : null;
 
         // 1. Ejecutamos la actualización en modo "write" (esperando la confirmación de Turso)
+        // ⭐ ACTUALIZAMOS POR HASH O POR ID DIRECTO PARA EVITAR QUE SE PIERDAN ⭐
         if (hashBase) {
             await db.execute({
-                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE hash_comprobante LIKE ? AND sorteo_id = ?`,
-                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id],
+                sql: `UPDATE tickets SET estado_pago = ?, notas_admin = ? WHERE (hash_comprobante LIKE ? AND sorteo_id = ?) OR id = ?`,
+                args: [nuevo, notas || t.notas_admin || null, `${hashBase}%`, t.sorteo_id, t.id],
                 mode: "write" // ⭐ CLAVE PARA TURSO ⭐
             });
         } else {

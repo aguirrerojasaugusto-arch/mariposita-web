@@ -24,9 +24,17 @@ router.get('/consultar', async (req, res) => {
             mode: "write"
         });
 
+        // ⭐ BÚSQUEDA MEJORADA DE TICKETS ⭐
+        // 1. Trae todos los estados (aprobados, rechazados, pendientes)
+        // 2. Ordena por ID en orden descendente para que los más recientes salgan primero en la página 1.
+        // 3. Busca también por nombre por si el OCR falló y el DNI quedó mal guardado.
         const ticketsRes = await db.execute({
-            sql: `SELECT t.*, s.nombre as sorteo_nombre FROM tickets t JOIN sorteos s ON s.id = t.sorteo_id WHERE t.cliente_dni = ? OR t.cliente_telefono = ? ORDER BY t.creado_en DESC`,
-            args: [query, query],
+            sql: `SELECT t.*, s.nombre as sorteo_nombre 
+                  FROM tickets t 
+                  JOIN sorteos s ON s.id = t.sorteo_id 
+                  WHERE (t.cliente_dni = ? OR t.cliente_telefono = ? OR t.cliente_nombre LIKE ?) 
+                  ORDER BY t.id DESC`,
+            args: [query, query, `%${query}%`],
             mode: "write"
         });
 
