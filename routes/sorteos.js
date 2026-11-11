@@ -94,12 +94,16 @@ router.post('/tickets', (req, res) => {
 
                 const hashUnico = `${hashBase}-${numero}`;
 
+                // ⭐ AQUÍ ESTÁ LA CORRECCIÓN: GUARDAMOS DNI Y TELÉFONO COMO STRING VACÍO SI NO EXISTEN, PARA QUE NO DEN NULL ⭐
                 await db.execute({
                     sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion, creado_en)
                           VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?, ${ahoraPeru})`,
                     args: [
-                        sorteo_id, numero, nombre.toUpperCase(), dni || null, telefono || null, 
-                        departamento ? departamento.toUpperCase() : null, base64Image, hashUnico, operacionDetectada
+                        sorteo_id, numero, nombre.toUpperCase(), 
+                        dni ? String(dni).trim() : '', 
+                        telefono ? String(telefono).trim() : '', 
+                        departamento ? departamento.toUpperCase() : null, 
+                        base64Image, hashUnico, operacionDetectada
                     ]
                 });
             }
