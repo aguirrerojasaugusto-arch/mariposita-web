@@ -26,19 +26,22 @@
             </div>
         </div>
 
-        <a href="/admin/dashboard.html" class="active">📊 Dashboard</a>
-        <a href="/admin/ordenes.html">📦 Órdenes</a>
-        <a href="/admin/tickets.html">🎁 Tickets</a>
-        <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
-        <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
-        <a href="/admin/ganadores.html" id="nav-ganadores">🏆 Ganadores</a>
-        <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
-        <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
-         <!-- ⭐ ÚNICO BOTÓN DE BÚSQUEDA ⭐ -->
-        <a href="/admin/buscar_tickets.html">🔍 Buscar Tickets</a>
-        <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
-        
-        <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+        <!-- ⭐ AQUÍ ESTÁ EL CAMBIO: SE AGREGA LA ETIQUETA <nav> CON LA CLASE CORRECTA ⭐ -->
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard.html" class="active">📊 Dashboard</a>
+            <a href="/admin/ordenes.html">📦 Órdenes</a>
+            <a href="/admin/tickets.html">🎁 Tickets</a>
+            <a href="/admin/productos.html" id="nav-productos">👗 Productos</a>
+            <a href="/admin/sorteos.html" id="nav-sorteos">🎰 Sorteos</a>
+            <a href="/admin/ganadores.html" id="nav-ganadores">🏆 Ganadores</a>
+            <a href="/admin/carrusel.html" id="nav-carrusel">🖼️ Carrusel</a>
+            <a href="/admin/usuarios.html" id="nav-usuarios">👥 Usuarios</a>
+            <!-- ⭐ ÚNICO BOTÓN DE BÚSQUEDA ⭐ -->
+            <a href="/admin/buscar_tickets.html">🔍 Buscar Tickets</a>
+            <a href="/admin/configuracion.html" id="nav-config">⚙️ Configuración</a>
+            
+            <a href="#" class="logout" onclick="logout()">🚪 Cerrar sesión</a>
+        </nav>
     </aside>
     <main class="main">
         <h2 style="margin-bottom: 2rem;">Bienvenido, <span id="saludo-nombre"></span></h2>
@@ -50,7 +53,7 @@
             <p style="display:flex; gap:1rem; flex-wrap:wrap;">
                 <a href="/admin/ordenes.html" class="btn btn-primario">Revisar órdenes</a>
                 <a href="/admin/tickets.html" class="btn btn-primario">Revisar tickets</a>
-                <a href="/admin/buscar.html" class="btn btn-acento">🔍 Buscar Cliente</a>
+                <a href="/admin/buscar_tickets.html" class="btn btn-acento">🔍 Buscar Tickets</a>
             </p>
         </div>
     </main>
@@ -69,7 +72,7 @@ async function checkAuth() {
     // Saludo principal
     document.getElementById('saludo-nombre').textContent = d.nombre;
 
-    // Ocultar menús según el rol
+    // Ocultar menús según el rol (Solo si el rol no es admin)
     if (d.rol !== 'admin') {
         document.getElementById('nav-productos').style.display = 'none';
         document.getElementById('nav-sorteos').style.display = 'none';
