@@ -28,6 +28,7 @@ router.get('/consultar-tickets', async (req, res) => {
             mode: "write"
         });
 
+        // ⭐ ESTE LOG SALDRÁ EN LA CONSOLA DE RENDER ⭐
         console.log(`🔍 [CONSULTA TICKETS] Query: ${query} | Tickets encontrados: ${ticketsRes.rows.length}`);
 
         res.json({
