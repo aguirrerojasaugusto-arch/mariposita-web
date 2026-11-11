@@ -257,6 +257,9 @@ async function buscar() {
         });
         const data = await res.json();
 
+        // ⭐ ESTO NOS DIRÁ EN LA CONSOLA QUÉ ESTÁ LLEGANDO DESDE RENDER/TURSO ⭐
+        console.log("Datos recibidos del servidor:", data);
+
         if (!data.ordenes.length && !data.tickets.length) {
             cont.innerHTML = '<div class="alert alert-info" style="background:#e3f2fd; color:#1565c0; padding:1rem; border-radius:8px;">No se encontraron compras ni tickets registrados con ese número.</div>';
             return;
