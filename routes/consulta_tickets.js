@@ -2,7 +2,6 @@ const express = require('express');
 const { db } = require('../database');
 const router = express.Router();
 
-// ⭐ RUTA EXCLUSIVA PARA BUSCAR TICKETS (IGNORA ÓRDENES DE PRODUCTOS) ⭐
 router.get('/consultar-tickets', async (req, res) => {
     const query = req.query.query;
 
@@ -15,20 +14,32 @@ router.get('/consultar-tickets', async (req, res) => {
     res.setHeader('Expires', '0');
 
     try {
-        // ⭐ FORZAMOS LA LECTURA PARA EVITAR CACHÉ DE TURSO ⭐
         await db.execute({ sql: "SELECT 1", mode: "write" });
 
+        let sqlQuery = "";
+        let args = [];
+
+        // ⭐ SI LA BÚSQUEDA ES 'ALL', TRAEMOS TODO ⭐
+        if (query === 'all') {
+            sqlQuery = `SELECT t.*, s.nombre as sorteo_nombre 
+                        FROM tickets t 
+                        JOIN sorteos s ON s.id = t.sorteo_id 
+                        ORDER BY t.id DESC LIMIT 50`;
+        } else {
+            sqlQuery = `SELECT t.*, s.nombre as sorteo_nombre 
+                        FROM tickets t 
+                        JOIN sorteos s ON s.id = t.sorteo_id 
+                        WHERE (t.cliente_dni = ? OR t.cliente_telefono = ? OR t.cliente_nombre LIKE ?) 
+                        ORDER BY t.id DESC`;
+            args = [query, query, `%${query}%`];
+        }
+
         const ticketsRes = await db.execute({
-            sql: `SELECT t.*, s.nombre as sorteo_nombre 
-                  FROM tickets t 
-                  JOIN sorteos s ON s.id = t.sorteo_id 
-                  WHERE (t.cliente_dni = ? OR t.cliente_telefono = ? OR t.cliente_nombre LIKE ?) 
-                  ORDER BY t.id DESC`,
-            args: [query, query, `%${query}%`],
+            sql: sqlQuery,
+            args: args,
             mode: "write"
         });
 
-        // ⭐ ESTE LOG SALDRÁ EN LA CONSOLA DE RENDER ⭐
         console.log(`🔍 [CONSULTA TICKETS] Query: ${query} | Tickets encontrados: ${ticketsRes.rows.length}`);
 
         res.json({
