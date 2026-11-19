@@ -6,71 +6,77 @@ async function extraerDatosLocal(fileBuffer) {
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
 
     try {
-        const worker = await createWorker('spa');
-
-        // 1. PREPROCESAMIENTO: Quitamos el fondo morado (trim) y mejoramos el contraste
+        // 1. Preprocesar imagen (blanco y negro, alto contraste)
         const processedImage = await sharp(fileBuffer)
-            .trim() // ⭐ Elimina los bordes morados automáticamente
             .resize(1500, null, { withoutEnlargement: true })
             .grayscale()
             .normalize()
             .toBuffer();
 
+        const worker = await createWorker('spa');
         const { data: { text } } = await worker.recognize(processedImage);
         await worker.terminate();
 
-        console.log("=== TEXTO LEÍDO (COMPLETO) ===");
+        console.log("=== TEXTO LEÍDO POR EL ROBOT ===");
         console.log(text);
-        console.log("==============================");
+        console.log("================================");
 
         let monto = null;
         let operacion = null;
 
-        // 2. LIMPIEZA DE TEXTO BASURA (Fechas, horas, celulares)
-        let cleanText = text;
-        // Borra "12 oct. 2026"
-        cleanText = cleanText.replace(/\d{1,2}\s*(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s*\d{2,4}/gi, '');
-        // Borra "10:00 a. m."
-        cleanText = cleanText.replace(/\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?/gi, '');
-        // Borra "*** *** 715"
-        cleanText = cleanText.replace(/\*{3}\s*\*{3}\s*\d{3}/g, '');
-        // Borra "CÓDIGO DE SEGURIDAD" para que no agarre el 7 8 4
-        cleanText = cleanText.replace(/c[oó]digo de seguridad/gi, '');
+        // 2. DIVIDIR EL TEXTO EN LÍNEAS (El robot lo analiza línea por línea)
+        const lineas = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-        // 3. BÚSQUEDA DEL MONTO
-        // Busca "S/ 15", "5/ 15" o "S/15"
-        const matchSoles = cleanText.toLowerCase().match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/);
-        if (matchSoles && matchSoles[1]) {
-            monto = parseFloat(matchSoles[1].replace(',', '.'));
-        } else {
-            // Respaldo: Si Tesseract se comió la "S/", agarramos el primer número de 1 a 4 dígitos
-            // que no sea un año (2020-2030) ni el número de operación.
-            const numeros = cleanText.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
-            if (numeros) {
-                for (let num of numeros) {
-                    let val = parseFloat(num.replace(',', '.'));
-                    // Excluir años
+        for (let i = 0; i < lineas.length; i++) {
+            const linea = lineas[i];
+
+            // REGLA 1: El Ancla de Yape (Si ve "Yapeaste", el monto está en la siguiente línea o en la misma)
+            if (linea.toLowerCase().includes('yapeaste')) {
+                // A veces el monto está en la misma línea, a veces en la siguiente
+                let posibleMonto = linea.replace(/yapeaste/gi, '').trim();
+                if (!posibleMonto && i + 1 < lineas.length) {
+                    posibleMonto = lineas[i + 1]; // Lee la siguiente línea
+                }
+                
+                const match = posibleMonto.match(/(\d+(?:[.,]\d{1,2})?)/);
+                if (match) {
+                    monto = parseFloat(match[1].replace(',', '.'));
+                }
+            }
+
+            // REGLA 2: Búsqueda directa del formato "S/ 15" o "5/ 15"
+            if (monto === null) {
+                const matchSoles = linea.match(/[s5$]\s*[\/l]?\s*(\d+(?:[.,]\d{1,2})?)/i);
+                if (matchSoles && matchSoles[1]) {
+                    let val = parseFloat(matchSoles[1].replace(',', '.'));
+                    if (val > 0 && val < 5000) monto = val;
+                }
+            }
+
+            // REGLA 3: Búsqueda del Número de Operación
+            // Evitamos tomar el código de seguridad (que suele ser 3 dígitos separados)
+            const matchOp = linea.match(/\b\d{6,9}\b/g);
+            if (matchOp) {
+                for (let op of matchOp) {
+                    let val = parseInt(op);
+                    // Ignorar si parece un año (2020-2030)
                     if (val >= 2020 && val <= 2030) continue;
-                    // Excluir montos absurdamente altos (ej. 10008784)
-                    if (val > 5000) continue;
-                    
-                    monto = val;
-                    break; // El primero que encuentre será el monto
+                    operacion = op;
                 }
             }
         }
 
-        // 4. BÚSQUEDA DE LA OPERACIÓN
-        // Buscamos números de 6 a 9 dígitos en el texto original (sin limpiar)
-        const opMatches = text.match(/\b\d{6,9}\b/g);
-        if (opMatches && opMatches.length > 0) {
-            // Excluir años
-            const validOps = opMatches.filter(op => {
-                const v = parseInt(op);
-                return !(v >= 2020 && v <= 2030);
-            });
-            if (validOps.length > 0) {
-                operacion = validOps.sort((a, b) => b.length - a.length)[0]; 
+        // REGLA 4: Si todo lo anterior falló, usar el "Modo Pánico" (buscar números seguros)
+        if (monto === null) {
+            const numeros = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
+            if (numeros) {
+                for (let num of numeros) {
+                    let val = parseFloat(num.replace(',', '.'));
+                    if (val >= 2020 && val <= 2030) continue; // Ignorar año
+                    if (val > 5000) continue; // Ignorar operación/celular
+                    monto = val;
+                    break;
+                }
             }
         }
 
