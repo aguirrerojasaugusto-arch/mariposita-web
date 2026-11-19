@@ -16,70 +16,60 @@ async function extraerDatosLocal(fileBuffer) {
         const { data: { text } } = await worker.recognize(processedImage);
         await worker.terminate();
 
-        // LOG DE DEPURACIÓN (Para ver qué lee exactamente la IA)
         console.log("=== TEXTO LEÍDO POR TESSERACT ===");
         console.log(text);
         console.log("==================================");
 
-        let monto = null;
-        const textLower = text.toLowerCase();
+        // ⭐ 1. LIMPIEZA EXTREMA (Eliminamos horas, fechas y celulares) ⭐
+        let cleanText = text;
+        cleanText = cleanText.replace(/\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?/gi, ''); // Borra "10:00 a. m."
+        cleanText = cleanText.replace(/\d{1,2}\s*(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s*\d{4}/gi, ''); // Borra "12 oct. 2026"
+        cleanText = cleanText.replace(/\*{3}\s*\*{3}\s*\d{3}/g, ''); // Borra "*** *** 715"
 
-        // 1. Búsqueda del patrón "S/" o "5/" (con corrección de errores OCR)
-        const matchSoles = text.match(/[s5$]\s*[\/l]?\s*([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)/i);
+        let monto = null;
+
+        // ⭐ 2. BÚSQUEDA SIN ESPACIOS ⭐
+        // Quitamos TODOS los espacios. Si Tesseract leyó "S / 1 5", lo convierte en "S/15"
+        const textNoSpaces = cleanText.replace(/\s+/g, '').toLowerCase();
+        
+        // Busca "S/", "5/" o "$/" seguido de números
+        const matchSoles = textNoSpaces.match(/[s5$][\/l]?([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)/);
+        
         if (matchSoles && matchSoles[1]) {
             let raw = matchSoles[1].toUpperCase()
-                .replace(/S/g, '5') // Corrige si leyó "1S" en vez de "15"
-                .replace(/O/g, '0') // Corrige si leyó "O" en vez de "0"
-                .replace(/I/g, '1') // Corrige si leyó "I" en vez de "1"
-                .replace(/L/g, '1');
+                .replace(/S/g, '5') // Corrige "1S" a "15"
+                .replace(/O/g, '0') // Corrige "O" a "0"
+                .replace(/I/g, '1'); // Corrige "I" a "1"
             let val = parseFloat(raw.replace(',', '.'));
             if (!isNaN(val) && val > 0) monto = val;
         }
 
-        // 2. Si falla, buscar el número que está justo debajo de "¡Yapeaste!"
+        // ⭐ 3. RESPALDO: BUSCAR EN LÍNEAS LIMPIAS ⭐
         if (monto === null) {
-            const yapeIndex = textLower.indexOf('yapeaste');
-            if (yapeIndex !== -1) {
-                const nextText = text.substring(yapeIndex, yapeIndex + 80);
-                const nums = nextText.match(/\b([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)\b/gi);
-                if (nums) {
-                    for (let n of nums) {
-                        let raw = n.toUpperCase().replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
-                        let val = parseFloat(raw);
-                        // Ignorar años (2020-2035)
-                        if (!isNaN(val) && val > 0 && val < 5000 && !(val >= 2020 && val <= 2035)) {
-                            monto = val;
-                            break;
-                        }
+            const lines = cleanText.split('\n');
+            for (let line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                
+                // Ignorar código de seguridad (3 números separados), operación, celular, etc.
+                if (/^\d\s*\d\s*\d$/.test(trimmed)) continue;
+                if (/operaci|celular|destino|seguridad|yapeaste/i.test(trimmed)) continue;
+
+                // Si la línea es exactamente un número (ej. "15")
+                const matchNum = trimmed.match(/^\b([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)\b$/i);
+                if (matchNum) {
+                    let raw = matchNum[1].toUpperCase().replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
+                    let val = parseFloat(raw.replace(',', '.'));
+                    // Ignorar años (2020 a 2035)
+                    if (!isNaN(val) && val > 0 && val < 5000 && !(val >= 2020 && val <= 2035)) {
+                        monto = val;
+                        break;
                     }
                 }
             }
         }
 
-        // 3. Último respaldo: analizar las primeras 10 líneas de texto
-        if (monto === null) {
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                let line = lines[i];
-                // Ignorar líneas que sabemos que no contienen el monto
-                if (/fecha|hora|celular|operaci|seguridad|destino/i.test(line)) continue;
-
-                const nums = line.match(/\b([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)\b/gi);
-                if (nums) {
-                    for (let n of nums) {
-                        let raw = n.toUpperCase().replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
-                        let val = parseFloat(raw);
-                        if (!isNaN(val) && val > 0 && val < 5000 && !(val >= 2020 && val <= 2035)) {
-                            monto = val;
-                            break;
-                        }
-                    }
-                }
-                if (monto !== null) break;
-            }
-        }
-
-        // 4. Extracción del Número de Operación
+        // 4. NÚMERO DE OPERACIÓN
         let operacion = null;
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
