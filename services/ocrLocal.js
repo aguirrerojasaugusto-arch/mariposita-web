@@ -10,61 +10,55 @@ async function extraerDatosLocal(fileBuffer) {
         const worker = await createWorker('spa');
 
         // ==========================================
-        // ⭐ PARTE 1: RECORTE PARA EL MONTO ⭐
+        // ⭐ RECORTE QUIRÚRGICO DEL MONTO ⭐
         // ==========================================
-        // Recortamos desde el 20% hasta el 45% de la altura.
-        // Esto captura "¡Yapeaste!" y "S/ 15", pero CORTA la hora y la fecha.
-        const topMonto = Math.floor(metadata.height * 0.20);
-        const heightMonto = Math.floor(metadata.height * 0.25);
+        // Recortamos exactamente del 25% al 40% de la imagen.
+        // Esto captura el "S/ 15" pero deja fuera la fecha y la hora (que están más abajo).
+        const topMonto = Math.floor(metadata.height * 0.25);
+        const heightMonto = Math.floor(metadata.height * 0.15);
 
         const imageMonto = await sharp(fileBuffer)
             .extract({ left: 0, top: topMonto, width: metadata.width, height: heightMonto })
-            .resize(1500, null, { withoutEnlargement: true })
+            .resize(1200, null, { withoutEnlargement: true })
             .grayscale()
             .normalize()
-            .sharpen() // Hace que el "5" resalte y no se vea como "0"
+            .sharpen() // Resalta los bordes del "15"
             .toBuffer();
 
-        // Le decimos a Tesseract que SOLO busque números, S y / en esta zona
-        await worker.setParameters({
-            tessedit_char_whitelist: '0123456789S/s$/,.'
-        });
-
+        // ⭐ YA NO USAMOS WHITELIST ⭐ 
+        // Dejamos que lea normal, para que respete los espacios y no junte todo.
         const { data: { text: textMonto } } = await worker.recognize(imageMonto);
 
-        // Limpiamos errores comunes del OCR
-        let cleanMonto = textMonto.replace(/\s+/g, '');
-        cleanMonto = cleanMonto.replace(/[s$]/gi, 'S').replace(/[l|]/g, '/');
-        
         let monto = null;
-        // Buscamos el patrón S/15 o S/15.00
-        const matchSoles = cleanMonto.match(/S\/(\d+(?:[.,]\d{1,2})?)/);
+        
+        // Buscamos el patrón "S/" o "5/" seguido del número
+        const matchSoles = textMonto.toLowerCase().match(/[s5]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/);
         
         if (matchSoles && matchSoles[1]) {
             monto = parseFloat(matchSoles[1].replace(',', '.'));
         } else {
-            // Respaldo: Si no encontró la S, busca cualquier número en este recorte
-            const numMatch = cleanMonto.match(/(\d+(?:[.,]\d{1,2})?)/);
-            if (numMatch && numMatch[1]) {
-                monto = parseFloat(numMatch[1].replace(',', '.'));
+            // Si Tesseract se comió la "S/", buscamos el primer número que aparezca en este recorte
+            const matchNum = textMonto.match(/\b\d+(?:[.,]\d{1,2})?\b/);
+            if (matchNum) {
+                monto = parseFloat(matchNum[0].replace(',', '.'));
             }
         }
 
         // ==========================================
-        // ⭐ PARTE 2: RECORTE PARA LA OPERACIÓN ⭐
+        // ⭐ RECORTE DE LA OPERACIÓN ⭐
         // ==========================================
-        // Recortamos la parte de abajo (60% al 95% de la altura)
-        const topOp = Math.floor(metadata.height * 0.60);
-        const heightOp = Math.floor(metadata.height * 0.35);
+        // La operación está en la parte de abajo (75% al 95%)
+        const topOp = Math.floor(metadata.height * 0.75);
+        const heightOp = Math.floor(metadata.height * 0.20);
 
         const imageOp = await sharp(fileBuffer)
             .extract({ left: 0, top: topOp, width: metadata.width, height: heightOp })
-            .resize(1500, null, { withoutEnlargement: true })
+            .resize(1200, null, { withoutEnlargement: true })
             .grayscale()
             .normalize()
             .toBuffer();
 
-        // Ahora le decimos que SOLO busque números puros (para la operación)
+        // Para la operación sí le decimos que busque solo números
         await worker.setParameters({
             tessedit_char_whitelist: '0123456789'
         });
@@ -78,11 +72,11 @@ async function extraerDatosLocal(fileBuffer) {
             operacion = opMatches.sort((a, b) => b.length - a.length)[0]; 
         }
 
-        // LOGS DE DEPURACIÓN
-        console.log("=== TEXTO MONTO (RECORTE 1) ===");
+        // LOGS PARA DEPURAR
+        console.log("=== TEXTO MONTO (RECORTE 25%-40%) ===");
         console.log(textMonto);
         console.log("Monto detectado:", monto);
-        console.log("=== TEXTO OPERACIÓN (RECORTE 2) ===");
+        console.log("=== TEXTO OPERACIÓN (RECORTE 75%-95%) ===");
         console.log(textOp);
         console.log("Operación detectada:", operacion);
 
