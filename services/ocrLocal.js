@@ -1,5 +1,5 @@
 async function extraerDatosLocal(fileBuffer) {
-    const vacio = { monto: null, operacion: null, destinatario: null, celular_destino: null, texto_completo: null, error_ocr: null };
+    const vacio = { monto: null, operacion: null, destinatario: null, celular_destino: null, fecha_hora: null, texto_completo: null, error_ocr: null };
     
     if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
         return { ...vacio, error_ocr: 'El archivo no es una imagen válida.' };
@@ -44,6 +44,7 @@ async function extraerDatosLocal(fileBuffer) {
         let operacion = null;
         let destinatario = null;
         let celular_destino = null;
+        let fecha_hora = null;
 
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
@@ -94,7 +95,28 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        return { monto, operacion, destinatario, celular_destino, texto_completo: text, error_ocr: null };
+        // ⭐ EXTRACCIÓN DE FECHA Y HORA ⭐
+        const monthMap = { ene: '01', feb: '02', mar: '03', abr: '04', may: '05', jun: '06', jul: '07', ago: '08', sep: '09', oct: '10', nov: '11', dic: '12' };
+        const fechaMatch = text.match(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s+(\d{4})/i);
+        const horaMatch = text.match(/(\d{1,2}):(\d{2})\s*([ap]\.?\s*m\.?)/i);
+
+        if (fechaMatch && horaMatch) {
+            const dia = fechaMatch[1].padStart(2, '0');
+            const mes = monthMap[fechaMatch[2].toLowerCase()];
+            const anio = fechaMatch[3];
+            
+            let hh = parseInt(horaMatch[1], 10);
+            const mm = horaMatch[2].padStart(2, '0');
+            const ampm = horaMatch[3].toLowerCase().replace(/[\s.]/g, ''); 
+            
+            if (ampm === 'pm' && hh < 12) hh += 12;
+            if (ampm === 'am' && hh === 12) hh = 0;
+            const hhStr = String(hh).padStart(2, '0');
+            
+            fecha_hora = `${anio}-${mes}-${dia}T${hhStr}:${mm}:00-05:00`;
+        }
+
+        return { monto, operacion, destinatario, celular_destino, fecha_hora, texto_completo: text, error_ocr: null };
 
     } catch (e) {
         console.error("Error OCR Local:", e.message);
