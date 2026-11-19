@@ -1,106 +1,76 @@
-const sharp = require('sharp');
-const { createWorker } = require('tesseract.js');
-
 async function extraerDatosLocal(fileBuffer) {
     const vacio = { monto: null, operacion: null, texto_completo: null, error_ocr: null };
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
 
+    if (!process.env.OCR_SPACE_API_KEY) {
+        return { ...vacio, error_ocr: 'Falta configurar OCR_SPACE_API_KEY en Render' };
+    }
+
     try {
-        // Preprocesamiento: Escala de grises y contraste mejorado (sin recortes que fallen)
-        const processedImage = await sharp(fileBuffer)
-            .resize(2000, null, { withoutEnlargement: true })
-            .grayscale()
-            .normalize()
-            .toBuffer();
+        const formData = new FormData();
+        formData.append('apikey', process.env.OCR_SPACE_API_KEY);
+        formData.append('language', 'spa');
+        formData.append('OCREngine', '2'); // El motor 2 es ultra preciso para capturas de celular
+        // Convertimos el Buffer a Blob para enviarlo
+        const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
+        formData.append('file', blob, 'comprobante.jpg');
 
-        const worker = await createWorker('spa');
-        const { data: { text } } = await worker.recognize(processedImage);
-        await worker.terminate();
+        const response = await fetch('https://api.ocr.space/parse/image', {
+            method: 'POST',
+            body: formData
+        });
 
-        console.log("=== TEXTO ORIGINAL LEÍDO ===");
+        const data = await response.json();
+
+        if (data.IsErroredOnProcessing) {
+            console.error("Error OCR.space:", data.ErrorMessage);
+            return { ...vacio, error_ocr: 'No se pudo procesar la imagen con OCR.space.' };
+        }
+
+        const text = data.ParsedResults[0].ParsedText;
+        
+        console.log("=== TEXTO LEÍDO POR OCR.SPACE ===");
         console.log(text);
+        console.log("==================================");
 
         let monto = null;
         let operacion = null;
 
-        // --- EXTRACCIÓN DEL NÚMERO DE OPERACIÓN ---
-        const opMatches = text.match(/\b\d{6,9}\b/g);
-        if (opMatches && opMatches.length > 0) {
-            const validOps = opMatches.filter(op => {
-                const v = parseInt(op);
-                return !(v >= 2020 && v <= 2030); // Ignorar años
-            });
-            if (validOps.length > 0) {
-                operacion = validOps.sort((a, b) => b.length - a.length)[0]; 
-            }
-        }
-
-        // ==========================================
-        // 🤖 EL ROBOT DE LIMPIEZA EXTREMA 🤖
-        // ==========================================
-        let cleanText = text;
-
-        // 1. Quitar "Nro. de operación" y el número que le sigue
-        cleanText = cleanText.replace(/nro\.?\s*de\s*operac[a-z0-9]*[\s\S]{0,20}/gi, '');
-        
-        // 2. Quitar "Nro. de celular" y el número que le sigue
-        cleanText = cleanText.replace(/nro\.?\s*de\s*celular[\s\S]{0,20}/gi, '');
-        cleanText = cleanText.replace(/\*{3}\s*\*{3}\s*\d{3}/g, ''); // Quita *** *** 715
-
-        // 3. Quitar "Destino Yape"
-        cleanText = cleanText.replace(/destino[\s\S]{0,10}?yape/gi, '');
-
-        // 4. Quitar "Código de seguridad" y los números separados (7 8 4)
-        cleanText = cleanText.replace(/c[oó]digo\s*de\s*seguridad[\s\S]{0,20}/gi, '');
-        cleanText = cleanText.replace(/(?:\b\d\s+){2,}\b\d\b/g, ''); 
-
-        // 5. Quitar Fecha (ej. 12 oct. 2026)
-        cleanText = cleanText.replace(/\d{1,2}\s*(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s*\d{2,4}/gi, '');
-
-        // 6. Quitar Hora (ej. 10:00 a. m.)
-        cleanText = cleanText.replace(/\b\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?/gi, '');
-
-        // 7. Quitar Años por si acaso
-        cleanText = cleanText.replace(/\b20[2-3]\d\b/g, '');
-
-        console.log("=== TEXTO DESPUÉS DEL ROBOT ===");
-        console.log(cleanText);
-
-        // --- BÚSQUEDA DEL MONTO EN EL TEXTO LIMPIO ---
-        // Buscamos el patrón "S/ 15" o "5/ 15" con corrección de errores OCR
-        const matchSoles = cleanText.toLowerCase().match(/[s5$]\s*[\/l]?\s*([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)/);
-        
+        // 1. Búsqueda del Monto
+        const matchSoles = text.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
         if (matchSoles && matchSoles[1]) {
-            let raw = matchSoles[1].toUpperCase()
-                .replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1').replace(/L/g, '1');
-            let val = parseFloat(raw.replace(',', '.'));
-            if (!isNaN(val) && val > 0) monto = val;
+            monto = parseFloat(matchSoles[1].replace(',', '.'));
         } else {
-            // Si Tesseract se comió la "S/", buscamos CUALQUIER número en el texto limpio.
-            // Como ya borramos la operación, la hora y la fecha, ¡el único número que queda es el monto!
-            const numeros = cleanText.match(/\b[0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?\b/g);
-            if (numeros) {
-                for (let n of numeros) {
-                    let raw = n.toUpperCase().replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
-                    let val = parseFloat(raw.replace(',', '.'));
-                    if (!isNaN(val) && val > 0 && val < 5000) {
-                        monto = val;
-                        break;
-                    }
+            // Búsqueda de respaldo: primer número que no sea año (2020-2030) ni operación (>5000)
+            const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
+            if (nums) {
+                for (let num of nums) {
+                    let val = parseFloat(num.replace(',', '.'));
+                    if (val >= 2020 && val <= 2030) continue;
+                    if (val > 5000) continue;
+                    monto = val;
+                    break;
                 }
             }
         }
 
-        return {
-            monto,
-            operacion,
-            texto_completo: text,
-            error_ocr: null
-        };
+        // 2. Búsqueda de la Operación
+        const opMatches = text.match(/\b\d{6,9}\b/g);
+        if (opMatches && opMatches.length > 0) {
+            const validOps = opMatches.filter(op => {
+                const v = parseInt(op);
+                return !(v >= 2020 && v <= 2030);
+            });
+            if (validOps.length > 0) {
+                operacion = validOps.sort((a, b) => b.length - a.length)[0];
+            }
+        }
+
+        return { monto, operacion, texto_completo: text, error_ocr: null };
 
     } catch (e) {
         console.error("Error OCR Local:", e.message);
-        return { ...vacio, error_ocr: `Error OCR: ${e.message}` };
+        return { ...vacio, error_ocr: `Error de red: ${e.message}` };
     }
 }
 
