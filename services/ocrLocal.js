@@ -20,39 +20,40 @@ async function extraerDatosLocal(fileBuffer) {
         console.log(text);
         console.log("==================================");
 
-        let monto = null;
-        const textLower = text.toLowerCase();
+        // ⭐ 1. LIMPIEZA PROFUNDA DE TEXTO BASURA ⭐
+        let cleanText = text;
+        // Eliminar fechas (ej. "12 oct. 2026")
+        cleanText = cleanText.replace(/\d{1,2}\s*(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s*\d{4}/gi, '');
+        // Eliminar horas (ej. "10:00 a. m.")
+        cleanText = cleanText.replace(/\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)/gi, '');
+        // Eliminar números de celular enmascarados
+        cleanText = cleanText.replace(/\*{3}\s*\*{3}\s*\d{3}/g, '');
 
-        // 1. Buscar el patrón clásico "S/" o "5/" (por si Tesseract confunde la S con 5)
-        // Acepta montos enteros (15) o con decimales (15.00 o 15,50)
-        const matchSoles = textLower.match(/[s5]\s*\/\s*(\d+(?:[.,]\d{1,2})?)/);
+        let monto = null;
+
+        // ⭐ 2. BÚSQUEDA DEL MONTO ⭐
+        // Buscar el patrón "S/" o "5/" (por si Tesseract confunde la S con 5)
+        const matchSoles = cleanText.toLowerCase().match(/[s5]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/);
         if (matchSoles && matchSoles[1]) {
             monto = parseFloat(matchSoles[1].replace(',', '.'));
         }
 
-        // 2. Si falla, buscar justo debajo de la palabra "Yapeaste"
+        // Respaldo: Si falla, buscar un número que esté SOLO en su propia línea
         if (monto === null) {
-            const matchYape = textLower.match(/yapeaste[\s\S]{0,30}?(\d+(?:[.,]\d{1,2})?)/);
-            if (matchYape && matchYape[1]) {
-                monto = parseFloat(matchYape[1].replace(',', '.'));
-            }
-        }
-
-        // 3. Último respaldo: buscar cualquier número, pero IGNORAR años y horas
-        if (monto === null) {
-            const numeros = text.match(/\b\d{1,5}(?:[.,]\d{2})?\b/g);
-            if (numeros) {
-                for (let num of numeros) {
-                    const val = parseFloat(num.replace(',', '.'));
-                    // Excluir años (2020 a 2030) para que no vuelva a leer la fecha
-                    if (val >= 2020 && val <= 2030) continue;
+            const lines = cleanText.split('\n');
+            for (let line of lines) {
+                const trimmed = line.trim();
+                // Si la línea es exactamente un número de 1 a 5 dígitos (ej. "15" o "15.00")
+                if (/^\d{1,5}(?:[.,]\d{2})?$/.test(trimmed)) {
+                    const val = parseFloat(trimmed.replace(',', '.'));
+                    if (val >= 2020 && val <= 2030) continue; // Ignorar años por si acaso
                     monto = val;
                     break;
                 }
             }
         }
 
-        // 4. Extracción del Número de Operación
+        // ⭐ 3. EXTRACCIÓN DEL NÚMERO DE OPERACIÓN ⭐
         let operacion = null;
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
