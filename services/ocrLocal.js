@@ -10,7 +10,7 @@ async function extraerDatosLocal(fileBuffer) {
         const formData = new FormData();
         formData.append('apikey', process.env.OCR_SPACE_API_KEY);
         formData.append('language', 'spa');
-        formData.append('OCREngine', '2'); // Motor 2: preciso para capturas de celular
+        formData.append('OCREngine', '2'); 
         const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
         formData.append('file', blob, 'comprobante.jpg');
 
@@ -19,14 +19,25 @@ async function extraerDatosLocal(fileBuffer) {
             body: formData
         });
 
-        const data = await response.json();
-
-        if (data.IsErroredOnProcessing) {
-            console.error("Error OCR.space:", data.ErrorMessage);
-            return { ...vacio, error_ocr: 'No se pudo procesar la imagen con OCR.space.' };
+        if (!response.ok) {
+            return { ...vacio, error_ocr: `Error de servidor OCR (HTTP ${response.status})` };
         }
 
-        const text = data.ParsedResults[0].ParsedText;
+        const data = await response.json();
+
+        // ⭐ PROTECCIÓN CONTRA RESPUESTAS VACÍAS O NULAS ⭐
+        if (!data) {
+            return { ...vacio, error_ocr: 'El OCR devolvió una respuesta vacía.' };
+        }
+        if (data.IsErroredOnProcessing) {
+            console.error("Error OCR.space:", data.ErrorMessage);
+            return { ...vacio, error_ocr: data.ErrorMessage || 'No se pudo procesar la imagen.' };
+        }
+        if (!data.ParsedResults || !Array.isArray(data.ParsedResults) || data.ParsedResults.length === 0) {
+            return { ...vacio, error_ocr: 'No se pudo leer el texto de la imagen. Intenta subir una captura más clara.' };
+        }
+
+        const text = data.ParsedResults[0]?.ParsedText || '';
         
         console.log("=== TEXTO LEÍDO POR OCR.SPACE ===");
         console.log(text);
@@ -53,9 +64,7 @@ async function extraerDatosLocal(fileBuffer) {
             }
 
             // 2. Buscar Celular de Destino
-            // Buscamos la línea que diga "celular" o que tenga asteriscos
             if (lineLower.includes('celular') || line.includes('*')) {
-                // Extraemos SOLO los números de esa línea y tomamos los últimos 3
                 const soloNumeros = line.replace(/\D/g, '');
                 if (soloNumeros.length >= 3) {
                     celular_destino = soloNumeros.slice(-3);
@@ -63,7 +72,7 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // Respaldo para el monto si no se encontró con "S/"
+        // Respaldo para el monto
         if (monto === null) {
             const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
