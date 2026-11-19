@@ -6,84 +6,78 @@ async function extraerDatosLocal(fileBuffer) {
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
 
     try {
-        const metadata = await sharp(fileBuffer).metadata();
         const worker = await createWorker('spa');
 
-        // ==========================================
-        // ⭐ RECORTE QUIRÚRGICO DEL MONTO ⭐
-        // ==========================================
-        // Recortamos exactamente del 25% al 40% de la imagen.
-        // Esto captura el "S/ 15" pero deja fuera la fecha y la hora (que están más abajo).
-        const topMonto = Math.floor(metadata.height * 0.25);
-        const heightMonto = Math.floor(metadata.height * 0.15);
-
-        const imageMonto = await sharp(fileBuffer)
-            .extract({ left: 0, top: topMonto, width: metadata.width, height: heightMonto })
-            .resize(1200, null, { withoutEnlargement: true })
+        // 1. PREPROCESAMIENTO: Quitamos el fondo morado (trim) y mejoramos el contraste
+        const processedImage = await sharp(fileBuffer)
+            .trim() // ⭐ Elimina los bordes morados automáticamente
+            .resize(1500, null, { withoutEnlargement: true })
             .grayscale()
             .normalize()
-            .sharpen() // Resalta los bordes del "15"
             .toBuffer();
 
-        // ⭐ YA NO USAMOS WHITELIST ⭐ 
-        // Dejamos que lea normal, para que respete los espacios y no junte todo.
-        const { data: { text: textMonto } } = await worker.recognize(imageMonto);
+        const { data: { text } } = await worker.recognize(processedImage);
+        await worker.terminate();
+
+        console.log("=== TEXTO LEÍDO (COMPLETO) ===");
+        console.log(text);
+        console.log("==============================");
 
         let monto = null;
-        
-        // Buscamos el patrón "S/" o "5/" seguido del número
-        const matchSoles = textMonto.toLowerCase().match(/[s5]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/);
-        
+        let operacion = null;
+
+        // 2. LIMPIEZA DE TEXTO BASURA (Fechas, horas, celulares)
+        let cleanText = text;
+        // Borra "12 oct. 2026"
+        cleanText = cleanText.replace(/\d{1,2}\s*(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s*\d{2,4}/gi, '');
+        // Borra "10:00 a. m."
+        cleanText = cleanText.replace(/\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?/gi, '');
+        // Borra "*** *** 715"
+        cleanText = cleanText.replace(/\*{3}\s*\*{3}\s*\d{3}/g, '');
+        // Borra "CÓDIGO DE SEGURIDAD" para que no agarre el 7 8 4
+        cleanText = cleanText.replace(/c[oó]digo de seguridad/gi, '');
+
+        // 3. BÚSQUEDA DEL MONTO
+        // Busca "S/ 15", "5/ 15" o "S/15"
+        const matchSoles = cleanText.toLowerCase().match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/);
         if (matchSoles && matchSoles[1]) {
             monto = parseFloat(matchSoles[1].replace(',', '.'));
         } else {
-            // Si Tesseract se comió la "S/", buscamos el primer número que aparezca en este recorte
-            const matchNum = textMonto.match(/\b\d+(?:[.,]\d{1,2})?\b/);
-            if (matchNum) {
-                monto = parseFloat(matchNum[0].replace(',', '.'));
+            // Respaldo: Si Tesseract se comió la "S/", agarramos el primer número de 1 a 4 dígitos
+            // que no sea un año (2020-2030) ni el número de operación.
+            const numeros = cleanText.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
+            if (numeros) {
+                for (let num of numeros) {
+                    let val = parseFloat(num.replace(',', '.'));
+                    // Excluir años
+                    if (val >= 2020 && val <= 2030) continue;
+                    // Excluir montos absurdamente altos (ej. 10008784)
+                    if (val > 5000) continue;
+                    
+                    monto = val;
+                    break; // El primero que encuentre será el monto
+                }
             }
         }
 
-        // ==========================================
-        // ⭐ RECORTE DE LA OPERACIÓN ⭐
-        // ==========================================
-        // La operación está en la parte de abajo (75% al 95%)
-        const topOp = Math.floor(metadata.height * 0.75);
-        const heightOp = Math.floor(metadata.height * 0.20);
-
-        const imageOp = await sharp(fileBuffer)
-            .extract({ left: 0, top: topOp, width: metadata.width, height: heightOp })
-            .resize(1200, null, { withoutEnlargement: true })
-            .grayscale()
-            .normalize()
-            .toBuffer();
-
-        // Para la operación sí le decimos que busque solo números
-        await worker.setParameters({
-            tessedit_char_whitelist: '0123456789'
-        });
-
-        const { data: { text: textOp } } = await worker.recognize(imageOp);
-        await worker.terminate();
-
-        let operacion = null;
-        const opMatches = textOp.match(/\d{6,9}/g);
+        // 4. BÚSQUEDA DE LA OPERACIÓN
+        // Buscamos números de 6 a 9 dígitos en el texto original (sin limpiar)
+        const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
-            operacion = opMatches.sort((a, b) => b.length - a.length)[0]; 
+            // Excluir años
+            const validOps = opMatches.filter(op => {
+                const v = parseInt(op);
+                return !(v >= 2020 && v <= 2030);
+            });
+            if (validOps.length > 0) {
+                operacion = validOps.sort((a, b) => b.length - a.length)[0]; 
+            }
         }
-
-        // LOGS PARA DEPURAR
-        console.log("=== TEXTO MONTO (RECORTE 25%-40%) ===");
-        console.log(textMonto);
-        console.log("Monto detectado:", monto);
-        console.log("=== TEXTO OPERACIÓN (RECORTE 75%-95%) ===");
-        console.log(textOp);
-        console.log("Operación detectada:", operacion);
 
         return {
             monto,
             operacion,
-            texto_completo: textMonto + " | " + textOp,
+            texto_completo: text,
             error_ocr: null
         };
 
