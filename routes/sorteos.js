@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { db } = require('../database');
 const { uploadComprobante } = require('../middleware/upload');
 const { esComprobanteYape } = require('../services/validarComprobante');
-const { extraerDatosLocal } = require('../services/ocrLocal'); // Usamos el nuevo OCR
+const { extraerDatosLocal } = require('../services/ocrLocal');
 const router = express.Router();
 
 function generarCodigoTicket() {
@@ -14,7 +14,7 @@ function generarCodigoTicket() {
 router.post('/tickets', (req, res) => {
     uploadComprobante(req, res, async (err) => {
         if (err) return res.status(400).json({ error: err.message });
-        if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
+        if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante.' });
 
         try {
             const validacion = await esComprobanteYape(req.file.buffer);
@@ -23,7 +23,7 @@ router.post('/tickets', (req, res) => {
             const { sorteo_id, nombre, telefono, dni, departamento, cantidad } = req.body;
             
             if (!sorteo_id || !nombre || !telefono) {
-                return res.status(400).json({ error: 'Faltan datos personales (Nombre o Teléfono)' });
+                return res.status(400).json({ error: 'Faltan datos personales (Nombre o Teléfono).' });
             }
 
             const sorteoRes = await db.execute({
@@ -31,48 +31,73 @@ router.post('/tickets', (req, res) => {
                 args: [sorteo_id]
             });
             const sorteo = sorteoRes.rows[0];
-            if (!sorteo) return res.status(400).json({ error: 'Sorteo no disponible' });
+            if (!sorteo) return res.status(400).json({ error: 'El sorteo ya no está disponible.' });
 
             const fechaSorteo = new Date(`${sorteo.fecha_sorteo}T${sorteo.hora_sorteo || '23:59'}:00-05:00`);
             if (new Date() > fechaSorteo) return res.status(400).json({ error: '⚠️ Este sorteo ya ha finalizado.' });
 
-            // ⭐ EXTRAER DATOS CON OCR LOCAL ROBUSTO ⭐
             const ocr = await extraerDatosLocal(req.file.buffer);
-            if (ocr.error_ocr) return res.status(400).json({ error: `No se pudo leer el comprobante: ${ocr.error_ocr}` });
+            if (ocr.error_ocr) return res.status(400).json({ error: `Problema al leer la imagen: ${ocr.error_ocr}` });
 
-            // ⭐ VALIDACIÓN ESTRICTA DE MONTO ⭐
+            // 1. VALIDACIÓN DE MONTO
             const cantTickets = parseInt(cantidad) || 1;
             const montoEsperado = sorteo.precio_ticket * cantTickets;
             
             if (!ocr.monto) {
-                return res.status(400).json({ error: 'No se pudo detectar el monto en el comprobante. Asegúrate de que sea legible.' });
+                return res.status(400).json({ error: 'No se pudo leer el monto en el comprobante. Asegúrate de que se vea claro.' });
             }
 
-            // Tolerancia de 0.10 céntimos por posibles redondeos
             if (Math.abs(ocr.monto - montoEsperado) > 0.10) {
                 return res.status(400).json({ 
-                    error: `El monto del comprobante (S/ ${ocr.monto.toFixed(2)}) no coincide con el total a pagar (S/ ${montoEsperado.toFixed(2)}).` 
+                    error: `❌ Monto incorrecto. Tu comprobante es de S/ ${ocr.monto.toFixed(2)}, pero debes pagar S/ ${montoEsperado.toFixed(2)}.` 
                 });
             }
 
-            // Validar Número de Operación
+            // 2. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
+            const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'" });
+            const numYape = configRes.rows[0]?.valor || '';
+
+            // Si el admin no configuró su Yape, bloqueamos todo por seguridad
+            if (!numYape.trim()) {
+                return res.status(500).json({ error: '❌ Error del sistema: El número de Yape no está configurado en el panel de administrador.' });
+            }
+
+            // Si el OCR no pudo leer el celular, bloqueamos
+            if (!ocr.celular_destino) {
+                return res.status(400).json({ error: '❌ No se pudo detectar el número de celular en el comprobante. Sube una imagen más clara.' });
+            }
+
+            // Comparamos los últimos 3 dígitos
+            const numLimpio = numYape.replace(/\D/g, ''); 
+            const ultimos3 = numLimpio.slice(-3);
+            
+            if (ocr.celular_destino !== ultimos3) {
+                return res.status(400).json({ 
+                    error: `❌ El Yape fue enviado a otro número. El comprobante termina en *** *** ${ocr.celular_destino}, pero tu Yape termina en *** *** ${ultimos3}.` 
+                });
+            }
+
+            // 3. VALIDACIÓN DE NÚMERO DE OPERACIÓN DUPLICADO
             if (!ocr.operacion) {
-                return res.status(400).json({ error: 'No se encontró el número de operación en el comprobante. Asegúrate de que sea legible.' });
+                return res.status(400).json({ error: 'No se encontró el Nro. de operación. Sube una captura donde se vea ese dato.' });
             }
 
             const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
             const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
+            
             if (opTicket.rows.length > 0 || opOrden.rows.length > 0) {
-                return res.status(400).json({ error: '⚠️ Este número de operación ya fue registrado en otra compra.' });
+                return res.status(400).json({ error: `❌ El Nro. de operación (${ocr.operacion}) ya fue usado. Si tienes un problema, contacta a soporte.` });
             }
 
-            // Validar Hash de Imagen Duplicada
+            // 4. VALIDACIÓN DE IMAGEN DUPLICADA (HASH)
             const hashBase = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hashBase}%`] });
+            
             if (ticketDup.rows.length > 0) {
-                return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
+                return res.status(400).json({ error: '❌ Esta imagen exacta ya fue subida anteriormente. Si es un error, contacta a soporte.' });
             }
 
+            // --- INSERCIÓN ---
             const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
             const codigosGenerados = [];
             const ahoraPeru = "datetime('now', '-05:00')";
@@ -105,7 +130,7 @@ router.post('/tickets', (req, res) => {
                 success: true, 
                 codigos: codigosGenerados,
                 numero_ticket: codigosGenerados[0],
-                mensaje: `Se generaron ${cantTickets} tickets correctamente.` 
+                mensaje: `✅ ¡Pago validado! Se generaron ${cantTickets} tickets.` 
             });
 
         } catch (e) {

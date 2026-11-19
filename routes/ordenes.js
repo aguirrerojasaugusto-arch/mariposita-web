@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { db } = require('../database');
 const multer = require('multer');
 const { validarImagenOrden } = require('../services/validarComprobanteOrdenes');
-const { extraerDatosLocal } = require('../services/ocrLocal'); // Usamos el nuevo OCR local
+const { extraerDatosLocal } = require('../services/ocrLocal');
 const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -28,7 +28,7 @@ router.get('/buscar-cliente/:dni', async (req, res) => {
 });
 
 router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante' });
+    if (!req.file) return res.status(400).json({ error: 'Debes subir el comprobante.' });
 
     try {
         const validacion = await validarImagenOrden(req.file.buffer);
@@ -36,64 +36,79 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
 
         const { nombre, telefono, direccion, items, dni } = req.body;
         if (!nombre || !telefono || !direccion || !dni) {
-            return res.status(400).json({ error: 'Faltan datos personales (Nombre, DNI, Teléfono o Dirección)' });
+            return res.status(400).json({ error: 'Faltan datos personales (Nombre, DNI, Teléfono o Dirección).' });
         }
 
         let itemsParsed;
         try { itemsParsed = JSON.parse(items); } catch { itemsParsed = null; }
-        if (!Array.isArray(itemsParsed) || itemsParsed.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
+        if (!Array.isArray(itemsParsed) || itemsParsed.length === 0) return res.status(400).json({ error: 'El carrito está vacío.' });
 
         let total = 0;
         const validItems = [];
         for (const it of itemsParsed) {
             const prodRes = await db.execute({ sql: 'SELECT * FROM productos WHERE id = ? AND activo = 1', args: [it.producto_id] });
             const prod = prodRes.rows[0];
-            if (!prod) return res.status(400).json({ error: 'Producto no encontrado' });
+            if (!prod) return res.status(400).json({ error: 'Producto no encontrado.' });
             const cant = parseInt(it.cantidad, 10);
-            if (!cant || cant < 1) return res.status(400).json({ error: 'Cantidad inválida' });
+            if (!cant || cant < 1) return res.status(400).json({ error: 'Cantidad inválida.' });
             if (prod.stock < cant) return res.status(400).json({ error: `Stock insuficiente: ${prod.nombre}` });
             total += prod.precio * cant;
             validItems.push({ producto_id: prod.id, cantidad: cant, precio: prod.precio });
         }
 
-        // ⭐ EXTRAER DATOS CON OCR LOCAL ROBUSTO ⭐
         const ocr = await extraerDatosLocal(req.file.buffer);
         
-        // ⭐ VALIDACIÓN ESTRICTA DE MONTO ⭐
+        // 1. VALIDACIÓN DE MONTO
         if (!ocr.monto) {
-            return res.status(400).json({ error: 'No se pudo detectar el monto en el comprobante. Asegúrate de que sea legible.' });
+            return res.status(400).json({ error: 'No se pudo leer el monto en el comprobante. Asegúrate de que se vea claro.' });
         }
 
-        // Tolerancia de 0.10 céntimos por redondeos
         if (Math.abs(ocr.monto - total) > 0.10) {
             return res.status(400).json({ 
-                error: `El monto del comprobante (S/ ${ocr.monto.toFixed(2)}) no coincide con el total de la orden (S/ ${total.toFixed(2)}).` 
+                error: `❌ Monto incorrecto. Tu comprobante es de S/ ${ocr.monto.toFixed(2)}, pero el total de tu carrito es S/ ${total.toFixed(2)}.` 
             });
         }
 
-        // ⭐ VALIDACIÓN DE NOMBRE (Igual que tu código original, pero usando el texto del OCR local) ⭐
-        if (ocr.texto_completo) {
-            const nombreParaValidar = nombre.trim().toLowerCase();
-            const palabrasNombre = nombreParaValidar.split(' ').filter(p => p.length > 2);
-            const textoAValidar = ocr.texto_completo.toLowerCase();
-            const nombreCoincide = palabrasNombre.some(palabra => textoAValidar.includes(palabra));
+        // 2. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
+        const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'" });
+        const numYape = configRes.rows[0]?.valor || '';
 
-            if (!nombreCoincide) {
+        if (!ocr.celular_destino) {
+            return res.status(400).json({ error: '❌ No se pudo detectar el número de celular en el comprobante. Sube una imagen más clara.' });
+        }
+
+        if (numYape) {
+            const numLimpio = numYape.replace(/\D/g, '');
+            const ultimos3 = numLimpio.slice(-3);
+            
+            if (ocr.celular_destino !== ultimos3) {
                 return res.status(400).json({ 
-                    error: `El nombre ingresado ("${nombre}") no coincide con el destinatario del comprobante.` 
+                    error: `❌ El Yape fue enviado a otro número. El comprobante termina en *** *** ${ocr.celular_destino}, pero tu Yape termina en ${ultimos3}.` 
                 });
             }
         }
 
-        // ⭐ VALIDACIÓN DE DUPLICADOS (ÓRDENES) ⭐
+        // 3. VALIDACIÓN DE DUPLICADOS (HASH)
         const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-        const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante = ?', args: [hash] });
+        const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hash}%`] });
         const ordenDup = await db.execute({ sql: 'SELECT id FROM ordenes WHERE hash_comprobante = ?', args: [hash] });
         
         if (ticketDup.rows.length > 0 || ordenDup.rows.length > 0) {
-            return res.status(400).json({ error: '⚠️ Esta imagen ya fue utilizada.' });
+            return res.status(400).json({ error: '❌ Esta imagen exacta ya fue subida anteriormente. Si es un error, contacta a soporte.' });
         }
 
+        // 4. VALIDACIÓN DE NÚMERO DE OPERACIÓN
+        if (!ocr.operacion) {
+            return res.status(400).json({ error: 'No se encontró el Nro. de operación. Sube una captura donde se vea ese dato.' });
+        }
+
+        const opTicket = await db.execute({ sql: 'SELECT id FROM tickets WHERE ocr_operacion = ?', args: [ocr.operacion] });
+        const opOrden = await db.execute({ sql: 'SELECT id FROM ordenes WHERE ocr_operacion = ?', args: [ocr.operacion] });
+        if (opTicket.rows.length > 0 || opOrden.rows.length > 0) {
+            return res.status(400).json({ error: `❌ El Nro. de operación (${ocr.operacion}) ya fue usado. Si tienes un problema, contacta a soporte.` });
+        }
+
+        // --- INSERCIÓN ---
         const countRes = await db.execute('SELECT COUNT(*) as c FROM ordenes');
         const count = countRes.rows[0].c + 1;
         const year = new Date().getFullYear();
@@ -116,7 +131,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             });
         }
 
-        res.json({ success: true, codigo, total, mensaje: 'Orden recibida correctamente.' });
+        res.json({ success: true, codigo, total, mensaje: '✅ ¡Orden recibida! Tu pago ha sido validado.' });
         
     } catch (e) {
         console.error("Error procesando orden:", e);
