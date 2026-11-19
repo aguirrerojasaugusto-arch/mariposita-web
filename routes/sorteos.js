@@ -60,7 +60,8 @@ router.post('/tickets', (req, res) => {
             }
 
             // 2. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
-            const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'" });
+            // ⭐ AQUÍ ESTÁ LA CORRECCIÓN: Agregado args: [] ⭐
+            const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'", args: [] });
             const numYape = configRes.rows[0]?.valor || '';
 
             if (!numYape.trim()) {
