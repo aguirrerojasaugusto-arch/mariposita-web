@@ -10,8 +10,7 @@ async function extraerDatosLocal(fileBuffer) {
         const formData = new FormData();
         formData.append('apikey', process.env.OCR_SPACE_API_KEY);
         formData.append('language', 'spa');
-        formData.append('OCREngine', '2'); // El motor 2 es ultra preciso para capturas de celular
-        // Convertimos el Buffer a Blob para enviarlo
+        formData.append('OCREngine', '2'); // Motor 2: preciso para capturas de celular
         const blob = new Blob([fileBuffer], { type: 'image/jpeg' });
         formData.append('file', blob, 'comprobante.jpg');
 
@@ -41,7 +40,6 @@ async function extraerDatosLocal(fileBuffer) {
         if (matchSoles && matchSoles[1]) {
             monto = parseFloat(matchSoles[1].replace(',', '.'));
         } else {
-            // Búsqueda de respaldo: primer número que no sea año (2020-2030) ni operación (>5000)
             const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
                 for (let num of nums) {
