@@ -48,7 +48,7 @@ async function extraerDatosLocal(fileBuffer) {
                 monto = parseFloat(matchSoles[1].replace(',', '.'));
                 // El nombre del destinatario suele estar en la línea inmediatamente inferior
                 if (i + 1 < lines.length) {
-                    destinatario = lines[i + 1].replace(/\*/g, '').trim(); // Quitamos el asterisco de Yape
+                    destinatario = lines[i + 1].replace(/\*/g, '').trim(); 
                 }
                 break;
             }
@@ -68,8 +68,9 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // 2. Búsqueda de los últimos 3 dígitos del celular de destino (ej. *** *** 715)
-        const matchCel = text.match(/\*+\s*\*+\s*(\d{3})/);
+        // 2. Búsqueda de los últimos 3 dígitos del celular de destino
+        // Busca patrones como: *** *** 715, ***-***-715, ****** 715, etc.
+        const matchCel = text.match(/(?:\*+\s*){2,}(\d{3})/);
         if (matchCel) {
             celular_destino = matchCel[1];
         }
