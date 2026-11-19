@@ -3,18 +3,10 @@ const crypto = require('crypto');
 const { db } = require('../database');
 const multer = require('multer');
 const { validarImagenOrden } = require('../services/validarComprobanteOrdenes');
-const { extraerDatosOrden } = require('../services/ocr_ordenes');
+const { extraerDatosLocal } = require('../services/ocrLocal'); // Usamos el nuevo OCR local
 const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
-
-// ⭐ ============ RUTA VIEJA COMENTADA (SE USA routes/consulta.js) ⭐ ============
-/*
-router.get('/consultar', async (req, res) => {
-    // ...
-});
-*/
-// ⭐ ============ FIN DE LA RUTA COMENTADA ============ ⭐
 
 router.get('/buscar-cliente/:dni', async (req, res) => {
     const dni = req.params.dni;
@@ -64,13 +56,26 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             validItems.push({ producto_id: prod.id, cantidad: cant, precio: prod.precio });
         }
 
-        const ocr = await extraerDatosOrden(req.file.buffer);
+        // ⭐ EXTRAER DATOS CON OCR LOCAL ROBUSTO ⭐
+        const ocr = await extraerDatosLocal(req.file.buffer);
         
-        // ⭐ VALIDACIÓN DE NOMBRE (ÓRDENES) ⭐
-        if (ocr.destinatario || ocr.texto_completo) {
+        // ⭐ VALIDACIÓN ESTRICTA DE MONTO ⭐
+        if (!ocr.monto) {
+            return res.status(400).json({ error: 'No se pudo detectar el monto en el comprobante. Asegúrate de que sea legible.' });
+        }
+
+        // Tolerancia de 0.10 céntimos por redondeos
+        if (Math.abs(ocr.monto - total) > 0.10) {
+            return res.status(400).json({ 
+                error: `El monto del comprobante (S/ ${ocr.monto.toFixed(2)}) no coincide con el total de la orden (S/ ${total.toFixed(2)}).` 
+            });
+        }
+
+        // ⭐ VALIDACIÓN DE NOMBRE (Igual que tu código original, pero usando el texto del OCR local) ⭐
+        if (ocr.texto_completo) {
             const nombreParaValidar = nombre.trim().toLowerCase();
             const palabrasNombre = nombreParaValidar.split(' ').filter(p => p.length > 2);
-            const textoAValidar = `${ocr.destinatario || ''} ${ocr.texto_completo || ''}`.toLowerCase();
+            const textoAValidar = ocr.texto_completo.toLowerCase();
             const nombreCoincide = palabrasNombre.some(palabra => textoAValidar.includes(palabra));
 
             if (!nombreCoincide) {
@@ -99,7 +104,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             sql: `INSERT INTO ordenes (codigo, cliente_nombre, cliente_dni, cliente_email, cliente_telefono, cliente_direccion,
                     total, comprobante_base64, hash_comprobante, estado, ocr_monto, ocr_fecha, ocr_operacion)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`,
-            args: [codigo, nombre, dni, null, telefono, direccion, total, base64Image, hash, ocr.monto || null, ocr.fecha || null, ocr.operacion || null]
+            args: [codigo, nombre, dni, null, telefono, direccion, total, base64Image, hash, ocr.monto, null, ocr.operacion]
         });
 
         const ordenId = insertRes.lastInsertRowid;
