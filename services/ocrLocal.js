@@ -6,92 +6,90 @@ async function extraerDatosLocal(fileBuffer) {
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
 
     try {
-        // ⭐ 1. RECORTE DINÁMICO INTELIGENTE ⭐
-        // Obtenemos el tamaño real de la imagen
         const metadata = await sharp(fileBuffer).metadata();
-        
-        // Recortamos una franja horizontal: 
-        // Empezamos a 20% desde arriba (para saltar el logo de Yape)
-        // Y tomamos un 40% de altura (donde está el monto y el nombre)
-        const cropTop = Math.floor(metadata.height * 0.20);
-        const cropHeight = Math.floor(metadata.height * 0.40);
+        const worker = await createWorker('spa');
 
-        const processedImage = await sharp(fileBuffer)
-            .extract({ left: 0, top: cropTop, width: metadata.width, height: cropHeight })
-            .resize(1500, null, { withoutEnlargement: true }) 
+        // ==========================================
+        // ⭐ PARTE 1: RECORTE PARA EL MONTO ⭐
+        // ==========================================
+        // Recortamos desde el 20% hasta el 45% de la altura.
+        // Esto captura "¡Yapeaste!" y "S/ 15", pero CORTA la hora y la fecha.
+        const topMonto = Math.floor(metadata.height * 0.20);
+        const heightMonto = Math.floor(metadata.height * 0.25);
+
+        const imageMonto = await sharp(fileBuffer)
+            .extract({ left: 0, top: topMonto, width: metadata.width, height: heightMonto })
+            .resize(1500, null, { withoutEnlargement: true })
             .grayscale()
             .normalize()
-            .threshold(150) // Blanco y negro puro para que el texto resalte
+            .sharpen() // Hace que el "5" resalte y no se vea como "0"
             .toBuffer();
 
-        const worker = await createWorker('spa');
-        const { data: { text } } = await worker.recognize(processedImage);
+        // Le decimos a Tesseract que SOLO busque números, S y / en esta zona
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789S/s$/,.'
+        });
+
+        const { data: { text: textMonto } } = await worker.recognize(imageMonto);
+
+        // Limpiamos errores comunes del OCR
+        let cleanMonto = textMonto.replace(/\s+/g, '');
+        cleanMonto = cleanMonto.replace(/[s$]/gi, 'S').replace(/[l|]/g, '/');
+        
+        let monto = null;
+        // Buscamos el patrón S/15 o S/15.00
+        const matchSoles = cleanMonto.match(/S\/(\d+(?:[.,]\d{1,2})?)/);
+        
+        if (matchSoles && matchSoles[1]) {
+            monto = parseFloat(matchSoles[1].replace(',', '.'));
+        } else {
+            // Respaldo: Si no encontró la S, busca cualquier número en este recorte
+            const numMatch = cleanMonto.match(/(\d+(?:[.,]\d{1,2})?)/);
+            if (numMatch && numMatch[1]) {
+                monto = parseFloat(numMatch[1].replace(',', '.'));
+            }
+        }
+
+        // ==========================================
+        // ⭐ PARTE 2: RECORTE PARA LA OPERACIÓN ⭐
+        // ==========================================
+        // Recortamos la parte de abajo (60% al 95% de la altura)
+        const topOp = Math.floor(metadata.height * 0.60);
+        const heightOp = Math.floor(metadata.height * 0.35);
+
+        const imageOp = await sharp(fileBuffer)
+            .extract({ left: 0, top: topOp, width: metadata.width, height: heightOp })
+            .resize(1500, null, { withoutEnlargement: true })
+            .grayscale()
+            .normalize()
+            .toBuffer();
+
+        // Ahora le decimos que SOLO busque números puros (para la operación)
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789'
+        });
+
+        const { data: { text: textOp } } = await worker.recognize(imageOp);
         await worker.terminate();
 
-        // Al recortar, el texto leído será mucho más corto y limpio
-        console.log("=== TEXTO LEÍDO (RECORTADO) ===");
-        console.log(text);
-        console.log("================================");
-
-        let monto = null;
-        const textLower = text.toLowerCase();
-
-        // 2. BÚSQUEDA DEL MONTO
-        // Busca el patrón "S/ 15" o "5/ 15"
-        const matchSoles = textLower.match(/[s5$]\s*[\/l]?\s*([0-9oOlIsS]{1,5}(?:[.,][0-9oOlIsS]{1,2})?)/);
-        if (matchSoles && matchSoles[1]) {
-            let raw = matchSoles[1].toUpperCase()
-                .replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
-            let val = parseFloat(raw.replace(',', '.'));
-            if (!isNaN(val) && val > 0) monto = val;
-        }
-
-        // Respaldo: Como recortamos la imagen, si solo hay un número en el texto, ¡ese es el monto!
-        if (monto === null) {
-            const nums = textLower.match(/\b([0-9oOlIsS]{1,5})\b/g);
-            if (nums && nums.length > 0) {
-                for (let n of nums) {
-                    let raw = n.toUpperCase().replace(/S/g, '5').replace(/O/g, '0').replace(/I/g, '1');
-                    let val = parseFloat(raw);
-                    // Evitar que tome el año (2020-2030)
-                    if (!isNaN(val) && val > 0 && val < 5000 && !(val >= 2020 && val <= 2030)) {
-                        monto = val;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 3. NÚMERO DE OPERACIÓN
-        // Lo buscamos en el texto original completo (no en el recortado)
-        // Como Tesseract es lento, para la operación usaremos un enfoque rápido.
         let operacion = null;
-        // Como recortamos arriba, el número de operación no saldrá en `text`.
-        // Hacemos una segunda lectura rápida de la parte de abajo si es necesario,
-        // o simplemente extraemos los números del texto completo si lo tuvieramos.
-        // PERO, para no hacer 2 lecturas, le pediremos al usuario que el número de operación
-        // se extraiga del texto recortado si por casualidad aparece, o usamos un regex en el texto.
-        
-        // Para mantenerlo simple y rápido, si el texto recortado no tiene la operación, 
-        // podemos usar un regex sobre el texto completo original si lo tienes. 
-        // Como en este archivo solo tenemos la imagen, haremos un fallback con la imagen completa:
-        const fullWorker = await createWorker('spa');
-        const { data: { text: fullText } } = await fullWorker.recognize(await sharp(fileBuffer).resize(1000).toBuffer());
-        await fullWorker.terminate();
-
-        const opMatches = fullText.match(/\b\d{6,9}\b/g);
+        const opMatches = textOp.match(/\d{6,9}/g);
         if (opMatches && opMatches.length > 0) {
-            // Excluir años
-            const validOps = opMatches.filter(op => !(parseInt(op) >= 2020 && parseInt(op) <= 2030));
-            if (validOps.length > 0) {
-                operacion = validOps.sort((a, b) => b.length - a.length)[0]; 
-            }
+            operacion = opMatches.sort((a, b) => b.length - a.length)[0]; 
         }
+
+        // LOGS DE DEPURACIÓN
+        console.log("=== TEXTO MONTO (RECORTE 1) ===");
+        console.log(textMonto);
+        console.log("Monto detectado:", monto);
+        console.log("=== TEXTO OPERACIÓN (RECORTE 2) ===");
+        console.log(textOp);
+        console.log("Operación detectada:", operacion);
 
         return {
             monto,
             operacion,
-            texto_completo: fullText,
+            texto_completo: textMonto + " | " + textOp,
             error_ocr: null
         };
 
