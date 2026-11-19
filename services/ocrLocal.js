@@ -39,22 +39,32 @@ async function extraerDatosLocal(fileBuffer) {
 
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-        // 1. Búsqueda del Monto y del Destinatario (suele estar en la línea de abajo)
+        // 1. Búsqueda del Monto, Destinatario y Celular
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
+            const lineLower = line.toLowerCase();
+
+            // Buscar Monto
             const matchSoles = line.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
-            
-            if (matchSoles && matchSoles[1]) {
+            if (matchSoles && matchSoles[1] && !monto) {
                 monto = parseFloat(matchSoles[1].replace(',', '.'));
-                // El nombre del destinatario suele estar en la línea inmediatamente inferior
                 if (i + 1 < lines.length) {
                     destinatario = lines[i + 1].replace(/\*/g, '').trim(); 
                 }
-                break;
+            }
+
+            // Buscar Celular (Buscamos la línea que diga "celular" o tenga asteriscos)
+            if (lineLower.includes('celular') || line.includes('*')) {
+                // Extraemos todos los grupos de 3 números que haya en esa línea
+                const numeros = line.match(/\b\d{3}\b/g);
+                if (numeros && numeros.length > 0) {
+                    // El último grupo de 3 dígitos suele ser el final del celular (ej. 715)
+                    celular_destino = numeros[numeros.length - 1];
+                }
             }
         }
 
-        // Respaldo para el monto
+        // Respaldo para el monto si no se encontró con "S/"
         if (monto === null) {
             const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
@@ -68,14 +78,7 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // 2. Búsqueda de los últimos 3 dígitos del celular de destino
-        // Busca patrones como: *** *** 715, ***-***-715, ****** 715, etc.
-        const matchCel = text.match(/(?:\*+\s*){2,}(\d{3})/);
-        if (matchCel) {
-            celular_destino = matchCel[1];
-        }
-
-        // 3. Búsqueda de la Operación
+        // 2. Búsqueda de la Operación
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
             const validOps = opMatches.filter(op => {
