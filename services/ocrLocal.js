@@ -1,7 +1,6 @@
 async function extraerDatosLocal(fileBuffer) {
     const vacio = { monto: null, operacion: null, destinatario: null, celular_destino: null, texto_completo: null, error_ocr: null };
     
-    // ⭐ PROTECCIÓN: Validar que el archivo sea un Buffer real ⭐
     if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
         return { ...vacio, error_ocr: 'El archivo no es una imagen válida.' };
     }
@@ -55,7 +54,7 @@ async function extraerDatosLocal(fileBuffer) {
             const matchSoles = line.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
             if (matchSoles && matchSoles[1] && !monto) {
                 let val = parseFloat(matchSoles[1].replace(',', '.'));
-                if (!isNaN(val)) monto = val; // ⭐ Evitar NaN
+                if (!isNaN(val)) monto = val; 
                 
                 if (i + 1 < lines.length) {
                     destinatario = lines[i + 1].replace(/\*/g, '').trim(); 
@@ -75,7 +74,7 @@ async function extraerDatosLocal(fileBuffer) {
             if (nums) {
                 for (let num of nums) {
                     let val = parseFloat(num.replace(',', '.'));
-                    if (isNaN(val)) continue; // ⭐ Evitar NaN
+                    if (isNaN(val)) continue;
                     if (val >= 2020 && val <= 2030) continue;
                     if (val > 5000) continue;
                     monto = val;
