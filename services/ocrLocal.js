@@ -1,6 +1,10 @@
 async function extraerDatosLocal(fileBuffer) {
     const vacio = { monto: null, operacion: null, destinatario: null, celular_destino: null, texto_completo: null, error_ocr: null };
-    if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
+    
+    // ⭐ PROTECCIÓN: Validar que el archivo sea un Buffer real ⭐
+    if (!fileBuffer || !Buffer.isBuffer(fileBuffer)) {
+        return { ...vacio, error_ocr: 'El archivo no es una imagen válida.' };
+    }
 
     if (!process.env.OCR_SPACE_API_KEY) {
         return { ...vacio, error_ocr: 'Falta configurar OCR_SPACE_API_KEY en Render' };
@@ -25,16 +29,10 @@ async function extraerDatosLocal(fileBuffer) {
 
         const data = await response.json();
 
-        // ⭐ PROTECCIÓN CONTRA RESPUESTAS VACÍAS O NULAS ⭐
-        if (!data) {
-            return { ...vacio, error_ocr: 'El OCR devolvió una respuesta vacía.' };
-        }
-        if (data.IsErroredOnProcessing) {
-            console.error("Error OCR.space:", data.ErrorMessage);
-            return { ...vacio, error_ocr: data.ErrorMessage || 'No se pudo procesar la imagen.' };
-        }
+        if (!data) return { ...vacio, error_ocr: 'El OCR devolvió una respuesta vacía.' };
+        if (data.IsErroredOnProcessing) return { ...vacio, error_ocr: data.ErrorMessage || 'No se pudo procesar la imagen.' };
         if (!data.ParsedResults || !Array.isArray(data.ParsedResults) || data.ParsedResults.length === 0) {
-            return { ...vacio, error_ocr: 'No se pudo leer el texto de la imagen. Intenta subir una captura más clara.' };
+            return { ...vacio, error_ocr: 'No se pudo leer el texto. Intenta con una captura más clara.' };
         }
 
         const text = data.ParsedResults[0]?.ParsedText || '';
@@ -54,16 +52,16 @@ async function extraerDatosLocal(fileBuffer) {
             const line = lines[i];
             const lineLower = line.toLowerCase();
 
-            // 1. Buscar Monto y Destinatario
             const matchSoles = line.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
             if (matchSoles && matchSoles[1] && !monto) {
-                monto = parseFloat(matchSoles[1].replace(',', '.'));
+                let val = parseFloat(matchSoles[1].replace(',', '.'));
+                if (!isNaN(val)) monto = val; // ⭐ Evitar NaN
+                
                 if (i + 1 < lines.length) {
                     destinatario = lines[i + 1].replace(/\*/g, '').trim(); 
                 }
             }
 
-            // 2. Buscar Celular de Destino
             if (lineLower.includes('celular') || line.includes('*')) {
                 const soloNumeros = line.replace(/\D/g, '');
                 if (soloNumeros.length >= 3) {
@@ -72,12 +70,12 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // Respaldo para el monto
         if (monto === null) {
             const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
                 for (let num of nums) {
                     let val = parseFloat(num.replace(',', '.'));
+                    if (isNaN(val)) continue; // ⭐ Evitar NaN
                     if (val >= 2020 && val <= 2030) continue;
                     if (val > 5000) continue;
                     monto = val;
@@ -86,7 +84,6 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // 3. Búsqueda de la Operación
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
             const validOps = opMatches.filter(op => {

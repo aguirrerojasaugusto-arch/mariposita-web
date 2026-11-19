@@ -20,7 +20,14 @@ router.post('/tickets', (req, res) => {
             const validacion = await esComprobanteYape(req.file.buffer);
             if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
-            const { sorteo_id, nombre, telefono, dni, departamento, cantidad } = req.body;
+            // ⭐ LIMPIEZA EXTREMA DE DATOS (Evitar objetos/arreglos) ⭐
+            const body = req.body || {};
+            const sorteo_id = String(body.sorteo_id || '');
+            const nombre = String(body.nombre || '');
+            const telefono = String(body.telefono || '');
+            const dni = body.dni ? String(body.dni) : '';
+            const departamento = body.departamento ? String(body.departamento) : null;
+            const cantidad = parseInt(body.cantidad, 10) || 1;
             
             if (!sorteo_id || !nombre || !telefono) {
                 return res.status(400).json({ error: 'Faltan datos personales (Nombre o Teléfono).' });
@@ -40,10 +47,9 @@ router.post('/tickets', (req, res) => {
             if (ocr.error_ocr) return res.status(400).json({ error: `Problema al leer la imagen: ${ocr.error_ocr}` });
 
             // 1. VALIDACIÓN DE MONTO
-            const cantTickets = parseInt(cantidad) || 1;
-            const montoEsperado = sorteo.precio_ticket * cantTickets;
+            const montoEsperado = parseFloat(sorteo.precio_ticket) * cantidad;
             
-            if (!ocr.monto) {
+            if (!ocr.monto || isNaN(ocr.monto)) {
                 return res.status(400).json({ error: 'No se pudo leer el monto en el comprobante. Asegúrate de que se vea claro.' });
             }
 
@@ -57,17 +63,14 @@ router.post('/tickets', (req, res) => {
             const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'" });
             const numYape = configRes.rows[0]?.valor || '';
 
-            // Si el admin no configuró su Yape, bloqueamos todo por seguridad
             if (!numYape.trim()) {
-                return res.status(500).json({ error: '❌ Error del sistema: El número de Yape no está configurado en el panel de administrador.' });
+                return res.status(500).json({ error: '❌ Error del sistema: El número de Yape no está configurado en el panel.' });
             }
 
-            // Si el OCR no pudo leer el celular, bloqueamos
             if (!ocr.celular_destino) {
                 return res.status(400).json({ error: '❌ No se pudo detectar el número de celular en el comprobante. Sube una imagen más clara.' });
             }
 
-            // Comparamos los últimos 3 dígitos
             const numLimpio = numYape.replace(/\D/g, ''); 
             const ultimos3 = numLimpio.slice(-3);
             
@@ -102,7 +105,7 @@ router.post('/tickets', (req, res) => {
             const codigosGenerados = [];
             const ahoraPeru = "datetime('now', '-05:00')";
 
-            for (let i = 0; i < cantTickets; i++) {
+            for (let i = 0; i < cantidad; i++) {
                 let numero;
                 let isUnique = false;
                 while (!isUnique) {
@@ -113,15 +116,21 @@ router.post('/tickets', (req, res) => {
                 codigosGenerados.push(numero);
                 const hashUnico = `${hashBase}-${numero}`;
 
+                // ⭐ FORZAMOS STRING() EN TODOS LOS ARGUMENTOS PARA QUE SQL NO FALLE ⭐
                 await db.execute({
                     sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion, ocr_monto, creado_en)
                           VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?, ?, ${ahoraPeru})`,
                     args: [
-                        sorteo_id, numero, nombre.toUpperCase(), 
-                        dni ? String(dni).trim() : '', 
-                        telefono ? String(telefono).trim() : '', 
-                        departamento ? departamento.toUpperCase() : null, 
-                        base64Image, hashUnico, ocr.operacion, ocr.monto
+                        String(sorteo_id), 
+                        String(numero), 
+                        String(nombre).toUpperCase(), 
+                        String(dni).trim(), 
+                        String(telefono).trim(), 
+                        departamento ? String(departamento).toUpperCase() : null, 
+                        String(base64Image), 
+                        String(hashUnico), 
+                        String(ocr.operacion), 
+                        Number(ocr.monto)
                     ]
                 });
             }
@@ -130,7 +139,7 @@ router.post('/tickets', (req, res) => {
                 success: true, 
                 codigos: codigosGenerados,
                 numero_ticket: codigosGenerados[0],
-                mensaje: `✅ ¡Pago validado! Se generaron ${cantTickets} tickets.` 
+                mensaje: `✅ ¡Pago validado! Se generaron ${cantidad} tickets.` 
             });
 
         } catch (e) {
