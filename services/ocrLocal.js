@@ -1,5 +1,5 @@
 async function extraerDatosLocal(fileBuffer) {
-    const vacio = { monto: null, operacion: null, texto_completo: null, error_ocr: null };
+    const vacio = { monto: null, operacion: null, destinatario: null, celular_destino: null, texto_completo: null, error_ocr: null };
     if (!fileBuffer) return { ...vacio, error_ocr: 'Sin archivo' };
 
     if (!process.env.OCR_SPACE_API_KEY) {
@@ -34,12 +34,28 @@ async function extraerDatosLocal(fileBuffer) {
 
         let monto = null;
         let operacion = null;
+        let destinatario = null;
+        let celular_destino = null;
 
-        // 1. Búsqueda del Monto
-        const matchSoles = text.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
-        if (matchSoles && matchSoles[1]) {
-            monto = parseFloat(matchSoles[1].replace(',', '.'));
-        } else {
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+        // 1. Búsqueda del Monto y del Destinatario (suele estar en la línea de abajo)
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const matchSoles = line.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
+            
+            if (matchSoles && matchSoles[1]) {
+                monto = parseFloat(matchSoles[1].replace(',', '.'));
+                // El nombre del destinatario suele estar en la línea inmediatamente inferior
+                if (i + 1 < lines.length) {
+                    destinatario = lines[i + 1].replace(/\*/g, '').trim(); // Quitamos el asterisco de Yape
+                }
+                break;
+            }
+        }
+
+        // Respaldo para el monto
+        if (monto === null) {
             const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
                 for (let num of nums) {
@@ -52,7 +68,13 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // 2. Búsqueda de la Operación
+        // 2. Búsqueda de los últimos 3 dígitos del celular de destino (ej. *** *** 715)
+        const matchCel = text.match(/\*+\s*\*+\s*(\d{3})/);
+        if (matchCel) {
+            celular_destino = matchCel[1];
+        }
+
+        // 3. Búsqueda de la Operación
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
             const validOps = opMatches.filter(op => {
@@ -64,7 +86,7 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        return { monto, operacion, texto_completo: text, error_ocr: null };
+        return { monto, operacion, destinatario, celular_destino, texto_completo: text, error_ocr: null };
 
     } catch (e) {
         console.error("Error OCR Local:", e.message);
