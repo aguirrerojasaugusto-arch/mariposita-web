@@ -48,11 +48,13 @@ async function extraerDatosLocal(fileBuffer) {
 
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
+        // 1. BUSCAR MONTO (Mejorado para capturar S/ 10, S/10, 5/ 10, etc.)
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const lineLower = line.toLowerCase();
 
-            const matchSoles = line.match(/[s5$]\s*[\/l]\s*(\d+(?:[.,]\d{1,2})?)/i);
+            // Busca formatos como S/ 10, S / 10, 5/ 10
+            const matchSoles = line.match(/(?:s\s*\/|s\/|5\s*\/|\$\/|\$|s\s*l)\s*(\d+(?:[.,]\d{1,2})?)/i);
             if (matchSoles && matchSoles[1] && !monto) {
                 let val = parseFloat(matchSoles[1].replace(',', '.'));
                 if (!isNaN(val)) monto = val; 
@@ -70,20 +72,27 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
+        // 2. FALLBACK MONTO (Si no encontró S/, limpia horas y fechas para no agarrar el 12:25)
         if (monto === null) {
-            const nums = text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
+            // Quitamos horas (12:25), fechas (09 nov 2026) y años (2026) del texto
+            const textLimpio = text
+                .replace(/\d{1,2}:\d{2}\s*(?:[ap]\.?m\.?)?/gi, '') 
+                .replace(/\b\d{1,2}\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\b/gi, '') 
+                .replace(/\b(19|20)\d{2}\b/g, ''); 
+
+            const nums = textLimpio.match(/\b\d{1,4}(?:[.,]\d{1,2})?\b/g);
             if (nums) {
                 for (let num of nums) {
                     let val = parseFloat(num.replace(',', '.'));
                     if (isNaN(val)) continue;
-                    if (val >= 2020 && val <= 2030) continue;
-                    if (val > 5000) continue;
+                    if (val > 5000) continue; // Ignorar números de operación largos
                     monto = val;
                     break;
                 }
             }
         }
 
+        // 3. BUSCAR OPERACIÓN
         const opMatches = text.match(/\b\d{6,9}\b/g);
         if (opMatches && opMatches.length > 0) {
             const validOps = opMatches.filter(op => {
@@ -95,7 +104,7 @@ async function extraerDatosLocal(fileBuffer) {
             }
         }
 
-        // ⭐ EXTRACCIÓN DE FECHA Y HORA ⭐
+        // 4. EXTRAER FECHA Y HORA
         const monthMap = { ene: '01', feb: '02', mar: '03', abr: '04', may: '05', jun: '06', jul: '07', ago: '08', sep: '09', oct: '10', nov: '11', dic: '12' };
         const fechaMatch = text.match(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z.]*\s+(\d{4})/i);
         const horaMatch = text.match(/(\d{1,2}):(\d{2})\s*([ap]\.?\s*m\.?)/i);
