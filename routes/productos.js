@@ -2,6 +2,11 @@ const express = require('express');
 const { db } = require('../database');
 const router = express.Router();
 
+// ⭐ CACHÉ PARA LA CONFIGURACIÓN PÚBLICA ⭐
+let configCache = null;
+let configCacheTime = 0;
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hora de duración
+
 router.get('/productos', async (req, res) => {
     try {
         const result = await db.execute('SELECT id, nombre, descripcion, precio, stock, imagen_base64, categoria FROM productos WHERE activo = 1 ORDER BY creado_en DESC');
@@ -25,8 +30,16 @@ router.get('/sorteos', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error al obtener sorteos' }); }
 });
 
+// ⭐ RUTA OPTIMIZADA CON CACHÉ ⭐
 router.get('/config-publica', async (req, res) => {
     try {
+        const ahora = Date.now();
+        // Si tenemos caché y no ha expirado, devolvemos la caché instantáneamente
+        if (configCache && (ahora - configCacheTime < CACHE_DURATION)) {
+            return res.json(configCache);
+        }
+
+        // Si no hay caché, consultamos la base de datos
         const keys = [
             'numero_yape', 'numero_plin', 'nombre_titular', 'whatsapp', 
             'email_contacto', 'telefono_contacto', 'ubicacion', 'logo_admin', 'fondo_login', 'flyer_inicio',
@@ -39,8 +52,20 @@ router.get('/config-publica', async (req, res) => {
         });
         const obj = {};
         result.rows.forEach(r => obj[r.clave] = r.valor);
+        
+        // Guardamos en la memoria caché
+        configCache = obj;
+        configCacheTime = ahora;
+
         res.json(obj);
     } catch (error) { res.status(500).json({ error: 'Error al obtener configuración' }); }
+});
+
+// ⭐ RUTA PARA LIMPIAR LA CACHÉ CUANDO EL ADMIN CAMBIA ALGO ⭐
+router.post('/config-publica/refresh', (req, res) => {
+    configCache = null;
+    configCacheTime = 0;
+    res.json({ success: true, message: 'Caché limpiada' });
 });
 
 router.get('/carrusel', async (req, res) => {
@@ -92,7 +117,6 @@ router.get('/consultar', async (req, res) => {
     }
 });
 
-// ⭐ RUTA DE GANADORES MODIFICADA: Incluye la imagen del sorteo ⭐
 router.get('/ganadores', async (req, res) => {
     try {
         const result = await db.execute(`

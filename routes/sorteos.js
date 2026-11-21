@@ -20,7 +20,6 @@ router.post('/tickets', (req, res) => {
             const validacion = await esComprobanteYape(req.file.buffer);
             if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
-            // ⭐ LIMPIEZA EXTREMA DE DATOS (Evitar objetos/arreglos) ⭐
             const body = req.body || {};
             const sorteo_id = String(body.sorteo_id || '');
             const nombre = String(body.nombre || '');
@@ -59,8 +58,22 @@ router.post('/tickets', (req, res) => {
                 });
             }
 
-            // 2. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
-            // ⭐ AQUÍ ESTÁ LA CORRECCIÓN: Agregado args: [] ⭐
+            // 2. VALIDACIÓN DE FECHA (MÁX 30 MINUTOS)
+            if (!ocr.fecha_hora) {
+                return res.status(400).json({ error: '❌ No se pudo leer la fecha y hora del comprobante. Sube una imagen más clara.' });
+            }
+            
+            const ahora = new Date();
+            const fechaComprobante = new Date(ocr.fecha_hora);
+            const diferenciaMinutos = (ahora - fechaComprobante) / 1000 / 60;
+            
+            if (diferenciaMinutos > 30) {
+                return res.status(400).json({ 
+                    error: `❌ Comprobante muy antiguo. Han pasado ${Math.round(diferenciaMinutos)} minutos desde el pago. El límite es de 30 minutos.` 
+                });
+            }
+
+            // 3. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
             const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'", args: [] });
             const numYape = configRes.rows[0]?.valor || '';
 
@@ -81,7 +94,7 @@ router.post('/tickets', (req, res) => {
                 });
             }
 
-            // 3. VALIDACIÓN DE NÚMERO DE OPERACIÓN DUPLICADO
+            // 4. VALIDACIÓN DE NÚMERO DE OPERACIÓN DUPLICADO
             if (!ocr.operacion) {
                 return res.status(400).json({ error: 'No se encontró el Nro. de operación. Sube una captura donde se vea ese dato.' });
             }
@@ -93,7 +106,7 @@ router.post('/tickets', (req, res) => {
                 return res.status(400).json({ error: `❌ El Nro. de operación (${ocr.operacion}) ya fue usado. Si tienes un problema, contacta a soporte.` });
             }
 
-            // 4. VALIDACIÓN DE IMAGEN DUPLICADA (HASH)
+            // 5. VALIDACIÓN DE IMAGEN DUPLICADA (HASH)
             const hashBase = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
             const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hashBase}%`] });
             
@@ -117,7 +130,6 @@ router.post('/tickets', (req, res) => {
                 codigosGenerados.push(numero);
                 const hashUnico = `${hashBase}-${numero}`;
 
-                // ⭐ FORZAMOS STRING() EN TODOS LOS ARGUMENTOS PARA QUE SQL NO FALLE ⭐
                 await db.execute({
                     sql: `INSERT INTO tickets (sorteo_id, numero_ticket, cliente_nombre, cliente_dni, cliente_telefono, cliente_departamento, cantidad_tickets, comprobante_base64, hash_comprobante, estado_pago, ocr_operacion, ocr_monto, creado_en)
                           VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, 'pendiente', ?, ?, ${ahoraPeru})`,

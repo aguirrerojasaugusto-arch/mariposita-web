@@ -34,13 +34,17 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
         const validacion = await validarImagenOrden(req.file.buffer);
         if (!validacion.valido) return res.status(400).json({ error: validacion.error });
 
-        const { nombre, telefono, direccion, items, dni } = req.body;
+        const body = req.body || {};
+        const nombre = String(body.nombre || '');
+        const telefono = String(body.telefono || '');
+        const direccion = String(body.direccion || '');
+        const dni = String(body.dni || '');
+        let itemsParsed;
+        try { itemsParsed = JSON.parse(body.items); } catch { itemsParsed = null; }
+        
         if (!nombre || !telefono || !direccion || !dni) {
             return res.status(400).json({ error: 'Faltan datos personales (Nombre, DNI, Teléfono o Dirección).' });
         }
-
-        let itemsParsed;
-        try { itemsParsed = JSON.parse(items); } catch { itemsParsed = null; }
         if (!Array.isArray(itemsParsed) || itemsParsed.length === 0) return res.status(400).json({ error: 'El carrito está vacío.' });
 
         let total = 0;
@@ -58,8 +62,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
 
         const ocr = await extraerDatosLocal(req.file.buffer);
         
-        // 1. VALIDACIÓN DE MONTO
-        if (!ocr.monto) {
+        if (!ocr.monto || isNaN(ocr.monto)) {
             return res.status(400).json({ error: 'No se pudo leer el monto en el comprobante. Asegúrate de que se vea claro.' });
         }
 
@@ -69,26 +72,41 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             });
         }
 
-        // 2. VALIDACIÓN ESTRICTA DE CELULAR DE DESTINO
-        const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'" });
+        // VALIDACIÓN DE FECHA (MÁX 30 MINUTOS)
+        if (!ocr.fecha_hora) {
+            return res.status(400).json({ error: '❌ No se pudo leer la fecha y hora del comprobante. Sube una imagen más clara.' });
+        }
+        
+        const ahora = new Date();
+        const fechaComprobante = new Date(ocr.fecha_hora);
+        const diferenciaMinutos = (ahora - fechaComprobante) / 1000 / 60;
+        
+        if (diferenciaMinutos > 30) {
+            return res.status(400).json({ 
+                error: `❌ Comprobante muy antiguo. Han pasado ${Math.round(diferenciaMinutos)} minutos desde el pago. El límite es de 30 minutos.` 
+            });
+        }
+
+        const configRes = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'numero_yape'", args: [] });
         const numYape = configRes.rows[0]?.valor || '';
+
+        if (!numYape.trim()) {
+            return res.status(500).json({ error: '❌ Error del sistema: El número de Yape no está configurado en el panel.' });
+        }
 
         if (!ocr.celular_destino) {
             return res.status(400).json({ error: '❌ No se pudo detectar el número de celular en el comprobante. Sube una imagen más clara.' });
         }
 
-        if (numYape) {
-            const numLimpio = numYape.replace(/\D/g, '');
-            const ultimos3 = numLimpio.slice(-3);
-            
-            if (ocr.celular_destino !== ultimos3) {
-                return res.status(400).json({ 
-                    error: `❌ El Yape fue enviado a otro número. El comprobante termina en *** *** ${ocr.celular_destino}, pero tu Yape termina en ${ultimos3}.` 
-                });
-            }
+        const numLimpio = numYape.replace(/\D/g, '');
+        const ultimos3 = numLimpio.slice(-3);
+        
+        if (ocr.celular_destino !== ultimos3) {
+            return res.status(400).json({ 
+                error: `❌ El Yape fue enviado a otro número. El comprobante termina en *** *** ${ocr.celular_destino}, pero tu Yape termina en *** *** ${ultimos3}.` 
+            });
         }
 
-        // 3. VALIDACIÓN DE DUPLICADOS (HASH)
         const hash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
         const ticketDup = await db.execute({ sql: 'SELECT id FROM tickets WHERE hash_comprobante LIKE ?', args: [`${hash}%`] });
         const ordenDup = await db.execute({ sql: 'SELECT id FROM ordenes WHERE hash_comprobante = ?', args: [hash] });
@@ -97,7 +115,6 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             return res.status(400).json({ error: '❌ Esta imagen exacta ya fue subida anteriormente. Si es un error, contacta a soporte.' });
         }
 
-        // 4. VALIDACIÓN DE NÚMERO DE OPERACIÓN
         if (!ocr.operacion) {
             return res.status(400).json({ error: 'No se encontró el Nro. de operación. Sube una captura donde se vea ese dato.' });
         }
@@ -108,8 +125,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             return res.status(400).json({ error: `❌ El Nro. de operación (${ocr.operacion}) ya fue usado. Si tienes un problema, contacta a soporte.` });
         }
 
-        // --- INSERCIÓN ---
-        const countRes = await db.execute('SELECT COUNT(*) as c FROM ordenes');
+        const countRes = await db.execute({ sql: 'SELECT COUNT(*) as c FROM ordenes', args: [] });
         const count = countRes.rows[0].c + 1;
         const year = new Date().getFullYear();
         const codigo = `MAR-${year}-${String(count).padStart(4, '0')}`;
@@ -119,7 +135,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
             sql: `INSERT INTO ordenes (codigo, cliente_nombre, cliente_dni, cliente_email, cliente_telefono, cliente_direccion,
                     total, comprobante_base64, hash_comprobante, estado, ocr_monto, ocr_fecha, ocr_operacion)
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)`,
-            args: [codigo, nombre, dni, null, telefono, direccion, total, base64Image, hash, ocr.monto, null, ocr.operacion]
+            args: [String(codigo), String(nombre), String(dni), null, String(telefono), String(direccion), Number(total), String(base64Image), String(hash), Number(ocr.monto), String(ocr.fecha_hora), String(ocr.operacion)]
         });
 
         const ordenId = insertRes.lastInsertRowid;
@@ -127,7 +143,7 @@ router.post('/ordenes', upload.single('comprobante'), async (req, res) => {
         for (const it of validItems) {
             await db.execute({
                 sql: 'INSERT INTO orden_items (orden_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
-                args: [ordenId, it.producto_id, it.cantidad, it.precio]
+                args: [Number(ordenId), Number(it.producto_id), Number(it.cantidad), Number(it.precio)]
             });
         }
 

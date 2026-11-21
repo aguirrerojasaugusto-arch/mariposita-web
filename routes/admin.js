@@ -68,6 +68,10 @@ router.post('/configuracion', requireAdmin, async (req, res) => {
                 args: [k, String(v)]
             });
         }
+        // ⭐ LIMPIAR LA CACHÉ DEL SERVIDOR ⭐
+        const productosRouter = require('./productos');
+        if (productosRouter.clearConfigCache) productosRouter.clearConfigCache();
+
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -87,6 +91,11 @@ router.post('/configuracion-imagenes', requireAdmin, (req, res) => {
                 sql: 'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
                 args: [clave, imagen_url]
             });
+
+            // ⭐ LIMPIAR LA CACHÉ DEL SERVIDOR ⭐
+            const productosRouter = require('./productos');
+            if (productosRouter.clearConfigCache) productosRouter.clearConfigCache();
+
             res.json({ success: true, mensaje: 'Imagen actualizada correctamente' });
         } catch (uploadError) {
             console.error("❌ ERROR REAL CLOUDINARY (Config):", uploadError);
